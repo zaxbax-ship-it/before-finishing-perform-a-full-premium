@@ -4,10 +4,7 @@ import type { CommunityDraft } from '@/lib/community';
 import { createAiModerationService } from '@/lib/ai/moderation/service';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import { submissionToQuestion } from '@/lib/community';
-
-function jsonError(message: string, status = 400) {
-  return NextResponse.json({ ok: false, error: message }, { status });
-}
+import { hashIdentity, internalServerError, publicJsonError, readLimitedJson, redactSubmissionForClient } from '@/lib/api/communitySecurity';
 
 export async function GET() {
   try {
@@ -16,16 +13,16 @@ export async function GET() {
       repositories.submissions.list({ limit: 200 }),
       repositories.auditLogs.list({ limit: 80 })
     ]);
-    return NextResponse.json({ ok: true, provider: repositories.kind, submissions, auditLogs });
+    return NextResponse.json({ ok: true, provider: repositories.kind, submissions: submissions.map(redactSubmissionForClient), auditLogs });
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : 'Failed to load submissions.', 500);
+    return internalServerError('community-submissions:get', error);
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { draft?: CommunityDraft };
-    if (!body.draft) return jsonError('Missing submission draft.');
+    const body = await readLimitedJson<{ draft?: CommunityDraft }>(request);
+    if (!body.draft) return publicJsonError('Missing submission draft.');
 
     const repositories = getRepositoryProvider();
     const [existingQuestions, existingSubmissions] = await Promise.all([
@@ -70,7 +67,7 @@ export async function POST(request: Request) {
       await repositories.antiSpamEvents.create({
         eventType: ai.qualitySignals.unsafeRisk >= 65 ? 'toxic_content' : 'manual_flag',
         submissionId: submission.id,
-        emailHash: submission.draft.contributorEmail || undefined,
+        emailHash: hashIdentity(submission.draft.contributorEmail),
         severity: Math.max(ai.qualitySignals.spamRisk, ai.qualitySignals.unsafeRisk),
         details: ai.qualitySignals
       });
@@ -89,9 +86,9 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({ ok: true, provider: repositories.kind, submission, auditLog: audit, ai });
+    return NextResponse.json({ ok: true, provider: repositories.kind, submission: redactSubmissionForClient(submission), auditLog: audit, ai });
   } catch (error) {
     const audit = createAudit('ai_moderation_failed', 'community_submission', error instanceof Error ? error.message : 'Unknown moderation error');
-    return NextResponse.json({ ok: false, error: audit.details }, { status: 500 });
+    return internalServerError('community-submissions:post', audit.details);
   }
 }
