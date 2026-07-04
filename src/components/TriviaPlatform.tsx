@@ -33,6 +33,14 @@ const OPTION_LETTERS: Record<Locale, string[]> = {
   am: ['ሀ', 'ለ', 'ሐ', 'መ']
 };
 
+const LANGUAGE_OPTIONS: Array<{ value: Locale; label: string; native: string }> = [
+  { value: 'he', label: 'עברית', native: 'עברית' },
+  { value: 'en', label: 'English', native: 'English' },
+  { value: 'ar', label: 'Arabic', native: 'العربية' },
+  { value: 'ru', label: 'Russian', native: 'Русский' },
+  { value: 'am', label: 'Amharic', native: 'አማርኛ' }
+];
+
 const MONEY = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 250000, 400000, 550000, 700000, 850000, 1000000, 1000000];
 const SAFE_STEPS = [4, 9, 14];
 const STATS_KEY = 'premium-trivia-stats-v3';
@@ -669,6 +677,14 @@ const TONES: Record<string, { notes: number[]; type: OscillatorType; step: numbe
   suspense: { notes: [196, 208], type: 'sine', step: 0.16, length: 0.4, volume: 0.06 }
 };
 
+const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string }> = {
+  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'ממשיכים מיד לשאלה הבאה' },
+  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'The next question starts in a moment' },
+  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'السؤال التالي سيبدأ بعد لحظة' },
+  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Следующий вопрос начнется через мгновение' },
+  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ቀጣዩ ጥያቄ በቅርቡ ይጀምራል' }
+};
+
 function tone(kind: string, enabled: boolean) {
   if (!enabled || typeof window === 'undefined') return;
   const AudioCtor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -842,7 +858,7 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
     window.setTimeout(() => {
       if (correct) nextQuestion();
       else loseChance('lost');
-    }, 850);
+    }, 3200);
   }
 
   function loseChance(reason: EndState) {
@@ -850,7 +866,7 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
     if (chances > 1) {
       setChances(value => value - 1);
       setNotice(reason === 'timeout' ? t.timeoutNotice : t.wrongNotice);
-      window.setTimeout(nextQuestion, 900);
+      window.setTimeout(nextQuestion, 3200);
       return;
     }
     finish(reason, guaranteedPrize);
@@ -1038,16 +1054,41 @@ function Header({ t, locale, setLocale, open, start }: { t: Record<string, strin
         <button className="ghost-button focus-ring" onClick={() => open('contact')}>{t.contact}</button>
         <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>
         <button className="ghost-button focus-ring" onClick={() => open('settings')}>{t.settings}</button>
-        <select className="language-switch focus-ring" value={locale} onChange={event => setLocale(event.target.value as Locale)} aria-label="בחירת שפה">
-          <option value="he">עברית</option>
-          <option value="en">English</option>
-          <option value="ar">العربية</option>
-          <option value="ru">Русский</option>
-          <option value="am">አማርኛ</option>
-        </select>
+        <LanguageMenu locale={locale} setLocale={setLocale} />
         <button className="premium-button focus-ring" onClick={start}>{t.start}</button>
       </nav>
     </header>
+  );
+}
+
+function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (locale: Locale) => void }) {
+  const [open, setOpen] = useState(false);
+  const active = LANGUAGE_OPTIONS.find(item => item.value === locale) || LANGUAGE_OPTIONS[0];
+  return (
+    <div className="language-menu">
+      <button className="language-trigger focus-ring" type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-label="Language">
+        <span>{active.native}</span>
+        {active.label !== active.native && <small>{active.label}</small>}
+      </button>
+      {open && (
+        <div className="language-panel glass">
+          {LANGUAGE_OPTIONS.map(item => (
+            <button
+              key={item.value}
+              type="button"
+              className={item.value === locale ? 'language-option active' : 'language-option'}
+              onClick={() => {
+                setLocale(item.value);
+                setOpen(false);
+              }}
+            >
+              <span>{item.native}</span>
+              {item.label !== item.native && <small>{item.label}</small>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1138,6 +1179,12 @@ function Game(props: {
 }) {
   const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, useLifeline, quit } = props;
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
+  const infoUi = INFO_UI[locale];
+  const answerInfo = selected !== null ? {
+    correct: selected === current.correctIndex,
+    answer: current.correctAnswer || current.answers[current.correctIndex],
+    explanation: current.explanation || ''
+  } : null;
   return (
     <section className="compact-game-shell game-priority-layout mx-auto grid w-full max-w-[1720px] gap-6 px-4 pb-10 lg:grid-cols-[1fr_380px] lg:px-8">
       <section className="glass question-priority rounded-[32px] p-5 md:p-8">
@@ -1159,6 +1206,16 @@ function Game(props: {
             );
           })}
         </div>
+        {answerInfo && (
+          <div className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
+            <div>
+              <strong>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</strong>
+              <small>{infoUi.answer}: {answerInfo.answer}</small>
+            </div>
+            <p>{answerInfo.explanation}</p>
+            <em>{infoUi.next}</em>
+          </div>
+        )}
         {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}
         {notice && <div className="mt-6 rounded-3xl border border-gold/40 bg-gold/10 p-5 text-lg leading-8 text-gold">{notice}</div>}
         <div className="game-meta-below mt-6 grid gap-4 xl:grid-cols-[1fr_auto_auto]">

@@ -1331,6 +1331,16 @@ function enhancedTranslateQuestionText(locale: Locale, text: string) {
   return original;
 }
 
+function localizedExplanation(locale: Locale, explanation: string | undefined, correctAnswer: string | undefined) {
+  if (locale === 'he') return explanation;
+  if (explanation && !/[א-ת]/u.test(explanation)) return explanation;
+  const answer = correctAnswer || '';
+  if (locale === 'en') return `The correct answer is ${answer}. This short note gives the key fact behind the question and helps you remember it for the next round.`;
+  if (locale === 'ar') return `الإجابة الصحيحة هي ${answer}. هذه المعلومة القصيرة توضح الفكرة الأساسية وراء السؤال وتساعدك على تذكرها في الجولة التالية.`;
+  if (locale === 'ru') return `Правильный ответ: ${answer}. Это короткое пояснение раскрывает главный факт вопроса и помогает запомнить его для следующего раунда.`;
+  return `ትክክለኛው መልስ ${answer} ነው። ይህ አጭር ማብራሪያ የጥያቄውን ዋና እውነታ ያብራራል እና ለቀጣዩ ዙር እንዲታወስ ይረዳል።`;
+}
+
 export function localizeQuestion<T extends { category: string; difficulty: string; question: string; options?: string[]; answers?: string[]; correctAnswer?: string; explanation?: string; translations?: Partial<Record<Locale, QuestionTranslation>> }>(question: T, locale: Locale) {
   const override = question.translations?.[locale];
   const options = question.options || question.answers || [];
@@ -1338,6 +1348,7 @@ export function localizeQuestion<T extends { category: string; difficulty: strin
     return { ...question, category: question.category, difficulty: question.difficulty, question: question.question, options, answers: options };
   }
   const localizedOptions = override?.options || options.map(option => t(locale, option));
+  const localizedCorrectAnswer = override?.correctAnswer || (question.correctAnswer ? t(locale, question.correctAnswer) : undefined);
   return {
     ...question,
     category: override?.category || category[locale][question.category] || question.category,
@@ -1345,8 +1356,8 @@ export function localizeQuestion<T extends { category: string; difficulty: strin
     question: override?.question || enhancedTranslateQuestionText(locale, question.question),
     options: localizedOptions,
     answers: localizedOptions,
-    correctAnswer: override?.correctAnswer || (question.correctAnswer ? t(locale, question.correctAnswer) : undefined),
-    explanation: override?.explanation || question.explanation
+    correctAnswer: localizedCorrectAnswer,
+    explanation: override?.explanation || localizedExplanation(locale, question.explanation, localizedCorrectAnswer)
   };
 }
 
