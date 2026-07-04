@@ -1,4 +1,5 @@
 import type { DatabaseMode } from './schema';
+import { getProductionConfig } from '@/lib/infrastructure/config';
 
 export type DatabaseConfig = {
   mode: DatabaseMode;
@@ -8,20 +9,16 @@ export type DatabaseConfig = {
   hasDatabaseUrl: boolean;
 };
 
-function readPublicEnv(name: string) {
-  return typeof process !== 'undefined' ? process.env[name] : undefined;
-}
-
 export function getDatabaseConfig(): DatabaseConfig {
-  const requestedMode = readPublicEnv('NEXT_PUBLIC_DATABASE_MODE');
-  const mode: DatabaseMode = requestedMode === 'supabase' ? 'supabase' : 'local';
+  const config = getProductionConfig();
+  const mode: DatabaseMode = config.database.mode;
 
   return {
     mode,
-    supabaseUrl: readPublicEnv('NEXT_PUBLIC_SUPABASE_URL'),
-    supabaseAnonKey: readPublicEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-    hasServiceRoleKey: Boolean(readPublicEnv('SUPABASE_SERVICE_ROLE_KEY')),
-    hasDatabaseUrl: Boolean(readPublicEnv('DATABASE_URL'))
+    supabaseUrl: config.database.supabaseUrl,
+    supabaseAnonKey: config.database.supabaseAnonKey,
+    hasServiceRoleKey: config.database.hasServiceRoleKey,
+    hasDatabaseUrl: config.database.hasDatabaseUrl
   };
 }
 

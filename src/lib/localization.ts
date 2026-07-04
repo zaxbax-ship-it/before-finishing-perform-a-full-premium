@@ -1,4 +1,4 @@
-﻿import type { Locale, QuestionTranslation } from './types';
+import type { Locale, QuestionTranslation } from './types';
 
 type Dictionary = Record<Locale, Record<string, string>>;
 

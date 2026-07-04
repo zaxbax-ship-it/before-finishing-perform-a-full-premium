@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
 import {
   type AuditLogEntry,
   type CommunityDraft,
@@ -1380,32 +1381,36 @@ function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (local
 
 function Home({ t, start, admin }: { t: Record<string, string>; start: () => void; admin: () => void }) {
   return (
-    <section className="mx-auto grid min-h-[calc(100vh-104px)] w-full max-w-[1680px] items-center gap-12 px-5 pb-16 pt-8 lg:grid-cols-[.86fr_1fr] lg:px-8">
-      <div className="glass relative min-h-[620px] overflow-hidden rounded-[36px] p-8">
-        <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
-        <div className="relative grid h-full place-items-center text-center">
-          <div>
-            <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]">🏆</div>
-            <div className="text-6xl font-black md:text-7xl">{money(1000000)}</div>
-            <p className="mt-8 text-white/65">{t.live}</p>
-            <div className="mx-auto mt-8 h-2 w-80 rounded-full bg-gradient-to-l from-gold to-azure" />
+    <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
+      <div className="grid min-h-[calc(100vh-104px)] items-center gap-12 lg:grid-cols-[.86fr_1fr]">
+        <div className="glass relative min-h-[620px] overflow-hidden rounded-[36px] p-8">
+          <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
+          <div className="relative grid h-full place-items-center text-center">
+            <div>
+              <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]">🏆</div>
+              <div className="text-6xl font-black md:text-7xl">{money(1000000)}</div>
+              <p className="mt-8 text-white/65">{t.live}</p>
+              <div className="mx-auto mt-8 h-2 w-80 rounded-full bg-gradient-to-l from-gold to-azure" />
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="mb-8 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold">✦ {t.pill}</p>
+          <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
+          <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
+          <div className="mt-9 flex flex-wrap gap-4">
+            <button className="premium-button focus-ring text-lg" onClick={start}>{t.enter}</button>
+            <button className="ghost-button focus-ring text-lg" onClick={admin}>{t.manage}</button>
+          </div>
+          <div className="mt-9 grid gap-4 md:grid-cols-3">
+            <Metric value="+500" label={t.homeQuestions} />
+            <Metric value="3" label={t.chancesLabel} />
+            <Metric value={money(1000000)} label={t.homePrize} gold />
           </div>
         </div>
       </div>
-      <div className="text-right">
-        <p className="mb-8 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold">✦ {t.pill}</p>
-        <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
-        <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
-        <div className="mt-9 flex flex-wrap gap-4">
-          <button className="premium-button focus-ring text-lg" onClick={start}>{t.enter}</button>
-          <button className="ghost-button focus-ring text-lg" onClick={admin}>{t.manage}</button>
-        </div>
-        <div className="mt-9 grid gap-4 md:grid-cols-3">
-          <Metric value="+500" label={t.homeQuestions} />
-          <Metric value="3" label={t.chancesLabel} />
-          <Metric value={money(1000000)} label={t.homePrize} gold />
-        </div>
-      </div>
+      <AdSlot placement="homepage-hero-below" className="mt-4" />
+      <AdSlot placement="homepage-content" className="mt-8" />
     </section>
   );
 }
@@ -1416,6 +1421,7 @@ function Categories({ t, locale, categories, questions, startGame }: { t: Record
       <p className="mb-8 mr-auto w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold">✦ {t.catPill}</p>
       <h1 className="max-w-5xl text-6xl font-black md:text-[86px]">{t.choose}</h1>
       <p className="mt-5 max-w-4xl text-xl leading-8 text-white/72">{t.chooseText}</p>
+      <AdSlot placement="categories-top" className="mt-7" />
       <button className="ghost-button focus-ring mt-8 lg:min-w-56" onClick={() => startGame('הכול')}>{t.all}</button>
       <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {categories.map(category => (
@@ -1427,6 +1433,7 @@ function Categories({ t, locale, categories, questions, startGame }: { t: Record
           </button>
         ))}
       </div>
+      <AdSlot placement="categories-grid-after" className="mt-8" />
     </section>
   );
 }
@@ -1530,6 +1537,7 @@ function Game(props: {
           <div className="text-2xl font-black text-gold">{money(guaranteedPrize)}</div>
           <button className="ghost-button focus-ring mt-4 w-full" onClick={quit}>{t.quit}</button>
         </div>
+        <GameplayAdSlot placement="gameplay-sidebar" className="hidden xl:grid" />
       </aside>
     </section>
   );
@@ -1672,6 +1680,7 @@ function Admin(props: {
   const rejectedSubmissions = communitySubmissions.filter(item => item.moderation.status === 'rejected').length;
   return (
     <section className="mx-auto grid w-full max-w-[1680px] gap-6 px-5 pb-12 pt-8 lg:grid-cols-[430px_1fr] lg:px-8">
+      <AdSlot placement="admin-top" className="lg:col-span-2" />
       <div className="glass rounded-[30px] p-6 lg:col-span-2">
         <div className="mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
           <div>
