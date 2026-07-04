@@ -1081,7 +1081,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
     }));
   }
 
-  function useLifeline(type: Lifeline) {
+  function triggerLifeline(type: Lifeline) {
     if (!current) return;
     const uses = lifelineUses[type];
     const price = priceFor(type, currentPrize);
@@ -1266,7 +1266,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
           advice={advice}
           notice={notice}
           chooseAnswer={chooseAnswer}
-          useLifeline={useLifeline}
+          triggerLifeline={triggerLifeline}
           quit={() => finish('quit', currentPrize || guaranteedPrize)}
         />
       )}
@@ -1460,10 +1460,10 @@ function Game(props: {
   advice: string;
   notice: string;
   chooseAnswer: (index: number) => void;
-  useLifeline: (type: Lifeline) => void;
+  triggerLifeline: (type: Lifeline) => void;
   quit: () => void;
 }) {
-  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, useLifeline, quit } = props;
+  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, triggerLifeline, quit } = props;
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
   const infoUi = INFO_UI[locale];
   const answerInfo = selected !== null ? {
@@ -1518,7 +1518,7 @@ function Game(props: {
       <aside className="space-y-5">
         <div className="glass rounded-[28px] p-5">
           <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold">✦</span></div>
-          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => useLifeline(type)}><span>{type === 'fifty' ? '½' : type === 'swap' ? '↻' : type === 'phone' ? '☎' : '◌'}</span><span>{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>)}</div>
+          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => triggerLifeline(type)}><span>{type === 'fifty' ? '½' : type === 'swap' ? '↻' : type === 'phone' ? '☎' : '◌'}</span><span>{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>)}</div>
           <p className="mt-4 text-sm leading-6 text-white/55">{t.reuseHint}</p>
         </div>
         <div className="glass rounded-[28px] p-5">

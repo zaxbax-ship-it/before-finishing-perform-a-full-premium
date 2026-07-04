@@ -1,3 +1,7 @@
 import TriviaPlatform from '@/components/TriviaPlatform';
-import data from '@/data/questions.json';
-export default function Home(){ return <TriviaPlatform questions={data.questions} />; }
+import { createTriviaDataService } from '@/lib/services/triviaDataService';
+
+export default async function Home(){
+  const data = await createTriviaDataService().getPageData();
+  return <TriviaPlatform questions={data.questions} />;
+}

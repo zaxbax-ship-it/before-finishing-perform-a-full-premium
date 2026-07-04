@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { localizeCategory, localizeQuestion } from '@/lib/localization';
 import type { Locale, Question } from '@/lib/types';
@@ -158,7 +159,7 @@ export default function AdminPanel({ questions }: { questions: Question[] }) {
     <main className="app-shell font-hebrew premium-typography" dir={dir}>
       <div className="particles" aria-hidden="true">{Array.from({ length: 24 }, (_, index) => <span key={index} className="particle" style={{ right: `${(index * 37) % 100}%`, animationDelay: `${-(index * 1.5)}s`, ['--duration' as string]: `${24 + (index % 9)}s`, ['--opacity' as string]: `${0.25 + (index % 5) * 0.08}`, ['--x' as string]: `${index % 2 ? 70 : -70}px` }} />)}</div>
       <header className="relative z-20 mx-auto flex w-full max-w-[1680px] flex-col gap-4 px-5 pt-5 md:flex-row md:items-center md:justify-between lg:px-8">
-        <a className="ghost-button focus-ring" href="/">{ui.back}</a>
+        <Link className="ghost-button focus-ring" href="/">{ui.back}</Link>
         <div className="text-right">
           <p className="text-gold">{ui.sub}</p>
           <h1 className="text-5xl font-black md:text-7xl">{ui.title}</h1>

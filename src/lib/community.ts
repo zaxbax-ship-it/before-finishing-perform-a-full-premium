@@ -1,6 +1,6 @@
 import type { Locale, Question } from './types';
 
-export type SubmissionStatus = 'auto_approved' | 'needs_review' | 'rejected';
+export type SubmissionStatus = 'auto_approved' | 'approved' | 'needs_review' | 'rejected';
 export type AdminRole = 'super_admin' | 'admin' | 'moderator';
 
 export type CommunityDraft = {
