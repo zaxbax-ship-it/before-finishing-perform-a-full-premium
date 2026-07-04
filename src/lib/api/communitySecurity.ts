@@ -39,6 +39,18 @@ export function hashIdentity(value?: string) {
   return createHash('sha256').update(normalized).digest('hex');
 }
 
+export function getClientIdentity(request: Request) {
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  const userAgent = request.headers.get('user-agent')?.trim();
+  const ip = forwarded || realIp || 'unknown';
+  return {
+    ip,
+    ipHash: hashIdentity(ip),
+    userAgentHash: hashIdentity(userAgent)
+  };
+}
+
 export function redactSubmissionForClient(submission: CommunitySubmission): CommunitySubmission {
   return {
     ...submission,

@@ -58,12 +58,13 @@ function createModeration(input: AiModerationInput, parsed: OpenAiModerationJson
 export function createOpenAiModerationProvider(): AiModerationProvider {
   return {
     name: 'openai',
-    async moderate(input): Promise<AiModerationOutput> {
+    async moderate(input, options): Promise<AiModerationOutput> {
       const apiKey = readEnv('OPENAI_API_KEY');
       if (!apiKey) throw new Error('OPENAI_API_KEY is missing. Use the mock-local provider until production credentials are configured.');
 
       const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
+        signal: options?.signal,
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json'

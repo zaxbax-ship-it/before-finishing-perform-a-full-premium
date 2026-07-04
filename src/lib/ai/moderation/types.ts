@@ -34,5 +34,5 @@ export type AiModerationOutput = {
 
 export type AiModerationProvider = {
   readonly name: AiModerationOutput['provider'];
-  moderate(input: AiModerationInput): Promise<AiModerationOutput>;
+  moderate(input: AiModerationInput, options?: { signal?: AbortSignal }): Promise<AiModerationOutput>;
 };

@@ -2,6 +2,7 @@ import type { CommunityDraft, CommunitySubmission } from '@/lib/community';
 import type { Question } from '@/lib/types';
 import type { AiModerationOutput, AiModerationProvider } from './types';
 import { createAiModerationProvider } from './providerFactory';
+import { moderateWithSafety } from './safety';
 import { validateAiModerationDraft, validateAiModerationOutput } from './validation';
 
 export type AiModerationServiceInput = {
@@ -19,7 +20,7 @@ export class AiModerationService {
       throw new Error(`Community submission failed validation: ${draftValidation.errors.join(' ')}`);
     }
 
-    const output = await this.provider.moderate({
+    const output = await moderateWithSafety(this.provider, {
       draft: input.draft,
       existingQuestions: input.existingQuestions,
       existingSubmissions: input.existingSubmissions.map(submission => ({

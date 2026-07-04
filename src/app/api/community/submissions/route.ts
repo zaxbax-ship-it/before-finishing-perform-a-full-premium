@@ -5,7 +5,8 @@ import { createAiModerationService } from '@/lib/ai/moderation/service';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import { submissionToQuestion } from '@/lib/community';
 import { guardApiPermission } from '@/lib/auth/guards';
-import { hashIdentity, internalServerError, publicJsonError, readLimitedJson, redactSubmissionForClient } from '@/lib/api/communitySecurity';
+import { getClientIdentity, hashIdentity, internalServerError, publicJsonError, readLimitedJson, redactSubmissionForClient } from '@/lib/api/communitySecurity';
+import { checkRateLimit, getAiModerationRateLimit, getCommunitySubmissionRateLimit } from '@/lib/infrastructure/rateLimit';
 
 // Reading the moderation queue and audit logs is an admin-only capability.
 export async function GET() {
@@ -26,10 +27,62 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const repositories = getRepositoryProvider();
+    const client = getClientIdentity(request);
     const body = await readLimitedJson<{ draft?: CommunityDraft }>(request);
     if (!body.draft) return publicJsonError('Missing submission draft.');
 
-    const repositories = getRepositoryProvider();
+    const emailHash = hashIdentity(body.draft.contributorEmail);
+    const submitLimit = getCommunitySubmissionRateLimit();
+    const submissionRate = checkRateLimit({
+      key: `community-submission:${client.ipHash || 'unknown'}:${emailHash || 'anonymous'}`,
+      ...submitLimit
+    });
+
+    if (!submissionRate.allowed) {
+      await repositories.antiSpamEvents.create({
+        eventType: 'rate_limit',
+        emailHash,
+        ipHash: client.ipHash,
+        userAgentHash: client.userAgentHash,
+        severity: 75,
+        details: {
+          scope: 'community_submission',
+          retryAfterSeconds: submissionRate.retryAfterSeconds,
+          resetAt: submissionRate.resetAt
+        }
+      });
+      return NextResponse.json(
+        { ok: false, error: 'Too many submissions. Please wait before trying again.' },
+        { status: 429, headers: { 'Retry-After': String(submissionRate.retryAfterSeconds) } }
+      );
+    }
+
+    const aiLimit = getAiModerationRateLimit();
+    const aiRate = checkRateLimit({
+      key: `ai-moderation:${client.ipHash || 'unknown'}`,
+      ...aiLimit
+    });
+
+    if (!aiRate.allowed) {
+      await repositories.antiSpamEvents.create({
+        eventType: 'rate_limit',
+        emailHash,
+        ipHash: client.ipHash,
+        userAgentHash: client.userAgentHash,
+        severity: 70,
+        details: {
+          scope: 'ai_moderation',
+          retryAfterSeconds: aiRate.retryAfterSeconds,
+          resetAt: aiRate.resetAt
+        }
+      });
+      return NextResponse.json(
+        { ok: false, error: 'Moderation is busy. Please wait before submitting another question.' },
+        { status: 429, headers: { 'Retry-After': String(aiRate.retryAfterSeconds) } }
+      );
+    }
+
     const [existingQuestions, existingSubmissions] = await Promise.all([
       repositories.approvedQuestions.listGameplayQuestions({ activeOnly: true, limit: 800 }),
       repositories.submissions.list({ limit: 300 })
@@ -50,7 +103,9 @@ export async function POST(request: Request) {
         contributorEmail: body.draft.contributorEmail.trim().toLowerCase(),
         contributorName: body.draft.contributorName.trim()
       },
-      moderation: ai.moderation
+      moderation: ai.moderation,
+      ipHash: client.ipHash,
+      userAgentHash: client.userAgentHash
     });
 
     await repositories.moderationResults.create(submission.id, ai.moderation);
@@ -87,7 +142,10 @@ export async function POST(request: Request) {
         provider: ai.provider,
         recommendation: ai.recommendation,
         confidence: ai.confidence,
-        status: ai.moderation.status
+        status: ai.moderation.status,
+        reasons: ai.reasons.slice(0, 8),
+        factCheck: ai.factCheck.status,
+        qualitySignals: ai.qualitySignals
       }
     });
 
