@@ -10,11 +10,11 @@ import { readEnv } from '@/lib/infrastructure/environment';
  */
 
 export function getSupabaseUrl(): string | undefined {
-  return readEnv('NEXT_PUBLIC_SUPABASE_URL');
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || readEnv('NEXT_PUBLIC_SUPABASE_URL');
 }
 
 export function getSupabaseAnonKey(): string | undefined {
-  return readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
 /** Supabase Auth can operate only when both the URL and anon key are present. */
@@ -54,7 +54,7 @@ export function isAdminAllowlisted(email: string | undefined): boolean {
 
 /** Absolute site origin used to build OAuth / email redirect URLs. */
 export function getSiteUrl(): string {
-  const explicit = readEnv('NEXT_PUBLIC_SITE_URL');
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL || readEnv('NEXT_PUBLIC_SITE_URL');
   if (explicit) return explicit.replace(/\/$/, '');
   if (typeof window !== 'undefined') return window.location.origin;
   const vercelUrl = readEnv('VERCEL_URL');
