@@ -4,9 +4,14 @@ import type { CommunityDraft } from '@/lib/community';
 import { createAiModerationService } from '@/lib/ai/moderation/service';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import { submissionToQuestion } from '@/lib/community';
+import { guardApiPermission } from '@/lib/auth/guards';
 import { hashIdentity, internalServerError, publicJsonError, readLimitedJson, redactSubmissionForClient } from '@/lib/api/communitySecurity';
 
+// Reading the moderation queue and audit logs is an admin-only capability.
 export async function GET() {
+  const guard = await guardApiPermission('submissions.read');
+  if (!guard.ok) return guard.response;
+
   try {
     const repositories = getRepositoryProvider();
     const [submissions, auditLogs] = await Promise.all([

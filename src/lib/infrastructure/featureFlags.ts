@@ -6,6 +6,8 @@ export type FeatureFlags = {
   communitySubmissionsEnabled: boolean;
   adminDashboardEnabled: boolean;
   openAiModerationEnabled: boolean;
+  supabaseAuthEnabled: boolean;
+  authEnforced: boolean;
   googleOAuthEnabled: boolean;
   paymentsEnabled: boolean;
   emailEnabled: boolean;
@@ -20,6 +22,8 @@ export function getFeatureFlags(): FeatureFlags {
     communitySubmissionsEnabled: readBooleanEnv('NEXT_PUBLIC_COMMUNITY_SUBMISSIONS_ENABLED', true),
     adminDashboardEnabled: readBooleanEnv('NEXT_PUBLIC_ADMIN_DASHBOARD_ENABLED', true),
     openAiModerationEnabled: Boolean(readEnv('OPENAI_API_KEY')) && readBooleanEnv('OPENAI_MODERATION_ENABLED'),
+    supabaseAuthEnabled: Boolean(readEnv('NEXT_PUBLIC_SUPABASE_URL') && readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')),
+    authEnforced: Boolean(readEnv('NEXT_PUBLIC_SUPABASE_URL') && readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')) && readEnv('AUTH_ENFORCED') !== 'false',
     googleOAuthEnabled: Boolean(readEnv('GOOGLE_OAUTH_CLIENT_ID') && readEnv('GOOGLE_OAUTH_CLIENT_SECRET')),
     paymentsEnabled: Boolean(readEnv('STRIPE_SECRET_KEY') && readEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')),
     emailEnabled: Boolean(readEnv('RESEND_API_KEY')),

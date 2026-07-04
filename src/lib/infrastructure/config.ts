@@ -23,6 +23,10 @@ export type ProductionConfig = {
   auth: {
     googleOAuthConfigured: boolean;
     googleClientId?: string;
+    supabaseAuthConfigured: boolean;
+    emailPasswordEnabled: boolean;
+    enforcement: 'enforced' | 'open-local';
+    adminAllowlistConfigured: boolean;
   };
   ai: {
     openAiConfigured: boolean;
@@ -52,6 +56,8 @@ export function getProductionConfig(): ProductionConfig {
   const adProvider = readEnv('NEXT_PUBLIC_AD_PROVIDER') as ProductionConfig['ads']['provider'] | undefined;
   const analyticsProvider = readEnv('NEXT_PUBLIC_ANALYTICS_PROVIDER') as ProductionConfig['analytics']['provider'] | undefined;
   const databaseMode = readEnv('NEXT_PUBLIC_DATABASE_MODE') === 'supabase' ? 'supabase' : 'local';
+  const supabaseAuthConfigured = Boolean(readEnv('NEXT_PUBLIC_SUPABASE_URL') && readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'));
+  const authEnforced = supabaseAuthConfigured && readEnv('AUTH_ENFORCED') !== 'false';
 
   return {
     environment: {
@@ -74,7 +80,11 @@ export function getProductionConfig(): ProductionConfig {
     },
     auth: {
       googleOAuthConfigured: Boolean(readEnv('GOOGLE_OAUTH_CLIENT_ID') && readEnv('GOOGLE_OAUTH_CLIENT_SECRET')),
-      googleClientId: readEnv('GOOGLE_OAUTH_CLIENT_ID')
+      googleClientId: readEnv('GOOGLE_OAUTH_CLIENT_ID'),
+      supabaseAuthConfigured,
+      emailPasswordEnabled: readEnv('AUTH_EMAIL_PASSWORD_ENABLED') !== 'false',
+      enforcement: authEnforced ? 'enforced' : 'open-local',
+      adminAllowlistConfigured: Boolean(readEnv('ADMIN_EMAILS'))
     },
     ai: {
       openAiConfigured: Boolean(readEnv('OPENAI_API_KEY')),
