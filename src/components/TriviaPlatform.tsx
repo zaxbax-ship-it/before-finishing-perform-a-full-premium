@@ -1,11 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import {
+  type AuditLogEntry,
+  type CommunityDraft,
+  type CommunitySubmission,
+  createAudit,
+  emptyCommunityDraft,
+  runLocalModeration,
+  submissionToQuestion
+} from '@/lib/community';
 import { localizeCategory, localizeCategoryDescription, localizeQuestion } from '@/lib/localization';
 import type { Locale, Question } from '@/lib/types';
 
 type GameQuestion = Question & { answers: string[]; imageUrl?: string };
-type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings';
+type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings' | 'submit';
 type EndState = 'win' | 'quit' | 'timeout' | 'lost';
 type Lifeline = 'fifty' | 'swap' | 'phone' | 'audience';
 
@@ -46,6 +55,8 @@ const SAFE_STEPS = [4, 9, 14];
 const STATS_KEY = 'premium-trivia-stats-v3';
 const SETTINGS_KEY = 'premium-trivia-settings-v3';
 const EXTRA_KEY = 'premium-trivia-extra-questions-v3';
+const COMMUNITY_KEY = 'premium-trivia-community-submissions-v1';
+const AUDIT_KEY = 'premium-trivia-audit-log-v1';
 
 const UI: Record<Locale, Record<string, string>> = {
   he: {
@@ -685,6 +696,169 @@ const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; 
   am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ቀጣዩ ጥያቄ በቅርቡ ይጀምራል' }
 };
 
+const COMMUNITY_UI: Record<Locale, Record<string, string>> = {
+  he: {
+    submitNav: 'שליחת שאלה',
+    submitTitle: 'שליחת שאלה לקהילה',
+    submitIntro: 'הוסיפו שאלה חדשה למאגר. המערכת בודקת איכות, כפילויות וניסוח לפני פרסום.',
+    contributorName: 'שם',
+    contributorEmail: 'אימייל',
+    language: 'שפה',
+    category: 'קטגוריה',
+    difficulty: 'רמת קושי',
+    question: 'שאלה',
+    explanation: 'הסבר קצר',
+    correctAnswer: 'תשובה נכונה',
+    send: 'שליחה לבדיקה',
+    autoApproved: 'השאלה אושרה אוטומטית ונוספה למשחק.',
+    needsReview: 'השאלה נשלחה לבדיקת מנהל לפני פרסום.',
+    rejected: 'השאלה נדחתה כרגע. אפשר לשפר ניסוח ולשלוח שוב.',
+    dashboard: 'מרכז בקרת תוכן קהילתי',
+    reviewQueue: 'תור בדיקה',
+    auditLog: 'יומן פעולות',
+    submissions: 'הגשות',
+    pending: 'ממתינות',
+    approved: 'אושרו',
+    rejectedLabel: 'נדחו',
+    confidence: 'ציון',
+    recommendation: 'המלצת מערכת',
+    reasons: 'סיבות',
+    approve: 'אישור פרסום',
+    reject: 'דחייה',
+    emptyQueue: 'אין שאלות שממתינות לבדיקה.',
+    localMode: 'מצב מקומי פעיל. חיבור למסד נתונים, הרשאות ו-AI אמיתי יתווסף בשלב הבא.',
+    answer: 'תשובה'
+  },
+  en: {
+    submitNav: 'Submit Question',
+    submitTitle: 'Submit a Community Question',
+    submitIntro: 'Add a new question to the pool. The system checks quality, duplicates and wording before publishing.',
+    contributorName: 'Name',
+    contributorEmail: 'Email',
+    language: 'Language',
+    category: 'Category',
+    difficulty: 'Difficulty',
+    question: 'Question',
+    explanation: 'Short explanation',
+    correctAnswer: 'Correct answer',
+    send: 'Send for review',
+    autoApproved: 'The question was approved automatically and added to the game.',
+    needsReview: 'The question was sent to admin review before publishing.',
+    rejected: 'The question was rejected for now. Improve it and submit again.',
+    dashboard: 'Community Content Control',
+    reviewQueue: 'Review queue',
+    auditLog: 'Audit log',
+    submissions: 'Submissions',
+    pending: 'Pending',
+    approved: 'Approved',
+    rejectedLabel: 'Rejected',
+    confidence: 'Score',
+    recommendation: 'System recommendation',
+    reasons: 'Reasons',
+    approve: 'Approve',
+    reject: 'Reject',
+    emptyQueue: 'No questions are waiting for review.',
+    localMode: 'Local mode is active. Database, permissions and real AI will connect in the next phase.',
+    answer: 'Answer'
+  },
+  ar: {
+    submitNav: 'إرسال سؤال',
+    submitTitle: 'إرسال سؤال للمجتمع',
+    submitIntro: 'أضف سؤالا جديدا إلى البنك. يفحص النظام الجودة والتكرار والصياغة قبل النشر.',
+    contributorName: 'الاسم',
+    contributorEmail: 'البريد الإلكتروني',
+    language: 'اللغة',
+    category: 'الفئة',
+    difficulty: 'مستوى الصعوبة',
+    question: 'السؤال',
+    explanation: 'شرح قصير',
+    correctAnswer: 'الإجابة الصحيحة',
+    send: 'إرسال للمراجعة',
+    autoApproved: 'تمت الموافقة على السؤال تلقائيا وإضافته إلى اللعبة.',
+    needsReview: 'تم إرسال السؤال إلى مراجعة المدير قبل النشر.',
+    rejected: 'تم رفض السؤال حاليا. يمكن تحسينه وإرساله مرة أخرى.',
+    dashboard: 'مركز إدارة محتوى المجتمع',
+    reviewQueue: 'قائمة المراجعة',
+    auditLog: 'سجل العمليات',
+    submissions: 'الإرسالات',
+    pending: 'قيد المراجعة',
+    approved: 'تمت الموافقة',
+    rejectedLabel: 'مرفوضة',
+    confidence: 'الدرجة',
+    recommendation: 'توصية النظام',
+    reasons: 'الأسباب',
+    approve: 'موافقة للنشر',
+    reject: 'رفض',
+    emptyQueue: 'لا توجد أسئلة تنتظر المراجعة.',
+    localMode: 'الوضع المحلي نشط. سيتم ربط قاعدة البيانات والصلاحيات والذكاء الاصطناعي الحقيقي في المرحلة التالية.',
+    answer: 'إجابة'
+  },
+  ru: {
+    submitNav: 'Отправить вопрос',
+    submitTitle: 'Отправить вопрос сообщества',
+    submitIntro: 'Добавьте новый вопрос в банк. Система проверяет качество, повторы и формулировку перед публикацией.',
+    contributorName: 'Имя',
+    contributorEmail: 'Электронная почта',
+    language: 'Язык',
+    category: 'Категория',
+    difficulty: 'Сложность',
+    question: 'Вопрос',
+    explanation: 'Короткое объяснение',
+    correctAnswer: 'Правильный ответ',
+    send: 'Отправить на проверку',
+    autoApproved: 'Вопрос автоматически одобрен и добавлен в игру.',
+    needsReview: 'Вопрос отправлен администратору на проверку перед публикацией.',
+    rejected: 'Вопрос пока отклонен. Его можно улучшить и отправить снова.',
+    dashboard: 'Центр управления контентом сообщества',
+    reviewQueue: 'Очередь проверки',
+    auditLog: 'Журнал действий',
+    submissions: 'Отправки',
+    pending: 'Ожидают',
+    approved: 'Одобрены',
+    rejectedLabel: 'Отклонены',
+    confidence: 'Оценка',
+    recommendation: 'Рекомендация системы',
+    reasons: 'Причины',
+    approve: 'Одобрить публикацию',
+    reject: 'Отклонить',
+    emptyQueue: 'Нет вопросов, ожидающих проверки.',
+    localMode: 'Включен локальный режим. База данных, права доступа и настоящий AI будут подключены на следующем этапе.',
+    answer: 'Ответ'
+  },
+  am: {
+    submitNav: 'ጥያቄ ላክ',
+    submitTitle: 'የማህበረሰብ ጥያቄ ላክ',
+    submitIntro: 'አዲስ ጥያቄ ወደ ማዕከሉ ያክሉ። ስርዓቱ ከህትመት በፊት ጥራትን፣ ተደጋጋሚነትን እና አጻጻፍን ይፈትሻል።',
+    contributorName: 'ስም',
+    contributorEmail: 'ኢሜይል',
+    language: 'ቋንቋ',
+    category: 'ምድብ',
+    difficulty: 'የክብደት ደረጃ',
+    question: 'ጥያቄ',
+    explanation: 'አጭር ማብራሪያ',
+    correctAnswer: 'ትክክለኛ መልስ',
+    send: 'ለግምገማ ላክ',
+    autoApproved: 'ጥያቄው በራስ ሰር ጸድቆ ወደ ጨዋታው ተጨምሯል።',
+    needsReview: 'ጥያቄው ከህትመት በፊት ወደ አስተዳዳሪ ግምገማ ተልኳል።',
+    rejected: 'ጥያቄው ለጊዜው ተቀባይነት አላገኘም። ማሻሻል እና እንደገና መላክ ይቻላል።',
+    dashboard: 'የማህበረሰብ ይዘት መቆጣጠሪያ',
+    reviewQueue: 'የግምገማ ዝርዝር',
+    auditLog: 'የእርምጃዎች መዝገብ',
+    submissions: 'የተላኩ',
+    pending: 'በግምገማ',
+    approved: 'ጸድቀዋል',
+    rejectedLabel: 'ውድቅ ተደርገዋል',
+    confidence: 'ውጤት',
+    recommendation: 'የስርዓት ምክር',
+    reasons: 'ምክንያቶች',
+    approve: 'ለህትመት አጽድቅ',
+    reject: 'ውድቅ አድርግ',
+    emptyQueue: 'ለግምገማ የሚጠብቁ ጥያቄዎች የሉም።',
+    localMode: 'አካባቢያዊ ሁነታ ነቅቷል። ዳታቤዝ፣ ፈቃዶች እና እውነተኛ AI በሚቀጥለው ደረጃ ይገናኛሉ።',
+    answer: 'መልስ'
+  }
+};
+
 function tone(kind: string, enabled: boolean) {
   if (!enabled || typeof window === 'undefined') return;
   const AudioCtor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -717,10 +891,10 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 
-export default function TriviaPlatform({ questions }: { questions: Question[] }) {
+export default function TriviaPlatform({ questions, initialScreen = 'home' }: { questions: Question[]; initialScreen?: Screen }) {
   const baseQuestions = useMemo(() => questions.map(normalize), [questions]);
   const [locale, setLocale] = useState<Locale>('he');
-  const [screen, setScreen] = useState<Screen>('home');
+  const [screen, setScreen] = useState<Screen>(initialScreen);
   const [extraQuestions, setExtraQuestions] = useState<GameQuestion[]>([]);
   const [settings, setSettings] = useState<Settings>({ sound: true, effects: true, timer: 'דרמטית' });
   const [stats, setStats] = useState<Stats>({ games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] });
@@ -744,8 +918,13 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
   const [form, setForm] = useState<GameQuestion>(emptyQuestion());
   const [importText, setImportText] = useState('');
   const [sent, setSent] = useState(false);
+  const [communitySubmissions, setCommunitySubmissions] = useState<CommunitySubmission[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [communityForm, setCommunityForm] = useState<CommunityDraft>(() => emptyCommunityDraft('he'));
+  const [communityMessage, setCommunityMessage] = useState('');
 
   const t = { ...UI[locale], ...UI_EXT[locale] };
+  const communityT = COMMUNITY_UI[locale] || COMMUNITY_UI.he;
   const dir = locale === 'he' || locale === 'ar' ? 'rtl' : 'ltr';
   const allQuestions = useMemo(() => [...extraQuestions, ...baseQuestions], [extraQuestions, baseQuestions]);
   const categories = useMemo(() => Array.from(new Set(allQuestions.map(question => question.category))).sort(), [allQuestions]);
@@ -766,6 +945,8 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
 
   useEffect(() => {
     setExtraQuestions(readLocal(EXTRA_KEY, []));
+    setCommunitySubmissions(readLocal(COMMUNITY_KEY, []));
+    setAuditLogs(readLocal(AUDIT_KEY, []));
     setSettings(readLocal(SETTINGS_KEY, { sound: true, effects: true, timer: 'דרמטית' }));
     setStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] }));
   }, []);
@@ -781,6 +962,18 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
   useEffect(() => {
     localStorage.setItem(STATS_KEY, JSON.stringify(stats));
   }, [stats]);
+
+  useEffect(() => {
+    localStorage.setItem(COMMUNITY_KEY, JSON.stringify(communitySubmissions));
+  }, [communitySubmissions]);
+
+  useEffect(() => {
+    localStorage.setItem(AUDIT_KEY, JSON.stringify(auditLogs));
+  }, [auditLogs]);
+
+  useEffect(() => {
+    setCommunityForm(previous => ({ ...previous, language: locale }));
+  }, [locale]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -959,6 +1152,82 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
     URL.revokeObjectURL(url);
   }
 
+  function submitCommunityQuestion() {
+    const moderation = runLocalModeration(communityForm, allQuestions, communitySubmissions);
+    const id = `sub-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const now = new Date().toISOString();
+    let submission: CommunitySubmission = {
+      id,
+      createdAt: now,
+      updatedAt: now,
+      draft: {
+        ...communityForm,
+        question: communityForm.question.trim(),
+        options: communityForm.options.map(option => option.trim()),
+        explanation: communityForm.explanation.trim(),
+        contributorEmail: communityForm.contributorEmail.trim().toLowerCase(),
+        contributorName: communityForm.contributorName.trim()
+      },
+      moderation
+    };
+
+    if (moderation.status === 'auto_approved') {
+      const question = submissionToQuestion(submission);
+      submission = { ...submission, question };
+      setExtraQuestions(previous => [normalize(question), ...previous]);
+      tone('correct', settings.sound);
+    } else if (moderation.status === 'rejected') {
+      tone('wrong', settings.sound);
+    } else {
+      tone('safe', settings.sound);
+    }
+
+    setCommunitySubmissions(previous => [submission, ...previous]);
+    setAuditLogs(previous => [
+      createAudit(
+        'community_submission',
+        submission.id,
+        `${moderation.status} with score ${moderation.score}`,
+        submission.draft.contributorEmail || submission.draft.contributorName || 'community-user'
+      ),
+      ...previous
+    ].slice(0, 80));
+    setCommunityMessage(communityT[moderation.status === 'auto_approved' ? 'autoApproved' : moderation.status === 'needs_review' ? 'needsReview' : 'rejected']);
+    setCommunityForm(emptyCommunityDraft(locale, categories[0] || communityForm.category));
+  }
+
+  function approveSubmission(id: string) {
+    setCommunitySubmissions(previous => previous.map(item => {
+      if (item.id !== id) return item;
+      const question = item.question || submissionToQuestion(item);
+      setExtraQuestions(currentQuestions => currentQuestions.some(currentQuestion => currentQuestion.id === question.id)
+        ? currentQuestions
+        : [normalize(question), ...currentQuestions]
+      );
+      return {
+        ...item,
+        updatedAt: new Date().toISOString(),
+        moderation: { ...item.moderation, status: 'auto_approved', recommendation: 'Approved by admin.' },
+        question
+      };
+    }));
+    setAuditLogs(previous => [createAudit('admin_approved_submission', id, 'Question published from review queue'), ...previous].slice(0, 80));
+    tone('correct', settings.sound);
+  }
+
+  function rejectSubmission(id: string) {
+    setCommunitySubmissions(previous => previous.map(item => item.id === id
+      ? {
+          ...item,
+          updatedAt: new Date().toISOString(),
+          moderation: { ...item.moderation, status: 'rejected', recommendation: 'Rejected by admin.' }
+        }
+      : item
+    ));
+    setAuditLogs(previous => [createAudit('admin_rejected_submission', id, 'Question rejected from review queue'), ...previous].slice(0, 80));
+    tone('wrong', settings.sound);
+  }
+
   return (
     <main className={`app-shell font-hebrew premium-typography ${screen === 'game' ? 'game-active' : ''}`} dir={dir}>
       {settings.effects && <Particles />}
@@ -966,6 +1235,17 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
       {screen === 'home' && <Home t={t} start={() => open('categories')} admin={() => open('admin')} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={allQuestions} startGame={startGame} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
+      {screen === 'submit' && (
+        <CommunitySubmit
+          ui={communityT}
+          locale={locale}
+          categories={categories}
+          form={communityForm}
+          setForm={setCommunityForm}
+          submit={submitCommunityQuestion}
+          message={communityMessage}
+        />
+      )}
       {screen === 'game' && current && (
         <Game
           t={t}
@@ -1010,6 +1290,11 @@ export default function TriviaPlatform({ questions }: { questions: Question[] })
           setImportText={setImportText}
           importQuestions={importQuestions}
           exportQuestions={exportQuestions}
+          communityUi={communityT}
+          communitySubmissions={communitySubmissions}
+          auditLogs={auditLogs}
+          approveSubmission={approveSubmission}
+          rejectSubmission={rejectSubmission}
         />
       )}
       {screen === 'contact' && <Contact t={t} sent={sent} setSent={setSent} />}
@@ -1051,6 +1336,7 @@ function Header({ t, locale, setLocale, open, start }: { t: Record<string, strin
       <nav className="flex flex-wrap items-center gap-3">
         <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
         <button className="ghost-button focus-ring" onClick={() => open('admin')}>{t.admin}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('submit')}>{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
         <button className="ghost-button focus-ring" onClick={() => open('contact')}>{t.contact}</button>
         <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>
         <button className="ghost-button focus-ring" onClick={() => open('settings')}>{t.settings}</button>
@@ -1249,6 +1535,97 @@ function Game(props: {
   );
 }
 
+function CommunitySubmit(props: {
+  ui: Record<string, string>;
+  locale: Locale;
+  categories: string[];
+  form: CommunityDraft;
+  setForm: (form: CommunityDraft | ((form: CommunityDraft) => CommunityDraft)) => void;
+  submit: () => void;
+  message: string;
+}) {
+  const { ui, locale, categories, form, setForm, submit, message } = props;
+  const optionLetters = OPTION_LETTERS[locale] || LETTERS;
+  const difficulties = ['קל', 'בינוני', 'קשה', 'מומחה'];
+  const updateOption = (index: number, value: string) => {
+    setForm(previous => ({
+      ...previous,
+      options: previous.options.map((option, optionIndex) => optionIndex === index ? value : option)
+    }));
+  };
+
+  return (
+    <section className="mx-auto grid w-full max-w-[1180px] gap-6 px-5 pb-16 pt-8 lg:px-8">
+      <div className="glass rounded-[34px] p-6 md:p-10">
+        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="mb-4 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold">Community Studio</p>
+            <h1 className="text-4xl font-black md:text-6xl">{ui.submitTitle}</h1>
+            <p className="mt-4 max-w-3xl text-lg leading-8 text-white/68">{ui.submitIntro}</p>
+          </div>
+          <div className="rounded-3xl border border-white/12 bg-white/[0.06] p-4 text-sm text-white/60">
+            {ui.localMode}
+          </div>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label={ui.contributorName}>
+            <input className="form-input" value={form.contributorName} onChange={event => setForm({ ...form, contributorName: event.target.value })} />
+          </Field>
+          <Field label={ui.contributorEmail}>
+            <input className="form-input" type="email" value={form.contributorEmail} onChange={event => setForm({ ...form, contributorEmail: event.target.value })} />
+          </Field>
+          <Field label={ui.language}>
+            <select className="form-input" value={form.language} onChange={event => setForm({ ...form, language: event.target.value as Locale })}>
+              {LANGUAGE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.native}</option>)}
+            </select>
+          </Field>
+          <Field label={ui.category}>
+            <select className="form-input" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })}>
+              {categories.map(category => <option key={category} value={category}>{localizeCategory(locale, category)}</option>)}
+            </select>
+          </Field>
+          <Field label={ui.difficulty}>
+            <select className="form-input" value={form.difficulty} onChange={event => setForm({ ...form, difficulty: event.target.value })}>
+              {difficulties.map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </Field>
+          <Field label={ui.correctAnswer}>
+            <select className="form-input" value={form.correctIndex} onChange={event => setForm({ ...form, correctIndex: Number(event.target.value) })}>
+              {optionLetters.map((letter, index) => <option key={letter} value={index}>{ui.answer} {letter}</option>)}
+            </select>
+          </Field>
+        </div>
+
+        <div className="mt-5">
+          <Field label={ui.question}>
+            <textarea className="form-input min-h-28 text-xl font-bold" value={form.question} onChange={event => setForm({ ...form, question: event.target.value })} />
+          </Field>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {form.options.map((option, index) => (
+            <Field key={index} label={`${ui.answer} ${optionLetters[index]}`}>
+              <input className="form-input" value={option} onChange={event => updateOption(index, event.target.value)} />
+            </Field>
+          ))}
+        </div>
+
+        <div className="mt-5">
+          <Field label={ui.explanation}>
+            <textarea className="form-input min-h-28" value={form.explanation} onChange={event => setForm({ ...form, explanation: event.target.value })} />
+          </Field>
+        </div>
+
+        <div className="mt-7 flex flex-col gap-4 md:flex-row md:items-center">
+          <button className="premium-button focus-ring md:min-w-72" onClick={submit}>{ui.send}</button>
+          {message && <Success text={message} />}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Result({ t, state, correctCount, elapsed, prize, start, home }: { t: Record<string, string>; state: EndState; correctCount: number; elapsed: number; prize: number; start: () => void; home: () => void }) {
   const title = state === 'win' ? t.winTitle : state === 'quit' ? t.quitTitle : state === 'timeout' ? t.timeoutTitle : t.lostTitle;
   const time = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
@@ -1283,10 +1660,74 @@ function Admin(props: {
   setImportText: (value: string) => void;
   importQuestions: () => void;
   exportQuestions: () => void;
+  communityUi: Record<string, string>;
+  communitySubmissions: CommunitySubmission[];
+  auditLogs: AuditLogEntry[];
+  approveSubmission: (id: string) => void;
+  rejectSubmission: (id: string) => void;
 }) {
-  const { t, locale, questions, filtered, search, setSearch, category, setCategory, categories, form, setForm, saveQuestion, setExtraQuestions, importText, setImportText, importQuestions, exportQuestions } = props;
+  const { t, locale, questions, filtered, search, setSearch, category, setCategory, categories, form, setForm, saveQuestion, setExtraQuestions, importText, setImportText, importQuestions, exportQuestions, communityUi, communitySubmissions, auditLogs, approveSubmission, rejectSubmission } = props;
+  const pendingSubmissions = communitySubmissions.filter(item => item.moderation.status === 'needs_review');
+  const approvedSubmissions = communitySubmissions.filter(item => item.moderation.status === 'auto_approved').length;
+  const rejectedSubmissions = communitySubmissions.filter(item => item.moderation.status === 'rejected').length;
   return (
     <section className="mx-auto grid w-full max-w-[1680px] gap-6 px-5 pb-12 pt-8 lg:grid-cols-[430px_1fr] lg:px-8">
+      <div className="glass rounded-[30px] p-6 lg:col-span-2">
+        <div className="mb-5 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
+          <div>
+            <h2 className="text-3xl font-black">{communityUi.dashboard}</h2>
+            <p className="mt-2 text-white/60">{communityUi.localMode}</p>
+          </div>
+          <div className="rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-bold text-gold">Local automation ready</div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          <Metric value={String(communitySubmissions.length)} label={communityUi.submissions} />
+          <Metric value={String(pendingSubmissions.length)} label={communityUi.pending} gold />
+          <Metric value={String(approvedSubmissions)} label={communityUi.approved} />
+          <Metric value={String(rejectedSubmissions)} label={communityUi.rejectedLabel} />
+        </div>
+        <div className="mt-6 grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.055] p-5">
+            <h3 className="mb-4 text-2xl font-black">{communityUi.reviewQueue}</h3>
+            <div className="grid gap-3">
+              {pendingSubmissions.length === 0 && <p className="rounded-2xl bg-white/[0.06] p-4 text-white/62">{communityUi.emptyQueue}</p>}
+              {pendingSubmissions.map(item => (
+                <article key={item.id} className="rounded-3xl border border-white/10 bg-black/18 p-4">
+                  <div className="flex flex-col justify-between gap-3 lg:flex-row">
+                    <div>
+                      <div className="mb-2 flex flex-wrap gap-2 text-xs font-bold">
+                        <span className="rounded-full bg-gold/15 px-3 py-1 text-gold">{item.draft.category}</span>
+                        <span className="rounded-full bg-azure/15 px-3 py-1 text-azure">{communityUi.confidence}: {item.moderation.score}</span>
+                      </div>
+                      <h4 className="text-xl font-extrabold">{item.moderation.normalizedQuestion}</h4>
+                      <p className="mt-2 text-white/60">{communityUi.correctAnswer}: {item.moderation.normalizedOptions[item.draft.correctIndex]}</p>
+                      <p className="mt-2 text-sm text-white/50">{communityUi.recommendation}: {item.moderation.recommendation}</p>
+                      <p className="mt-1 text-sm text-white/45">{communityUi.reasons}: {item.moderation.reasons.join(' | ')}</p>
+                    </div>
+                    <div className="flex min-w-48 flex-col gap-2">
+                      <button className="premium-button focus-ring" onClick={() => approveSubmission(item.id)}>{communityUi.approve}</button>
+                      <button className="ghost-button focus-ring" onClick={() => rejectSubmission(item.id)}>{communityUi.reject}</button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.055] p-5">
+            <h3 className="mb-4 text-2xl font-black">{communityUi.auditLog}</h3>
+            <div className="grid max-h-80 gap-3 overflow-auto pr-1">
+              {auditLogs.slice(0, 12).map(item => (
+                <div key={item.id} className="rounded-2xl bg-black/18 p-3 text-sm">
+                  <strong className="block text-gold">{item.action}</strong>
+                  <span className="text-white/62">{item.details}</span>
+                  <small className="mt-1 block text-white/35">{new Date(item.createdAt).toLocaleString()}</small>
+                </div>
+              ))}
+              {auditLogs.length === 0 && <p className="text-white/55">No activity yet.</p>}
+            </div>
+          </div>
+        </div>
+      </div>
       <aside className="glass rounded-[30px] p-6">
         <div className="mb-6 flex items-center justify-between"><h2 className="text-3xl font-black">{t.manageTitle}</h2><span className="text-gold">⚙</span></div>
         <QuestionForm t={t} locale={locale} form={form} setForm={setForm} save={saveQuestion} reset={() => setForm(emptyQuestion())} />
