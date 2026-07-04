@@ -75,8 +75,8 @@ export function validateEnvironment(): EnvironmentValidationIssue[] {
   }
 
   const databaseMode = readEnv('NEXT_PUBLIC_DATABASE_MODE') || 'local';
-  if (databaseMode === 'supabase' && (!readEnv('NEXT_PUBLIC_SUPABASE_URL') || !readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'))) {
-    issues.push({ name: 'NEXT_PUBLIC_DATABASE_MODE', severity: 'warning', message: 'Supabase mode requested without public Supabase credentials. The app should fall back to local mode.' });
+  if (databaseMode === 'supabase' && (!readEnv('NEXT_PUBLIC_SUPABASE_URL') || !readEnv('SUPABASE_SERVICE_ROLE_KEY'))) {
+    issues.push({ name: 'NEXT_PUBLIC_DATABASE_MODE', severity: 'warning', message: 'Supabase mode requested without a project URL and server-only service role key. The app should fall back to local mode.' });
   }
 
   const adsEnabled = readBooleanEnv('NEXT_PUBLIC_ADS_ENABLED');

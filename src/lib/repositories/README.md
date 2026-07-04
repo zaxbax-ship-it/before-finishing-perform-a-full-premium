@@ -8,7 +8,7 @@ The application is now database-agnostic at the page data boundary.
 Uses the existing `src/data/questions.json` question bank and keeps the current browser-local behavior untouched.
 
 `database`
-Implements the same contracts, but is intentionally a stub until Supabase/PostgreSQL credentials, RLS policies and migrations are confirmed.
+Implements the same contracts through Supabase/PostgreSQL using the server-only service role key.
 
 ## Switching Providers
 
@@ -22,7 +22,11 @@ SUPABASE_SERVICE_ROLE_KEY=
 DATABASE_URL=
 ```
 
-The app stays on `local-json` unless `NEXT_PUBLIC_DATABASE_MODE=supabase` and Supabase public variables are present.
+The app stays on `local-json` unless `NEXT_PUBLIC_DATABASE_MODE=supabase`, `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are present.
+
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is reserved for future browser-safe Supabase features and is not required for the current repository provider.
+
+See `docs/supabase-setup.md` and `database/001_supabase_core_schema.sql` before switching production traffic.
 
 ## Clean Architecture Flow
 

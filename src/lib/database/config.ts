@@ -23,5 +23,5 @@ export function getDatabaseConfig(): DatabaseConfig {
 }
 
 export function isSupabaseConfigured(config = getDatabaseConfig()) {
-  return Boolean(config.supabaseUrl && config.supabaseAnonKey);
+  return Boolean(config.supabaseUrl && config.hasServiceRoleKey);
 }
