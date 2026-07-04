@@ -367,7 +367,15 @@ function moderationPayload(submissionId: EntityId, result: ModerationResult): Js
     normalized_options: result.normalizedOptions,
     explanation: result.explanation,
     duplicate_question_id: result.duplicateQuestionId ? String(result.duplicateQuestionId) : undefined,
-    provider: 'manual',
+    provider: result.aiProvider === 'openai' ? 'openai' : result.aiProvider === 'mock-local' ? 'local_rules' : 'manual',
+    raw_response: {
+      aiRecommendation: result.aiRecommendation,
+      aiConfidence: result.aiConfidence,
+      improvedQuestion: result.improvedQuestion,
+      improvedOptions: result.improvedOptions,
+      factCheck: result.factCheck,
+      qualitySignals: result.qualitySignals
+    },
     created_at: now()
   };
 }

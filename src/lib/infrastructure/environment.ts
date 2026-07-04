@@ -22,6 +22,8 @@ export const ENVIRONMENT_SPECS: EnvironmentVariableSpec[] = [
   { name: 'SUPABASE_SERVICE_ROLE_KEY', visibility: 'server', description: 'Supabase server-only service role key.' },
   { name: 'DATABASE_URL', visibility: 'server', description: 'Direct PostgreSQL connection string.' },
   { name: 'OPENAI_API_KEY', visibility: 'server', description: 'OpenAI server-only API key.' },
+  { name: 'OPENAI_MODERATION_ENABLED', visibility: 'server', allowedValues: ['true', 'false'], description: 'Enables OpenAI-backed moderation when an API key exists.' },
+  { name: 'OPENAI_MODERATION_MODEL', visibility: 'server', description: 'OpenAI model used by the moderation provider.' },
   { name: 'GOOGLE_OAUTH_CLIENT_ID', visibility: 'server', description: 'Google OAuth client id.' },
   { name: 'GOOGLE_OAUTH_CLIENT_SECRET', visibility: 'server', description: 'Google OAuth client secret.' },
   { name: 'NEXT_PUBLIC_ADS_ENABLED', visibility: 'public', allowedValues: ['true', 'false'], description: 'Enables prepared ad slots.' },

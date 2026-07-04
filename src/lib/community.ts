@@ -24,6 +24,21 @@ export type ModerationResult = {
   normalizedOptions: string[];
   explanation: string;
   duplicateQuestionId?: string | number;
+  aiProvider?: string;
+  aiRecommendation?: 'approve' | 'reject' | 'needs_manual_review';
+  aiConfidence?: number;
+  improvedQuestion?: string;
+  improvedOptions?: string[];
+  factCheck?: {
+    status: 'passed' | 'uncertain' | 'failed';
+    notes: string[];
+  };
+  qualitySignals?: {
+    duplicateRisk: number;
+    spamRisk: number;
+    unsafeRisk: number;
+    lowQualityRisk: number;
+  };
 };
 
 export type CommunitySubmission = {

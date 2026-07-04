@@ -923,6 +923,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [communityForm, setCommunityForm] = useState<CommunityDraft>(() => emptyCommunityDraft('he'));
   const [communityMessage, setCommunityMessage] = useState('');
+  const [communityProviderLabel, setCommunityProviderLabel] = useState('Local automation ready');
 
   const t = { ...UI[locale], ...UI_EXT[locale] };
   const communityT = COMMUNITY_UI[locale] || COMMUNITY_UI.he;
@@ -950,6 +951,22 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
     setAuditLogs(readLocal(AUDIT_KEY, []));
     setSettings(readLocal(SETTINGS_KEY, { sound: true, effects: true, timer: 'דרמטית' }));
     setStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] }));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/community/submissions', { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : undefined)
+      .then(data => {
+        if (!active || !data?.ok) return;
+        if (Array.isArray(data.submissions)) setCommunitySubmissions(data.submissions);
+        if (Array.isArray(data.auditLogs)) setAuditLogs(data.auditLogs);
+        setCommunityProviderLabel(data.provider === 'database' ? 'Supabase + AI moderation ready' : 'Local JSON + mock AI ready');
+      })
+      .catch(() => setCommunityProviderLabel('Local automation ready'));
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -1153,7 +1170,36 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
     URL.revokeObjectURL(url);
   }
 
-  function submitCommunityQuestion() {
+  async function submitCommunityQuestion() {
+    try {
+      const response = await fetch('/api/community/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draft: communityForm })
+      });
+      const data = await response.json();
+      if (response.ok && data?.ok && data.submission) {
+        const submission = data.submission as CommunitySubmission;
+        setCommunitySubmissions(previous => [submission, ...previous.filter(item => item.id !== submission.id)]);
+        if (data.auditLog) setAuditLogs(previous => [data.auditLog, ...previous].slice(0, 80));
+        if (submission.moderation.status === 'auto_approved') {
+          const question = submission.question || submissionToQuestion(submission);
+          setExtraQuestions(previous => [normalize(question), ...previous]);
+          tone('correct', settings.sound);
+        } else if (submission.moderation.status === 'rejected') {
+          tone('wrong', settings.sound);
+        } else {
+          tone('safe', settings.sound);
+        }
+        setCommunityProviderLabel(data.provider === 'database' ? 'Supabase + AI moderation ready' : 'Local JSON + mock AI ready');
+        setCommunityMessage(communityT[submission.moderation.status === 'auto_approved' ? 'autoApproved' : submission.moderation.status === 'needs_review' ? 'needsReview' : 'rejected']);
+        setCommunityForm(emptyCommunityDraft(locale, categories[0] || communityForm.category));
+        return;
+      }
+    } catch {
+      setCommunityProviderLabel('Local fallback active');
+    }
+
     const moderation = runLocalModeration(communityForm, allQuestions, communitySubmissions);
     const id = `sub-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const now = new Date().toISOString();
@@ -1197,7 +1243,30 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
     setCommunityForm(emptyCommunityDraft(locale, categories[0] || communityForm.category));
   }
 
-  function approveSubmission(id: string) {
+  async function approveSubmission(id: string) {
+    try {
+      const response = await fetch(`/api/community/submissions/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' })
+      });
+      const data = await response.json();
+      if (response.ok && data?.ok && data.submission) {
+        const submission = data.submission as CommunitySubmission;
+        setCommunitySubmissions(previous => previous.map(item => item.id === id ? submission : item));
+        const question = submission.question || submissionToQuestion(submission);
+        setExtraQuestions(currentQuestions => currentQuestions.some(currentQuestion => currentQuestion.id === question.id)
+          ? currentQuestions
+          : [normalize(question), ...currentQuestions]
+        );
+        setAuditLogs(previous => [createAudit('admin_approved_submission', id, 'Question published from review queue'), ...previous].slice(0, 80));
+        tone('correct', settings.sound);
+        return;
+      }
+    } catch {
+      setCommunityProviderLabel('Local fallback active');
+    }
+
     setCommunitySubmissions(previous => previous.map(item => {
       if (item.id !== id) return item;
       const question = item.question || submissionToQuestion(item);
@@ -1216,7 +1285,24 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
     tone('correct', settings.sound);
   }
 
-  function rejectSubmission(id: string) {
+  async function rejectSubmission(id: string) {
+    try {
+      const response = await fetch(`/api/community/submissions/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject' })
+      });
+      const data = await response.json();
+      if (response.ok && data?.ok && data.submission) {
+        setCommunitySubmissions(previous => previous.map(item => item.id === id ? data.submission : item));
+        setAuditLogs(previous => [createAudit('admin_rejected_submission', id, 'Question rejected from review queue'), ...previous].slice(0, 80));
+        tone('wrong', settings.sound);
+        return;
+      }
+    } catch {
+      setCommunityProviderLabel('Local fallback active');
+    }
+
     setCommunitySubmissions(previous => previous.map(item => item.id === id
       ? {
           ...item,
@@ -1293,6 +1379,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
           exportQuestions={exportQuestions}
           communityUi={communityT}
           communitySubmissions={communitySubmissions}
+          communityProviderLabel={communityProviderLabel}
           auditLogs={auditLogs}
           approveSubmission={approveSubmission}
           rejectSubmission={rejectSubmission}
@@ -1670,11 +1757,12 @@ function Admin(props: {
   exportQuestions: () => void;
   communityUi: Record<string, string>;
   communitySubmissions: CommunitySubmission[];
+  communityProviderLabel: string;
   auditLogs: AuditLogEntry[];
-  approveSubmission: (id: string) => void;
-  rejectSubmission: (id: string) => void;
+  approveSubmission: (id: string) => void | Promise<void>;
+  rejectSubmission: (id: string) => void | Promise<void>;
 }) {
-  const { t, locale, questions, filtered, search, setSearch, category, setCategory, categories, form, setForm, saveQuestion, setExtraQuestions, importText, setImportText, importQuestions, exportQuestions, communityUi, communitySubmissions, auditLogs, approveSubmission, rejectSubmission } = props;
+  const { t, locale, questions, filtered, search, setSearch, category, setCategory, categories, form, setForm, saveQuestion, setExtraQuestions, importText, setImportText, importQuestions, exportQuestions, communityUi, communitySubmissions, communityProviderLabel, auditLogs, approveSubmission, rejectSubmission } = props;
   const pendingSubmissions = communitySubmissions.filter(item => item.moderation.status === 'needs_review');
   const approvedSubmissions = communitySubmissions.filter(item => item.moderation.status === 'auto_approved').length;
   const rejectedSubmissions = communitySubmissions.filter(item => item.moderation.status === 'rejected').length;
@@ -1687,7 +1775,7 @@ function Admin(props: {
             <h2 className="text-3xl font-black">{communityUi.dashboard}</h2>
             <p className="mt-2 text-white/60">{communityUi.localMode}</p>
           </div>
-          <div className="rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-bold text-gold">Local automation ready</div>
+          <div className="rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-bold text-gold">{communityProviderLabel}</div>
         </div>
         <div className="grid gap-4 md:grid-cols-4">
           <Metric value={String(communitySubmissions.length)} label={communityUi.submissions} />
@@ -1709,9 +1797,22 @@ function Admin(props: {
                         <span className="rounded-full bg-azure/15 px-3 py-1 text-azure">{communityUi.confidence}: {item.moderation.score}</span>
                       </div>
                       <h4 className="text-xl font-extrabold">{item.moderation.normalizedQuestion}</h4>
+                      <p className="mt-2 text-sm text-white/45">Original: {item.draft.question}</p>
+                      {item.moderation.improvedQuestion && item.moderation.improvedQuestion !== item.draft.question && (
+                        <p className="mt-2 rounded-2xl border border-azure/20 bg-azure/10 p-3 text-sm text-white/70">AI improved: {item.moderation.improvedQuestion}</p>
+                      )}
                       <p className="mt-2 text-white/60">{communityUi.correctAnswer}: {item.moderation.normalizedOptions[item.draft.correctIndex]}</p>
                       <p className="mt-2 text-sm text-white/50">{communityUi.recommendation}: {item.moderation.recommendation}</p>
                       <p className="mt-1 text-sm text-white/45">{communityUi.reasons}: {item.moderation.reasons.join(' | ')}</p>
+                      {item.moderation.factCheck && (
+                        <p className="mt-1 text-sm text-white/45">Fact check: {item.moderation.factCheck.status} · {item.moderation.factCheck.notes.join(' | ')}</p>
+                      )}
+                      {item.moderation.qualitySignals && (
+                        <p className="mt-1 text-sm text-white/45">
+                          Quality signals: duplicate {item.moderation.qualitySignals.duplicateRisk}, spam {item.moderation.qualitySignals.spamRisk}, unsafe {item.moderation.qualitySignals.unsafeRisk}, low quality {item.moderation.qualitySignals.lowQualityRisk}
+                        </p>
+                      )}
+                      <p className="mt-2 rounded-2xl bg-white/[0.055] p-3 text-sm text-white/62">{item.moderation.explanation}</p>
                     </div>
                     <div className="flex min-w-48 flex-col gap-2">
                       <button className="premium-button focus-ring" onClick={() => approveSubmission(item.id)}>{communityUi.approve}</button>
