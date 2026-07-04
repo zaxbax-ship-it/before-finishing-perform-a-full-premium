@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
 import {
   type AuditLogEntry,
@@ -892,7 +892,7 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 
-export default function TriviaPlatform({ questions, initialScreen = 'home' }: { questions: Question[]; initialScreen?: Screen }) {
+export default function TriviaPlatform({ questions, initialScreen = 'home', adminHeader }: { questions: Question[]; initialScreen?: Screen; adminHeader?: ReactNode }) {
   const baseQuestions = useMemo(() => questions.map(normalize), [questions]);
   const [locale, setLocale] = useState<Locale>('he');
   const [screen, setScreen] = useState<Screen>(initialScreen);
@@ -1316,8 +1316,9 @@ export default function TriviaPlatform({ questions, initialScreen = 'home' }: { 
   }
 
   return (
-    <main className={`app-shell font-hebrew premium-typography ${screen === 'game' ? 'game-active' : ''}`} dir={dir}>
+    <main className={`app-shell font-hebrew premium-typography ${screen === 'game' ? 'game-active' : ''} ${screen === 'admin' ? 'admin-active' : ''}`} dir={dir}>
       {settings.effects && <Particles />}
+      {screen === 'admin' && adminHeader}
       <Header t={t} locale={locale} setLocale={setLocale} open={open} start={() => open('categories')} />
       {screen === 'home' && <Home t={t} start={() => open('categories')} admin={() => open('admin')} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={allQuestions} startGame={startGame} />}

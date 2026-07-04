@@ -8,10 +8,12 @@ import { AuthShell, AuthField, AuthMessage, GoogleButton } from '../auth-ui/Auth
 
 export default function LoginForm({
   supabaseConfigured,
-  emailPasswordEnabled
+  emailPasswordEnabled,
+  googleOAuthConfigured
 }: {
   supabaseConfigured: boolean;
   emailPasswordEnabled: boolean;
+  googleOAuthConfigured: boolean;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -40,11 +42,15 @@ export default function LoginForm({
   }
 
   async function onGoogle() {
+    if (!googleOAuthConfigured) {
+      setError('כניסה עם Google עדיין לא הופעלה. אפשר להתחבר כרגע באמצעות אימייל וסיסמה.');
+      return;
+    }
     setBusy(true);
     setError('');
     const result = await createAuthService().signInWithGoogle();
     if (result.status !== 'ok') {
-      setError(result.message || 'התחברות Google נכשלה.');
+      setError(result.message || 'התחברות עם Google נכשלה.');
       setBusy(false);
     }
   }
@@ -53,7 +59,7 @@ export default function LoginForm({
     <AuthShell title="כניסת מנהלים" subtitle="גישה מאובטחת לאזור הניהול">
       {!supabaseConfigured && (
         <AuthMessage tone="warn">
-          התחברות אינה מופעלת בסביבה זו. יש לחבר את Supabase Auth (משתני סביבה) כדי להתחבר.
+          התחברות אינה מופעלת בסביבה זו. יש לחבר את Supabase Auth כדי להתחבר.
         </AuthMessage>
       )}
 
@@ -83,12 +89,17 @@ export default function LoginForm({
           </AuthField>
           {error && <AuthMessage tone="error">{error}</AuthMessage>}
           <button className="premium-button focus-ring w-full" type="submit" disabled={!supabaseConfigured || busy}>
-            {busy ? 'מתחבר…' : 'כניסה'}
+            {busy ? 'מתחבר...' : 'כניסה'}
           </button>
         </form>
       )}
 
-      <GoogleButton label="כניסה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || busy} />
+      <GoogleButton label="כניסה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || !googleOAuthConfigured || busy} />
+      {!googleOAuthConfigured && supabaseConfigured && (
+        <AuthMessage tone="warn">
+          כניסה עם Google עדיין לא מחוברת בפרויקט. כניסה באמצעות אימייל וסיסמה ממשיכה לעבוד כרגיל.
+        </AuthMessage>
+      )}
 
       <div className="auth-links">
         <Link className="focus-ring" href="/reset-password">שכחתי סיסמה</Link>

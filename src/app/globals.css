@@ -20,6 +20,13 @@
 .game-active .game-topline-pot{font-size:.82rem}
 .game-active .question-priority h2.question-text{font-size:1.32rem;line-height:1.32;margin-bottom:.85rem}
 .game-active .answers-grid{gap:10px}
+.admin-active{overflow-x:hidden;overflow-y:auto}
+.admin-active > header{padding-top:1rem}
+.admin-active .admin-scroll{max-height:min(62vh,720px)}
+.admin-active article,.admin-active .glass{min-width:0}
+.admin-active .ghost-button,.admin-active .premium-button{white-space:normal;text-align:center}
+@media (max-width:1024px){.admin-active section[class*="lg:grid-cols"]{grid-template-columns:1fr}.admin-active aside{order:2}.admin-active section.glass{order:3}.admin-active .ad-slot{order:0}.admin-active .glass[class*="lg:col-span"]{order:1}.admin-active .admin-scroll{max-height:none}}
+@media (max-width:640px){.admin-active > header{padding-inline:.75rem}.admin-active > section{padding-inline:.75rem;padding-top:1rem}.admin-active .glass{border-radius:24px;padding:1rem}.admin-active h2{font-size:1.65rem;line-height:1.15}.admin-active h3{font-size:1.25rem}.admin-active .flex.gap-2{flex-wrap:wrap}.admin-active .flex.gap-2 > button{flex:1 1 100%}}
 .game-active .answer-button{min-height:56px;padding:10px 14px;border-radius:16px}
 .game-active .answer-button>span:first-child{height:1.9rem;width:1.9rem;margin-left:.55rem}
 .game-active .answer-button>span:last-child{font-size:1rem;line-height:1.35}

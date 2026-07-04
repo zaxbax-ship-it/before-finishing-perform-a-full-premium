@@ -8,6 +8,13 @@ const NOT_CONFIGURED: AuthResult = {
   message: 'Authentication is not configured yet. Supabase Auth must be connected first.'
 };
 
+function authErrorMessage(message: string): string {
+  if (/unsupported provider|provider is not enabled/i.test(message)) {
+    return 'Google login is not enabled yet. Continue with email and password, or enable Google OAuth in Supabase first.';
+  }
+  return message;
+}
+
 /**
  * Reusable browser-side authentication service. Wraps the Supabase browser
  * client and returns a stable {@link AuthResult} so UI components never handle
@@ -30,7 +37,7 @@ export class AuthService {
       email: email.trim().toLowerCase(),
       password
     });
-    if (error) return { status: 'error', message: error.message };
+    if (error) return { status: 'error', message: authErrorMessage(error.message) };
     return { status: 'ok' };
   }
 
@@ -41,7 +48,7 @@ export class AuthService {
       password,
       options: { emailRedirectTo: getAuthCallbackUrl() }
     });
-    if (error) return { status: 'error', message: error.message };
+    if (error) return { status: 'error', message: authErrorMessage(error.message) };
     if (data.session) return { status: 'ok' };
     return {
       status: 'verification_sent',
@@ -55,7 +62,7 @@ export class AuthService {
       provider: 'google',
       options: { redirectTo: getAuthCallbackUrl() }
     });
-    if (error) return { status: 'error', message: error.message };
+    if (error) return { status: 'error', message: authErrorMessage(error.message) };
     // On success the browser is redirected to Google; nothing else to do here.
     return { status: 'ok' };
   }
@@ -65,7 +72,7 @@ export class AuthService {
     const { error } = await this.client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: getPasswordResetRedirectUrl()
     });
-    if (error) return { status: 'error', message: error.message };
+    if (error) return { status: 'error', message: authErrorMessage(error.message) };
     return {
       status: 'reset_sent',
       message: 'If the address exists, a password reset link has been sent.'
@@ -75,14 +82,14 @@ export class AuthService {
   async updatePassword(newPassword: string): Promise<AuthResult> {
     if (!this.client) return NOT_CONFIGURED;
     const { error } = await this.client.auth.updateUser({ password: newPassword });
-    if (error) return { status: 'error', message: error.message };
+    if (error) return { status: 'error', message: authErrorMessage(error.message) };
     return { status: 'ok' };
   }
 
   async signOut(): Promise<AuthResult> {
     if (!this.client) return NOT_CONFIGURED;
     const { error } = await this.client.auth.signOut();
-    if (error) return { status: 'error', message: error.message };
+    if (error) return { status: 'error', message: authErrorMessage(error.message) };
     return { status: 'ok' };
   }
 

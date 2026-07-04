@@ -37,6 +37,11 @@ export function isEmailPasswordEnabled(): boolean {
   return readEnv('AUTH_EMAIL_PASSWORD_ENABLED') !== 'false';
 }
 
+/** True when the project has the Google OAuth credentials needed by Supabase. */
+export function isGoogleOAuthConfigured(): boolean {
+  return Boolean(readEnv('GOOGLE_OAUTH_CLIENT_ID') && readEnv('GOOGLE_OAUTH_CLIENT_SECRET'));
+}
+
 /** Comma-separated, normalized (lowercased, trimmed) bootstrap admin emails. */
 export function getAdminAllowlist(): string[] {
   const raw = readEnv('ADMIN_EMAILS');

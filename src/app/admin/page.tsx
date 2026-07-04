@@ -26,9 +26,10 @@ export default async function Admin() {
   const data = await createTriviaDataService().getPageData();
 
   return (
-    <>
-      {context && <AdminAuthBar context={context} />}
-      <TriviaPlatform questions={data.questions} initialScreen="admin" />
-    </>
+    <TriviaPlatform
+      questions={data.questions}
+      initialScreen="admin"
+      adminHeader={context ? <AdminAuthBar context={context} /> : null}
+    />
   );
 }

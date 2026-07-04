@@ -9,10 +9,12 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export default function SignupForm({
   supabaseConfigured,
-  emailPasswordEnabled
+  emailPasswordEnabled,
+  googleOAuthConfigured
 }: {
   supabaseConfigured: boolean;
   emailPasswordEnabled: boolean;
+  googleOAuthConfigured: boolean;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,11 +50,15 @@ export default function SignupForm({
   }
 
   async function onGoogle() {
+    if (!googleOAuthConfigured) {
+      setError('הרשמה עם Google עדיין לא הופעלה. אפשר להירשם כרגע באמצעות אימייל וסיסמה.');
+      return;
+    }
     setBusy(true);
     setError('');
     const result = await createAuthService().signInWithGoogle();
     if (result.status !== 'ok') {
-      setError(result.message || 'התחברות Google נכשלה.');
+      setError(result.message || 'הרשמה עם Google נכשלה.');
       setBusy(false);
     }
   }
@@ -79,12 +85,17 @@ export default function SignupForm({
           {error && <AuthMessage tone="error">{error}</AuthMessage>}
           {notice && <AuthMessage tone="success">{notice}</AuthMessage>}
           <button className="premium-button focus-ring w-full" type="submit" disabled={!supabaseConfigured || busy}>
-            {busy ? 'יוצר חשבון…' : 'הרשמה'}
+            {busy ? 'יוצר חשבון...' : 'הרשמה'}
           </button>
         </form>
       )}
 
-      <GoogleButton label="הרשמה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || busy} />
+      <GoogleButton label="הרשמה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || !googleOAuthConfigured || busy} />
+      {!googleOAuthConfigured && supabaseConfigured && (
+        <AuthMessage tone="warn">
+          הרשמה עם Google עדיין לא מחוברת בפרויקט. הרשמה באמצעות אימייל וסיסמה ממשיכה לעבוד כרגיל.
+        </AuthMessage>
+      )}
 
       <div className="auth-links">
         <Link className="focus-ring" href="/login">כבר יש לי חשבון</Link>
