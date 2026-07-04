@@ -1351,8 +1351,8 @@ export function localizeQuestion<T extends { category: string; difficulty: strin
   const localizedCorrectAnswer = override?.correctAnswer || (question.correctAnswer ? t(locale, question.correctAnswer) : undefined);
   return {
     ...question,
-    category: override?.category || category[locale][question.category] || question.category,
-    difficulty: override?.difficulty || difficulty[locale][question.difficulty] || question.difficulty,
+    category: override?.category || cleanCategory[locale][question.category] || category[locale][question.category] || question.category,
+    difficulty: override?.difficulty || cleanDifficulty[locale][question.difficulty] || difficulty[locale][question.difficulty] || question.difficulty,
     question: override?.question || enhancedTranslateQuestionText(locale, question.question),
     options: localizedOptions,
     answers: localizedOptions,
@@ -1361,12 +1361,83 @@ export function localizeQuestion<T extends { category: string; difficulty: strin
   };
 }
 
+const cleanCategory: Dictionary = {
+  he: {
+    'גאוגרפיה': 'גאוגרפיה',
+    'היסטוריה': 'היסטוריה',
+    'מדע': 'מדע',
+    'רפואה': 'רפואה',
+    'טכנולוגיה': 'טכנולוגיה',
+    'פוליטיקה': 'פוליטיקה',
+    'טיקטוק': 'טיקטוק',
+    'רכילות ותרבות ישראלית': 'רכילות ותרבות ישראלית',
+    'רכילות ותרבות אמריקאית ועולמית': 'רכילות ותרבות אמריקאית ועולמית',
+    'ידע כללי': 'ידע כללי'
+  },
+  en: {
+    'גאוגרפיה': 'Geography',
+    'היסטוריה': 'History',
+    'מדע': 'Science',
+    'רפואה': 'Medicine',
+    'טכנולוגיה': 'Technology',
+    'פוליטיקה': 'Politics',
+    'טיקטוק': 'TikTok',
+    'רכילות ותרבות ישראלית': 'Israeli Celebrity and Culture',
+    'רכילות ותרבות אמריקאית ועולמית': 'Global Celebrity and Pop Culture',
+    'ידע כללי': 'General Knowledge'
+  },
+  ar: {
+    'גאוגרפיה': 'الجغرافيا',
+    'היסטוריה': 'التاريخ',
+    'מדע': 'العلوم',
+    'רפואה': 'الطب',
+    'טכנולוגיה': 'التكنولوجيا',
+    'פוליטיקה': 'السياسة',
+    'טיקטוק': 'تيك توك',
+    'רכילות ותרבות ישראלית': 'مشاهير وثقافة إسرائيلية',
+    'רכילות ותרבות אמריקאית ועולמית': 'مشاهير وثقافة عالمية',
+    'ידע כללי': 'معرفة عامة'
+  },
+  ru: {
+    'גאוגרפיה': 'География',
+    'היסטוריה': 'История',
+    'מדע': 'Наука',
+    'רפואה': 'Медицина',
+    'טכנולוגיה': 'Технологии',
+    'פוליטיקה': 'Политика',
+    'טיקטוק': 'TikTok',
+    'רכילות ותרבות ישראלית': 'Израильские знаменитости и культура',
+    'רכילות ותרבות אמריקאית ועולמית': 'Мировые знаменитости и поп-культура',
+    'ידע כללי': 'Общие знания'
+  },
+  am: {
+    'גאוגרפיה': 'ጂኦግራፊ',
+    'היסטוריה': 'ታሪክ',
+    'מדע': 'ሳይንስ',
+    'רפואה': 'ሕክምና',
+    'טכנולוגיה': 'ቴክኖሎጂ',
+    'פוליטיקה': 'ፖለቲካ',
+    'טיקטוק': 'TikTok',
+    'רכילות ותרבות ישראלית': 'የእስራኤል ዝነኞችና ባህል',
+    'רכילות ותרבות אמריקאית ועולמית': 'ዓለም አቀፍ ዝነኞችና ፖፕ ባህል',
+    'ידע כללי': 'አጠቃላይ እውቀት'
+  }
+};
+
+const cleanDifficulty: Dictionary = {
+  he: { 'קל': 'קל', 'בינוני': 'בינוני', 'קשה': 'קשה', 'מומחה': 'מומחה' },
+  en: { 'קל': 'Easy', 'בינוני': 'Medium', 'קשה': 'Hard', 'מומחה': 'Expert' },
+  ar: { 'קל': 'سهل', 'בינוני': 'متوسط', 'קשה': 'صعب', 'מומחה': 'خبير' },
+  ru: { 'קל': 'Легкий', 'בינוני': 'Средний', 'קשה': 'Сложный', 'מומחה': 'Эксперт' },
+  am: { 'קל': 'ቀላል', 'בינוני': 'መካከለኛ', 'קשה': 'ከባድ', 'מומחה': 'ባለሙያ' }
+};
+
 export function localizeCategory(locale: Locale, value: string) {
-  return category[locale][value] || value;
+  return cleanCategory[locale][value] || category[locale][value] || value;
 }
 
 export function localizeDifficulty(locale: Locale, value: string) {
-  return difficulty[locale][value] || value;
+  return cleanDifficulty[locale][value] || difficulty[locale][value] || value;
 }
 
 const categoryDescription: Dictionary = {
@@ -1447,6 +1518,69 @@ const categoryDescription: Dictionary = {
   }
 };
 
+const cleanCategoryDescription: Dictionary = {
+  he: {
+    'גאוגרפיה': 'ערים, מדינות, נהרות, הרים ומפות עולם',
+    'היסטוריה': 'אירועים, תקופות ונקודות מפנה שעיצבו את העולם',
+    'מדע': 'טבע, חלל, כימיה, פיזיקה ומושגי יסוד',
+    'רפואה': 'גוף האדם, בריאות, אבחון ומונחים רפואיים',
+    'טכנולוגיה': 'דיגיטל, תוכנה, חומרה וכלים מודרניים',
+    'פוליטיקה': 'מוסדות, דמוקרטיה, שלטון וקבלת החלטות',
+    'טיקטוק': 'טרנדים, יוצרים, פיצ׳רים ושפת רשת',
+    'רכילות ותרבות ישראלית': 'טלוויזיה, מוזיקה, בידור ושיחה ישראלית',
+    'רכילות ותרבות אמריקאית ועולמית': 'כוכבים, קולנוע, מוזיקה ותרבות פופ עולמית',
+    'ידע כללי': 'עובדות שימושיות, מושגים וידע רחב'
+  },
+  en: {
+    'גאוגרפיה': 'Cities, countries, rivers, mountains and world maps',
+    'היסטוריה': 'Events, eras and turning points that shaped the world',
+    'מדע': 'Nature, space, chemistry, physics and core ideas',
+    'רפואה': 'The human body, health, diagnosis and medical terms',
+    'טכנולוגיה': 'Digital life, software, hardware and modern tools',
+    'פוליטיקה': 'Institutions, democracy, government and decision-making',
+    'טיקטוק': 'Trends, creators, features and social platform language',
+    'רכילות ותרבות ישראלית': 'Television, music, entertainment and Israeli culture',
+    'רכילות ותרבות אמריקאית ועולמית': 'Stars, cinema, music and global pop culture',
+    'ידע כללי': 'Useful facts, concepts and broad knowledge'
+  },
+  ar: {
+    'גאוגרפיה': 'مدن ودول وأنهار وجبال وخرائط العالم',
+    'היסטוריה': 'أحداث وعصور ونقاط تحول شكلت العالم',
+    'מדע': 'طبيعة وفضاء وكيمياء وفيزياء ومفاهيم أساسية',
+    'רפואה': 'جسم الإنسان والصحة والتشخيص والمصطلحات الطبية',
+    'טכנולוגיה': 'العالم الرقمي والبرمجيات والأجهزة والأدوات الحديثة',
+    'פוליטיקה': 'مؤسسات وديمقراطية وحكم وصنع قرارات',
+    'טיקטוק': 'ترندات وصناع محتوى وميزات ولغة المنصات',
+    'רכילות ותרבות ישראלית': 'تلفزيون وموسيقى وترفيه وثقافة إسرائيلية',
+    'רכילות ותרבות אמריקאית ועולמית': 'نجوم وسينما وموسيقى وثقافة شعبية عالمية',
+    'ידע כללי': 'حقائق مفيدة ومفاهيم ومعرفة واسعة'
+  },
+  ru: {
+    'גאוגרפיה': 'Города, страны, реки, горы и карты мира',
+    'היסטוריה': 'События, эпохи и поворотные моменты истории',
+    'מדע': 'Природа, космос, химия, физика и базовые идеи',
+    'רפואה': 'Тело человека, здоровье, диагностика и медицинские термины',
+    'טכנולוגיה': 'Цифровой мир, программы, устройства и современные инструменты',
+    'פוליטיקה': 'Институты, демократия, власть и принятие решений',
+    'טיקטוק': 'Тренды, авторы, функции и язык социальных платформ',
+    'רכילות ותרבות ישראלית': 'Телевидение, музыка, развлечения и израильская культура',
+    'רכילות ותרבות אמריקאית ועולמית': 'Звезды, кино, музыка и мировая поп-культура',
+    'ידע כללי': 'Полезные факты, понятия и широкий круг знаний'
+  },
+  am: {
+    'גאוגרפיה': 'ከተሞች፣ አገሮች፣ ወንዞች፣ ተራሮች እና የዓለም ካርታዎች',
+    'היסטוריה': 'ዓለምን የቀየሩ ክስተቶች፣ ዘመናት እና መዞሪያ ነጥቦች',
+    'מדע': 'ተፈጥሮ፣ ሕዋ፣ ኬሚስትሪ፣ ፊዚክስ እና መሠረታዊ ሐሳቦች',
+    'רפואה': 'የሰውነት አካል፣ ጤና፣ ምርመራ እና የሕክምና ቃላት',
+    'טכנולוגיה': 'ዲጂታል ዓለም፣ ሶፍትዌር፣ ሃርድዌር እና ዘመናዊ መሣሪያዎች',
+    'פוליטיקה': 'ተቋማት፣ ዴሞክራሲ፣ መንግሥት እና ውሳኔ አሰጣጥ',
+    'טיקטוק': 'ትሬንዶች፣ ፈጣሪዎች፣ ባህሪያት እና የማኅበራዊ መድረክ ቋንቋ',
+    'רכילות ותרבות ישראלית': 'ቴሌቪዥን፣ ሙዚቃ፣ መዝናኛ እና የእስራኤል ባህል',
+    'רכילות ותרבות אמריקאית ועולמית': 'ዝነኞች፣ ሲኒማ፣ ሙዚቃ እና ዓለም አቀፍ ፖፕ ባህል',
+    'ידע כללי': 'ጠቃሚ እውነታዎች፣ ጽንሰ ሐሳቦች እና ሰፊ እውቀት'
+  }
+};
+
 export function localizeCategoryDescription(locale: Locale, value: string) {
-  return categoryDescription[locale][value] || categoryDescription.he[value] || 'מאגר שאלות מאוזן';
+  return cleanCategoryDescription[locale][value] || categoryDescription[locale][value] || categoryDescription.he[value] || 'מאגר שאלות מאוזן';
 }

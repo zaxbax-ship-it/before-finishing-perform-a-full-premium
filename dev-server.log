@@ -1,0 +1,36 @@
+
+> dev
+> next dev -p 3000
+
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.5.0.2:3000
+✓ Ready in 913ms
+
+ GET / 200 in 2.1s (next.js: 927ms, application-code: 1210ms)
+ GET / 200 in 930ms (next.js: 8ms, application-code: 922ms)
+ GET / 200 in 1110ms (next.js: 6ms, application-code: 1104ms)
+✓ Compiled in 2.4s
+ GET / 200 in 2.1s (next.js: 770ms, application-code: 1341ms)
+ GET / 200 in 1008ms (next.js: 7ms, application-code: 1002ms)
+ GET / 200 in 984ms (next.js: 7ms, application-code: 977ms)
+✓ Compiled in 45ms
+ GET / 200 in 1292ms (next.js: 847ms, application-code: 445ms)
+ GET / 200 in 878ms (next.js: 521ms, application-code: 357ms)
+ GET / 200 in 254ms (next.js: 5ms, application-code: 249ms)
+ GET / 200 in 275ms (next.js: 13ms, application-code: 262ms)
+ GET /api/community/submissions 200 in 753ms (next.js: 732ms, application-code: 21ms)
+ GET /api/questions 200 in 817ms (next.js: 677ms, application-code: 140ms)
+ GET / 200 in 207ms (next.js: 6ms, application-code: 201ms)
+ GET /api/community/submissions 200 in 19ms (next.js: 8ms, application-code: 10ms)
+ GET /api/questions 200 in 174ms (next.js: 3ms, application-code: 171ms)
+✓ Compiled in 142ms
+ GET / 200 in 1278ms (next.js: 927ms, application-code: 351ms)
+✓ Compiled in 59ms
+ GET / 200 in 313ms (next.js: 6ms, application-code: 307ms)
+ GET /api/community/submissions 200 in 686ms (next.js: 671ms, application-code: 15ms)
+ GET /api/questions 200 in 206ms (next.js: 21ms, application-code: 185ms)
+ GET / 200 in 277ms (next.js: 6ms, application-code: 271ms)
+ GET /api/community/submissions 200 in 12ms (next.js: 4ms, application-code: 8ms)
+ GET /api/questions 200 in 153ms (next.js: 4ms, application-code: 150ms)
+ GET /api/questions 200 in 222ms (next.js: 5ms, application-code: 217ms)

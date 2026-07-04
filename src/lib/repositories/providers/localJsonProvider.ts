@@ -109,8 +109,8 @@ function createInitialState(): LocalState {
 
 const localState = createInitialState();
 
-function limit<T>(items: T[], size = 500) {
-  return items.slice(0, size);
+function limit<T>(items: T[], size?: number) {
+  return typeof size === 'number' ? items.slice(0, size) : items;
 }
 
 function findById<T extends { id: string | number }>(items: T[], itemId: string | number) {

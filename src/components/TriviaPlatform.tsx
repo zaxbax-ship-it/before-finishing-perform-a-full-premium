@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
 import {
   type AuditLogEntry,
@@ -53,6 +53,7 @@ const LANGUAGE_OPTIONS: Array<{ value: Locale; label: string; native: string }> 
 
 const MONEY = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 250000, 400000, 550000, 700000, 850000, 1000000, 1000000];
 const SAFE_STEPS = [4, 9, 14];
+const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
 const SETTINGS_KEY = 'premium-trivia-settings-v3';
 const EXTRA_KEY = 'premium-trivia-extra-questions-v3';
@@ -689,12 +690,12 @@ const TONES: Record<string, { notes: number[]; type: OscillatorType; step: numbe
   suspense: { notes: [196, 208], type: 'sine', step: 0.16, length: 0.4, volume: 0.06 }
 };
 
-const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string }> = {
-  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'ממשיכים מיד לשאלה הבאה' },
-  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'The next question starts in a moment' },
-  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'السؤال التالي سيبدأ بعد لحظة' },
-  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Следующий вопрос начнется через мгновение' },
-  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ቀጣዩ ጥያቄ በቅርቡ ይጀምራል' }
+const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string; action: string }> = {
+  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'אפשר להמשיך מיד או לתת לשאלה הבאה להיפתח לבד', action: 'לשאלה הבאה' },
+  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'Continue now or let the next question open automatically', action: 'Next question' },
+  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'يمكنك المتابعة الآن أو انتظار السؤال التالي تلقائيا', action: 'السؤال التالي' },
+  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Можно продолжить сразу или дождаться следующего вопроса', action: 'Следующий вопрос' },
+  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'አሁን መቀጠል ወይም ቀጣዩን ጥያቄ በራሱ መጠበቅ ይችላሉ', action: 'ቀጣዩ ጥያቄ' }
 };
 
 const COMMUNITY_UI: Record<Locale, Record<string, string>> = {
@@ -893,7 +894,8 @@ function readLocal<T>(key: string, fallback: T): T {
 }
 
 export default function TriviaPlatform({ questions, initialScreen = 'home', adminHeader }: { questions: Question[]; initialScreen?: Screen; adminHeader?: ReactNode }) {
-  const baseQuestions = useMemo(() => questions.map(normalize), [questions]);
+  const [loadedQuestions, setLoadedQuestions] = useState<Question[]>(questions);
+  const baseQuestions = useMemo(() => loadedQuestions.map(normalize), [loadedQuestions]);
   const [locale, setLocale] = useState<Locale>('he');
   const [screen, setScreen] = useState<Screen>(initialScreen);
   const [extraQuestions, setExtraQuestions] = useState<GameQuestion[]>([]);
@@ -924,6 +926,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   const [communityForm, setCommunityForm] = useState<CommunityDraft>(() => emptyCommunityDraft('he'));
   const [communityMessage, setCommunityMessage] = useState('');
   const [communityProviderLabel, setCommunityProviderLabel] = useState('Local automation ready');
+  const advanceTimeoutRef = useRef<number | null>(null);
 
   const t = { ...UI[locale], ...UI_EXT[locale] };
   const communityT = COMMUNITY_UI[locale] || COMMUNITY_UI.he;
@@ -951,6 +954,27 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     setAuditLogs(readLocal(AUDIT_KEY, []));
     setSettings(readLocal(SETTINGS_KEY, { sound: true, effects: true, timer: 'דרמטית' }));
     setStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] }));
+  }, []);
+
+  useEffect(() => {
+    setLoadedQuestions(questions);
+  }, [questions]);
+
+  useEffect(() => {
+    let active = true;
+    const id = window.setTimeout(() => {
+      fetch('/api/questions', { cache: 'no-store' })
+        .then(response => response.ok ? response.json() : undefined)
+        .then(data => {
+          if (!active || !Array.isArray(data?.questions)) return;
+          setLoadedQuestions(current => data.questions.length > current.length ? data.questions : current);
+        })
+        .catch(() => undefined);
+    }, 900);
+    return () => {
+      active = false;
+      window.clearTimeout(id);
+    };
   }, []);
 
   useEffect(() => {
@@ -1016,12 +1040,30 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     return () => window.clearInterval(id);
   }, [screen]);
 
+  useEffect(() => () => clearAdvanceTimer(), []);
+
+  function clearAdvanceTimer() {
+    if (advanceTimeoutRef.current === null) return;
+    window.clearTimeout(advanceTimeoutRef.current);
+    advanceTimeoutRef.current = null;
+  }
+
+  function scheduleAdvance(callback: () => void) {
+    clearAdvanceTimer();
+    advanceTimeoutRef.current = window.setTimeout(() => {
+      advanceTimeoutRef.current = null;
+      callback();
+    }, AUTO_ADVANCE_MS);
+  }
+
   function open(next: Screen) {
+    clearAdvanceTimer();
     setScreen(next);
     tone('click', settings.sound);
   }
 
   function startGame(nextCategory = category) {
+    clearAdvanceTimer();
     const available = shuffle(allQuestions.filter(question => nextCategory === 'הכול' || question.category === nextCategory));
     if (available.length < 4) return;
     let pool = available.slice(0, 15);
@@ -1047,6 +1089,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   }
 
   function nextQuestion() {
+    clearAdvanceTimer();
     if (round >= 14) {
       finish('win', MONEY[14]);
       return;
@@ -1061,15 +1104,32 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     setNotice('');
   }
 
+  function completeAnsweredQuestion(answerIndex: number) {
+    if (!current) return;
+    if (answerIndex === current.correctIndex) {
+      nextQuestion();
+      return;
+    }
+    if (chances > 1) {
+      setChances(value => value - 1);
+      nextQuestion();
+      return;
+    }
+    finish('lost', guaranteedPrize);
+  }
+
+  function advanceAfterAnswer() {
+    if (selected === null) return;
+    clearAdvanceTimer();
+    completeAnsweredQuestion(selected);
+  }
+
   function chooseAnswer(index: number) {
     if (!current || selected !== null) return;
     setSelected(index);
     const correct = index === current.correctIndex;
     tone(correct ? 'correct' : 'wrong', settings.sound);
-    window.setTimeout(() => {
-      if (correct) nextQuestion();
-      else loseChance('lost');
-    }, 3200);
+    scheduleAdvance(() => completeAnsweredQuestion(index));
   }
 
   function loseChance(reason: EndState) {
@@ -1077,13 +1137,14 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     if (chances > 1) {
       setChances(value => value - 1);
       setNotice(reason === 'timeout' ? t.timeoutNotice : t.wrongNotice);
-      window.setTimeout(nextQuestion, 3200);
+      scheduleAdvance(nextQuestion);
       return;
     }
     finish(reason, guaranteedPrize);
   }
 
   function finish(state: EndState, prize: number) {
+    clearAdvanceTimer();
     setEndState(state);
     setFinalPrize(prize);
     setScreen('result');
@@ -1320,7 +1381,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       {settings.effects && <Particles />}
       {screen === 'admin' && adminHeader}
       <Header t={t} locale={locale} setLocale={setLocale} open={open} start={() => open('categories')} />
-      {screen === 'home' && <Home t={t} start={() => open('categories')} admin={() => open('admin')} />}
+      {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} start={() => open('categories')} admin={() => open('admin')} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={allQuestions} startGame={startGame} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
       {screen === 'submit' && (
@@ -1354,6 +1415,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
           advice={advice}
           notice={notice}
           chooseAnswer={chooseAnswer}
+          advanceAfterAnswer={advanceAfterAnswer}
           triggerLifeline={triggerLifeline}
           quit={() => finish('quit', currentPrize || guaranteedPrize)}
         />
@@ -1467,7 +1529,8 @@ function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (local
   );
 }
 
-function Home({ t, start, admin }: { t: Record<string, string>; start: () => void; admin: () => void }) {
+function Home({ t, locale, questionCount, start, admin }: { t: Record<string, string>; locale: Locale; questionCount: number; start: () => void; admin: () => void }) {
+  const formattedQuestionCount = new Intl.NumberFormat(locale === 'he' ? 'he-IL' : locale).format(questionCount);
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
       <div className="grid min-h-[calc(100vh-104px)] items-center gap-12 lg:grid-cols-[.86fr_1fr]">
@@ -1476,7 +1539,7 @@ function Home({ t, start, admin }: { t: Record<string, string>; start: () => voi
           <div className="relative grid h-full place-items-center text-center">
             <div>
               <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]">🏆</div>
-              <div className="text-6xl font-black md:text-7xl">{money(1000000)}</div>
+              <div className="home-prize-amount text-6xl font-black md:text-7xl">{money(1000000)}</div>
               <p className="mt-8 text-white/65">{t.live}</p>
               <div className="mx-auto mt-8 h-2 w-80 rounded-full bg-gradient-to-l from-gold to-azure" />
             </div>
@@ -1491,7 +1554,7 @@ function Home({ t, start, admin }: { t: Record<string, string>; start: () => voi
             <button className="ghost-button focus-ring text-lg" onClick={admin}>{t.manage}</button>
           </div>
           <div className="mt-9 grid gap-4 md:grid-cols-3">
-            <Metric value="+500" label={t.homeQuestions} />
+            <Metric value={`${formattedQuestionCount}+`} label={t.homeQuestions} />
             <Metric value="3" label={t.chancesLabel} />
             <Metric value={money(1000000)} label={t.homePrize} gold />
           </div>
@@ -1555,10 +1618,11 @@ function Game(props: {
   advice: string;
   notice: string;
   chooseAnswer: (index: number) => void;
+  advanceAfterAnswer: () => void;
   triggerLifeline: (type: Lifeline) => void;
   quit: () => void;
 }) {
-  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, triggerLifeline, quit } = props;
+  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit } = props;
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
   const infoUi = INFO_UI[locale];
   const answerInfo = selected !== null ? {
@@ -1589,12 +1653,18 @@ function Game(props: {
         </div>
         {answerInfo && (
           <div className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
-            <div>
-              <strong>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</strong>
-              <small>{infoUi.answer}: {answerInfo.answer}</small>
+            <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? '✓' : '!'}</div>
+            <div className="answer-info-content">
+              <div className="answer-info-header">
+                <strong>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</strong>
+                <span>{infoUi.answer}: {answerInfo.answer}</span>
+              </div>
+              <p>{answerInfo.explanation}</p>
+              <div className="answer-info-actions">
+                <em>{infoUi.next}</em>
+                <button className="answer-info-next focus-ring" type="button" onClick={advanceAfterAnswer}>{infoUi.action}</button>
+              </div>
             </div>
-            <p>{answerInfo.explanation}</p>
-            <em>{infoUi.next}</em>
           </div>
         )}
         {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}

@@ -6,12 +6,23 @@ export class TriviaDataService {
   constructor(private readonly repositories: RepositoryProvider) {}
 
   async getPageData(): Promise<PageDataDto> {
+    const questions = await this.repositories.approvedQuestions.listGameplayQuestions({ activeOnly: true });
     return {
-      questions: await this.repositories.approvedQuestions.listGameplayQuestions({ activeOnly: true })
+      questions: balancedQuestionSample(questions, 1200)
     };
   }
 }
 
 export function createTriviaDataService(repositories = getRepositoryProvider()) {
   return new TriviaDataService(repositories);
+}
+
+function balancedQuestionSample<T extends { category: string }>(questions: T[], maxQuestions: number) {
+  if (questions.length <= maxQuestions) return questions;
+  const groups = new Map<string, T[]>();
+  for (const question of questions) {
+    groups.set(question.category, [...(groups.get(question.category) || []), question]);
+  }
+  const perCategory = Math.max(1, Math.ceil(maxQuestions / Math.max(groups.size, 1)));
+  return Array.from(groups.values()).flatMap(group => group.slice(0, perCategory)).slice(0, maxQuestions);
 }
