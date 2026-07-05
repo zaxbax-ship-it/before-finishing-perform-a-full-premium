@@ -22,9 +22,9 @@ export default function LoginForm({
   const [error, setError] = useState('');
 
   function redirectTarget() {
-    if (typeof window === 'undefined') return '/admin';
+    if (typeof window === 'undefined') return '/';
     const target = new URLSearchParams(window.location.search).get('redirect');
-    return target && target.startsWith('/') ? target : '/admin';
+    return target && target.startsWith('/') ? target : '/';
   }
 
   async function onPasswordSubmit(event: React.FormEvent) {
@@ -56,7 +56,7 @@ export default function LoginForm({
   }
 
   return (
-    <AuthShell title="כניסת מנהלים" subtitle="גישה מאובטחת לאזור הניהול">
+    <AuthShell title="כניסה לחשבון" subtitle="חזרו למשחק, לסטטיסטיקות וללוח השיאים שלכם">
       {!supabaseConfigured && (
         <AuthMessage tone="warn">
           התחברות אינה מופעלת בסביבה זו. יש לחבר את Supabase Auth כדי להתחבר.
@@ -94,10 +94,10 @@ export default function LoginForm({
         </form>
       )}
 
-      <GoogleButton label="כניסה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || !googleOAuthConfigured || busy} />
+      {googleOAuthConfigured && <GoogleButton label="כניסה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || busy} />}
       {!googleOAuthConfigured && supabaseConfigured && (
         <AuthMessage tone="warn">
-          כניסה עם Google עדיין לא מחוברת בפרויקט. כניסה באמצעות אימייל וסיסמה ממשיכה לעבוד כרגיל.
+          כניסה עם Google תוכן בהמשך. בינתיים אפשר להתחבר באימייל וסיסמה.
         </AuthMessage>
       )}
 

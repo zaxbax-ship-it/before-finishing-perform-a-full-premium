@@ -1,7 +1,7 @@
 import { isEmailPasswordEnabled, isGoogleOAuthConfigured, isSupabaseAuthConfigured } from '@/lib/auth/config';
 import LoginForm from './LoginForm';
 
-export const metadata = { title: 'כניסת מנהלים · משחק השעשועון' };
+export const metadata = { title: 'כניסה לחשבון · משחק השעשועון' };
 
 export default function LoginPage() {
   return (

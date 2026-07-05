@@ -15,13 +15,23 @@ import {
 import { localizeCategory, localizeCategoryDescription, localizeQuestion } from '@/lib/localization';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import type { LeaderboardEntry } from '@/lib/domain/models';
+import { createAuthService } from '@/lib/auth/authService';
+import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
 import type { Locale, Question } from '@/lib/types';
+import type { User } from '@supabase/supabase-js';
 
 type GameQuestion = Question & { answers: string[]; imageUrl?: string };
 type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings' | 'submit' | 'leaderboard' | 'multiplayer';
 type EndState = 'win' | 'quit' | 'timeout' | 'lost';
 type Lifeline = 'fifty' | 'swap' | 'phone' | 'audience';
 type LeaderboardStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'taken' | 'error';
+type PublicAuthUser = {
+  id: string;
+  email?: string;
+  displayName?: string;
+  avatarUrl?: string;
+  createdAt?: string;
+};
 
 type Settings = {
   sound: boolean;
@@ -64,6 +74,175 @@ const EXTRA_KEY = 'premium-trivia-extra-questions-v3';
 const COMMUNITY_KEY = 'premium-trivia-community-submissions-v1';
 const AUDIT_KEY = 'premium-trivia-audit-log-v1';
 const NICKNAME_KEY = 'premium-trivia-public-nickname-v1';
+const RESERVED_NICKNAMES = new Set([
+  'admin',
+  'administrator',
+  'moderator',
+  'owner',
+  'support',
+  'official',
+  'system',
+  'staff',
+  'team',
+  'google',
+  'supabase',
+  'root',
+  'null',
+  'undefined'
+]);
+
+const AUTH_UI: Record<Locale, Record<string, string>> = {
+  he: {
+    signIn: 'כניסה',
+    createAccount: 'יצירת חשבון',
+    account: 'חשבון',
+    guest: 'אורח',
+    profile: 'הפרופיל שלי',
+    stats: 'הסטטיסטיקה שלי',
+    achievements: 'הישגים',
+    leaderboard: 'לוח שיאים',
+    settings: 'הגדרות',
+    logout: 'יציאה',
+    nicknamePrompt: 'בחרו כינוי ציבורי לשמירת שיאים ומשחקים מרובי משתתפים.',
+    nicknamePlaceholder: 'כינוי ציבורי',
+    saveNickname: 'שמירת כינוי',
+    googleSoon: 'כניסה עם Google תופעל בהמשך.',
+    guestCtaTitle: 'שמרו את ההתקדמות שלכם',
+    guestCtaBody: 'צרו חשבון חינמי כדי לשמור סטטיסטיקות, דירוגים והישגים.',
+    privateEmail: 'אימייל פרטי',
+    memberSince: 'חבר מאז',
+    multiplayerWins: 'ניצחונות מרובי משתתפים',
+    winRate: 'אחוז ניצחון',
+    favoriteCategory: 'קטגוריה מועדפת',
+    chooseNickname: 'בחרו כינוי',
+    nicknameValid: 'הכינוי נראה טוב.',
+    nicknameShort: 'הכינוי חייב לכלול לפחות 3 תווים.',
+    nicknameLong: 'הכינוי יכול לכלול עד 20 תווים.',
+    nicknameChars: 'אפשר להשתמש באותיות, מספרים, רווח, נקודה, קו תחתון או מקף.',
+    nicknameReserved: 'הכינוי הזה שמור למערכת. נסו כינוי אחר.',
+    notSignedIn: 'לא מחובר'
+  },
+  en: {
+    signIn: 'Sign In',
+    createAccount: 'Create Account',
+    account: 'Account',
+    guest: 'Guest',
+    profile: 'My Profile',
+    stats: 'My Statistics',
+    achievements: 'My Achievements',
+    leaderboard: 'Global Leaderboard',
+    settings: 'Settings',
+    logout: 'Logout',
+    nicknamePrompt: 'Choose a public nickname for scores and multiplayer.',
+    nicknamePlaceholder: 'Public nickname',
+    saveNickname: 'Save nickname',
+    googleSoon: 'Continue with Google will be enabled later.',
+    guestCtaTitle: 'Save Your Progress',
+    guestCtaBody: 'Create a free account to save statistics, rankings and achievements.',
+    privateEmail: 'Private email',
+    memberSince: 'Member since',
+    multiplayerWins: 'Multiplayer wins',
+    winRate: 'Win rate',
+    favoriteCategory: 'Favorite category',
+    chooseNickname: 'Choose nickname',
+    nicknameValid: 'This nickname looks good.',
+    nicknameShort: 'Nickname must be at least 3 characters.',
+    nicknameLong: 'Nickname can be up to 20 characters.',
+    nicknameChars: 'Use letters, numbers, spaces, dots, underscores or hyphens.',
+    nicknameReserved: 'This nickname is reserved. Try another one.',
+    notSignedIn: 'Not signed in'
+  },
+  ar: {
+    signIn: 'تسجيل الدخول',
+    createAccount: 'إنشاء حساب',
+    account: 'الحساب',
+    guest: 'زائر',
+    profile: 'ملفي',
+    stats: 'إحصاءاتي',
+    achievements: 'إنجازاتي',
+    leaderboard: 'لوحة الصدارة',
+    settings: 'الإعدادات',
+    logout: 'تسجيل الخروج',
+    nicknamePrompt: 'اختر اسمًا علنيًا للنتائج واللعب الجماعي.',
+    nicknamePlaceholder: 'اسم علني',
+    saveNickname: 'حفظ الاسم',
+    googleSoon: 'تسجيل الدخول عبر Google سيتاح لاحقًا.',
+    guestCtaTitle: 'احفظ تقدمك',
+    guestCtaBody: 'أنشئ حسابًا مجانيًا لحفظ الإحصاءات والترتيب والإنجازات.',
+    privateEmail: 'البريد الخاص',
+    memberSince: 'عضو منذ',
+    multiplayerWins: 'انتصارات جماعية',
+    winRate: 'نسبة الفوز',
+    favoriteCategory: 'الفئة المفضلة',
+    chooseNickname: 'اختر اسمًا',
+    nicknameValid: 'هذا الاسم مناسب.',
+    nicknameShort: 'يجب أن يتكون الاسم من 3 أحرف على الأقل.',
+    nicknameLong: 'يمكن أن يصل الاسم إلى 20 حرفًا.',
+    nicknameChars: 'استخدم حروفًا أو أرقامًا أو مسافات أو نقاطًا أو شرطات.',
+    nicknameReserved: 'هذا الاسم محجوز. جرّب اسمًا آخر.',
+    notSignedIn: 'غير مسجل'
+  },
+  ru: {
+    signIn: 'Войти',
+    createAccount: 'Создать аккаунт',
+    account: 'Аккаунт',
+    guest: 'Гость',
+    profile: 'Мой профиль',
+    stats: 'Моя статистика',
+    achievements: 'Мои достижения',
+    leaderboard: 'Общий рейтинг',
+    settings: 'Настройки',
+    logout: 'Выйти',
+    nicknamePrompt: 'Выберите публичный ник для рейтинга и мультиплеера.',
+    nicknamePlaceholder: 'Публичный ник',
+    saveNickname: 'Сохранить ник',
+    googleSoon: 'Вход через Google будет доступен позже.',
+    guestCtaTitle: 'Сохраните прогресс',
+    guestCtaBody: 'Создайте бесплатный аккаунт, чтобы сохранять статистику, рейтинг и достижения.',
+    privateEmail: 'Личный email',
+    memberSince: 'Участник с',
+    multiplayerWins: 'Победы в мультиплеере',
+    winRate: 'Процент побед',
+    favoriteCategory: 'Любимая категория',
+    chooseNickname: 'Выберите ник',
+    nicknameValid: 'Этот ник выглядит хорошо.',
+    nicknameShort: 'Ник должен быть не короче 3 символов.',
+    nicknameLong: 'Ник может быть до 20 символов.',
+    nicknameChars: 'Используйте буквы, цифры, пробелы, точки, подчёркивания или дефисы.',
+    nicknameReserved: 'Этот ник зарезервирован. Попробуйте другой.',
+    notSignedIn: 'Не выполнен вход'
+  },
+  am: {
+    signIn: 'ግባ',
+    createAccount: 'መለያ ፍጠር',
+    account: 'መለያ',
+    guest: 'እንግዳ',
+    profile: 'የእኔ መገለጫ',
+    stats: 'የእኔ ስታቲስቲክስ',
+    achievements: 'የእኔ ስኬቶች',
+    leaderboard: 'የዓለም ደረጃ',
+    settings: 'ቅንብሮች',
+    logout: 'ውጣ',
+    nicknamePrompt: 'ለውጤቶች እና ለብዙ ተጫዋቾች ጨዋታ የሚታይ ስም ይምረጡ።',
+    nicknamePlaceholder: 'የሚታይ ስም',
+    saveNickname: 'ስም አስቀምጥ',
+    googleSoon: 'በGoogle መግባት በኋላ ይነቃል።',
+    guestCtaTitle: 'እድገትዎን ያስቀምጡ',
+    guestCtaBody: 'ስታቲስቲክስ፣ ደረጃ እና ስኬቶችን ለማስቀመጥ ነፃ መለያ ይፍጠሩ።',
+    privateEmail: 'የግል ኢሜይል',
+    memberSince: 'አባል ከ',
+    multiplayerWins: 'የብዙ ተጫዋቾች ድሎች',
+    winRate: 'የድል መጠን',
+    favoriteCategory: 'ተወዳጅ ምድብ',
+    chooseNickname: 'ስም ይምረጡ',
+    nicknameValid: 'ይህ ስም ጥሩ ይመስላል።',
+    nicknameShort: 'ስሙ ቢያንስ 3 ቁምፊዎች መሆን አለበት።',
+    nicknameLong: 'ስሙ እስከ 20 ቁምፊዎች መሆን ይችላል።',
+    nicknameChars: 'ፊደላት፣ ቁጥሮች፣ ክፍተቶች፣ ነጥቦች ወይም ሰረዞች ይጠቀሙ።',
+    nicknameReserved: 'ይህ ስም ተይዟል። ሌላ ይሞክሩ።',
+    notSignedIn: 'አልገቡም'
+  }
+};
 
 const UI: Record<Locale, Record<string, string>> = {
   he: {
@@ -1031,10 +1210,14 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [leaderboardStatus, setLeaderboardStatus] = useState<LeaderboardStatus>('idle');
   const [nickname, setNicknameState] = useState('');
+  const [authUser, setAuthUser] = useState<PublicAuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authConfigured, setAuthConfigured] = useState(false);
   const advanceTimeoutRef = useRef<number | null>(null);
   const advancingRef = useRef(false);
 
   const t = { ...UI[locale], ...UI_EXT[locale] };
+  const authT = AUTH_UI[locale] || AUTH_UI.en;
   const communityT = COMMUNITY_UI[locale] || COMMUNITY_UI.he;
   const multiplayerCopy = getMultiplayerCopy(locale);
   const dir = locale === 'he' || locale === 'ar' ? 'rtl' : 'ltr';
@@ -1063,6 +1246,32 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     setStats(normalizeStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] })));
     setNicknameState(readLocal(NICKNAME_KEY, ''));
     void refreshLeaderboard();
+  }, []);
+
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    setAuthConfigured(Boolean(supabase));
+    if (!supabase) {
+      setAuthReady(true);
+      return;
+    }
+
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      setAuthUser(data.user ? mapAuthUser(data.user) : null);
+      setAuthReady(true);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ? mapAuthUser(session.user) : null);
+      setAuthReady(true);
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -1195,7 +1404,8 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
 
   async function saveNickname(value: string) {
     const cleaned = value.trim().replace(/\s+/g, ' ').slice(0, 20);
-    if (cleaned.length < 3) {
+    const validation = validateNickname(cleaned, authT);
+    if (!validation.ok) {
       setLeaderboardStatus('error');
       return;
     }
@@ -1225,6 +1435,12 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       // Handled by the error state below.
     }
     setLeaderboardStatus('error');
+  }
+
+  async function signOut() {
+    await createAuthService().signOut();
+    setAuthUser(null);
+    tone('click', settings.sound);
   }
 
   async function submitLeaderboardScore(publicNickname: string, prize: number, correctCount: number) {
@@ -1581,6 +1797,19 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       <div className="language-corner">
         <LanguageMenu locale={locale} setLocale={setLocale} />
       </div>
+      {screen !== 'admin' && (
+        <PublicAuthArea
+          ui={authT}
+          user={authUser}
+          ready={authReady}
+          configured={authConfigured}
+          nickname={nickname}
+          leaderboardStatus={leaderboardStatus}
+          saveNickname={saveNickname}
+          open={open}
+          signOut={signOut}
+        />
+      )}
       {screen === 'admin' && adminHeader}
       {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
@@ -1623,7 +1852,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
           quit={() => finish('quit', currentPrize || guaranteedPrize)}
         />
       )}
-      {screen === 'result' && <Result t={t} state={endState} correctCount={round} elapsed={elapsed} prize={finalPrize} start={() => open('categories')} home={() => open('home')} />}
+      {screen === 'result' && <Result t={t} authUi={authT} isAuthenticated={Boolean(authUser)} state={endState} correctCount={round} elapsed={elapsed} prize={finalPrize} start={() => open('categories')} home={() => open('home')} />}
       {screen === 'admin' && (
         <Admin
           t={t}
@@ -1658,11 +1887,13 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
           entries={leaderboardEntries}
           status={leaderboardStatus}
           nickname={nickname}
+          locale={locale}
+          authUi={authT}
           setNickname={saveNickname}
           bestPrize={stats.bestPrize}
         />
       )}
-      {screen === 'profile' && <Profile t={t} stats={stats} />}
+      {screen === 'profile' && <PremiumProfile t={t} authUi={authT} user={authUser} nickname={nickname} stats={stats} />}
       {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => setPendingPaid(null)} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
     </main>
@@ -1741,6 +1972,114 @@ function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (local
       )}
     </div>
   );
+}
+
+function PublicAuthArea({
+  ui,
+  user,
+  ready,
+  configured,
+  nickname,
+  leaderboardStatus,
+  saveNickname,
+  open,
+  signOut
+}: {
+  ui: Record<string, string>;
+  user: PublicAuthUser | null;
+  ready: boolean;
+  configured: boolean;
+  nickname: string;
+  leaderboardStatus: LeaderboardStatus;
+  saveNickname: (value: string) => void | Promise<void>;
+  open: (screen: Screen) => void;
+  signOut: () => void | Promise<void>;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [draft, setDraft] = useState(nickname);
+
+  useEffect(() => {
+    setDraft(nickname);
+  }, [nickname]);
+
+  const displayName = nickname || user?.displayName || user?.email?.split('@')[0] || ui.guest;
+  const validation = validateNickname(draft, ui);
+  const shouldPromptNickname = Boolean(user && !nickname);
+  const initials = initialsFor(displayName);
+
+  if (!ready) {
+    return (
+      <div className="public-auth-corner" aria-label={ui.account}>
+        <div className="public-auth-skeleton" />
+      </div>
+    );
+  }
+
+  if (!configured || !user) {
+    return (
+      <nav className="public-auth-corner public-auth-actions" aria-label={ui.account}>
+        <a className="auth-link-button secondary focus-ring" href="/login">{ui.signIn}</a>
+        <a className="auth-link-button primary focus-ring" href="/signup">{ui.createAccount}</a>
+      </nav>
+    );
+  }
+
+  return (
+    <div className="public-auth-corner public-user-menu">
+      <button
+        type="button"
+        className="public-user-trigger focus-ring"
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(value => !value)}
+      >
+        <Avatar user={user} initials={initials} />
+        <span>
+          <strong>{displayName}</strong>
+          <small>{user.email || ui.account}</small>
+        </span>
+      </button>
+
+      {menuOpen && (
+        <div className="public-user-dropdown glass" role="menu">
+          {shouldPromptNickname && (
+            <section className="nickname-prompt" aria-label={ui.chooseNickname}>
+              <strong>{ui.chooseNickname}</strong>
+              <p>{ui.nicknamePrompt}</p>
+              <input
+                className="form-input"
+                value={draft}
+                maxLength={20}
+                onChange={event => setDraft(event.target.value)}
+                placeholder={ui.nicknamePlaceholder}
+              />
+              <small className={validation.ok ? 'nickname-valid' : 'nickname-invalid'}>{validation.message}</small>
+              <button
+                type="button"
+                className="premium-button focus-ring w-full"
+                disabled={!validation.ok || leaderboardStatus === 'saving'}
+                onClick={() => void saveNickname(draft)}
+              >
+                {ui.saveNickname}
+              </button>
+            </section>
+          )}
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}>{ui.profile}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}>{ui.stats}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}>{ui.achievements}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('leaderboard'); }}>{ui.leaderboard}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('settings'); }}>{ui.settings}</button>
+          <button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); void signOut(); }}>{ui.logout}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Avatar({ user, initials }: { user: PublicAuthUser; initials: string }) {
+  return user.avatarUrl
+    ? <img className="public-avatar" src={user.avatarUrl} alt="" />
+    : <span className="public-avatar" aria-hidden="true">{initials}</span>;
 }
 
 function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, open }: { t: Record<string, string>; locale: Locale; questionCount: number; soloLabel: string; multiplayerLabel: string; start: () => void; open: (screen: Screen) => void }) {
@@ -2020,7 +2359,7 @@ function CommunitySubmit(props: {
   );
 }
 
-function Result({ t, state, correctCount, elapsed, prize, start, home }: { t: Record<string, string>; state: EndState; correctCount: number; elapsed: number; prize: number; start: () => void; home: () => void }) {
+function Result({ t, authUi, isAuthenticated, state, correctCount, elapsed, prize, start, home }: { t: Record<string, string>; authUi: Record<string, string>; isAuthenticated: boolean; state: EndState; correctCount: number; elapsed: number; prize: number; start: () => void; home: () => void }) {
   const title = state === 'win' ? t.winTitle : state === 'quit' ? t.quitTitle : state === 'timeout' ? t.timeoutTitle : t.lostTitle;
   const time = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
   return (
@@ -2030,17 +2369,29 @@ function Result({ t, state, correctCount, elapsed, prize, start, home }: { t: Re
         <h2 className="text-5xl font-black">{title}</h2>
         <p className="mx-auto mt-4 max-w-2xl text-xl leading-8 text-white/70">{fmt(t.resultSummary, { correct: correctCount, time, prize: money(prize) })}</p>
         <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
+        {!isAuthenticated && (
+          <div className="guest-progress-cta" role="note">
+            <strong>{authUi.guestCtaTitle}</strong>
+            <p>{authUi.guestCtaBody}</p>
+            <div>
+              <a className="ghost-button focus-ring" href="/login">{authUi.signIn}</a>
+              <a className="premium-button focus-ring" href="/signup">{authUi.createAccount}</a>
+            </div>
+          </div>
+        )}
         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row"><button className="premium-button focus-ring" onClick={start}>{t.playAgain}</button><button className="ghost-button focus-ring" onClick={() => navigator.share?.({ title: t.headline, text: fmt(t.shareText, { prize: money(prize) }) })}>{t.shareBtn}</button><button className="ghost-button focus-ring" onClick={home}>{t.home}</button></div>
       </div>
     </section>
   );
 }
 
-function Leaderboard({ t, entries, status, nickname, setNickname, bestPrize }: {
+function Leaderboard({ t, entries, status, nickname, authUi, setNickname, bestPrize }: {
   t: Record<string, string>;
   entries: LeaderboardEntry[];
   status: LeaderboardStatus;
   nickname: string;
+  locale: Locale;
+  authUi: Record<string, string>;
   setNickname: (value: string) => void | Promise<void>;
   bestPrize: number;
 }) {
@@ -2050,6 +2401,7 @@ function Leaderboard({ t, entries, status, nickname, setNickname, bestPrize }: {
     setDraft(nickname);
   }, [nickname]);
 
+  const validation = validateNickname(draft, authUi);
   const message = status === 'loading' || status === 'saving'
     ? t.lbLoading
     : status === 'saved'
@@ -2076,12 +2428,16 @@ function Leaderboard({ t, entries, status, nickname, setNickname, bestPrize }: {
               maxLength={20}
               onChange={event => setDraft(event.target.value)}
               placeholder={t.lbNickname}
+              aria-invalid={draft.length > 0 && !validation.ok}
             />
           </Field>
+          <p className={validation.ok ? 'nickname-live-message valid' : 'nickname-live-message invalid'} aria-live="polite">
+            {draft.trim() ? validation.message : authUi.nicknamePrompt}
+          </p>
           <p className="leaderboard-hint">{t.lbNicknameHint}</p>
           <button
             className="premium-button focus-ring w-full"
-            disabled={status === 'saving' || draft.trim().length < 3}
+            disabled={status === 'saving' || !validation.ok}
             onClick={() => void setNickname(draft)}
           >
             {t.lbSave}
@@ -2295,6 +2651,45 @@ function Profile({ t, stats }: { t: Record<string, string>; stats: Stats }) {
   return <Panel title={t.profile} icon="★"><div className="grid gap-4 md:grid-cols-3"><Metric value={String(stats.games)} label={t.gamesPlayed} /><Metric value={money(stats.bestPrize)} label={t.bestWin} gold /><Metric value={String(stats.correct)} label={t.correctTotal} /><Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold /><Metric value={String(stats.lifelines)} label={t.lifelinesUsed} /><Metric value={String(stats.achievements.length)} label={t.achievementsLbl} /></div><div className="mt-6 rounded-3xl border border-white/12 bg-white/[0.07] p-5"><h3 className="mb-3 text-xl font-black">{t.achievementsLbl}</h3><div className="flex flex-wrap gap-3">{stats.achievements.map(item => <span key={item} className="rounded-full bg-gold/15 px-4 py-2 text-sm font-bold text-gold">{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div></div></Panel>;
 }
 
+function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record<string, string>; authUi: Record<string, string>; user: PublicAuthUser | null; nickname: string; stats: Stats }) {
+  const displayName = nickname || user?.displayName || user?.email?.split('@')[0] || authUi.notSignedIn;
+  const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—';
+  const highestCorrect = Math.min(15, stats.correct);
+  const winRate = stats.games > 0 && stats.bestPrize >= 1000000 ? `${Math.round((1 / stats.games) * 100)}%` : '0%';
+
+  return (
+    <Panel title={t.profile} icon="ג˜…">
+      <section className="profile-hero-card">
+        {user?.avatarUrl ? <img className="profile-avatar" src={user.avatarUrl} alt="" /> : <span className="profile-avatar" aria-hidden="true">{initialsFor(displayName)}</span>}
+        <div>
+          <p>{authUi.account}</p>
+          <h3>{displayName}</h3>
+          <span>{nickname || authUi.chooseNickname}</span>
+        </div>
+      </section>
+      <div className="profile-metrics-grid">
+        <Metric value={nickname || '—'} label={authUi.nicknamePlaceholder} />
+        <Metric value={displayName} label="Display Name" />
+        <Metric value={user?.email || '—'} label={authUi.privateEmail} />
+        <Metric value={String(stats.games)} label={t.gamesPlayed} />
+        <Metric value={money(stats.bestPrize)} label={t.bestWin} gold />
+        <Metric value={String(highestCorrect)} label={authUi.stats} />
+        <Metric value="0" label={authUi.multiplayerWins} />
+        <Metric value={winRate} label={authUi.winRate} />
+        <Metric value="—" label={authUi.favoriteCategory} />
+        <Metric value={memberSince} label={authUi.memberSince} />
+        <Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold />
+        <Metric value={String(stats.lifelines)} label={t.lifelinesUsed} />
+      </div>
+      <div className="profile-achievements-card">
+        <h3>{t.achievementsLbl}</h3>
+        <div>{stats.achievements.map(item => <span key={item}>{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div>
+        <p>{authUi.achievements}</p>
+      </div>
+    </Panel>
+  );
+}
+
 function SettingsPanel({ t, settings, setSettings, reset }: { t: Record<string, string>; settings: Settings; setSettings: (settings: Settings | ((settings: Settings) => Settings)) => void; reset: () => void }) {
   const timerOptions = [
     { value: 'רגועה', label: t.timerCalm },
@@ -2302,6 +2697,42 @@ function SettingsPanel({ t, settings, setSettings, reset }: { t: Record<string, 
     { value: 'אינטנסיבית', label: t.timerIntense }
   ];
   return <Panel title={t.settings} icon="⚙"><div className="grid gap-4"><label className="setting-row"><span>{t.soundLbl}</span><input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} /></label><label className="setting-row"><span>{t.effectsLbl}</span><input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} /></label><Field label={t.timerLbl}><select className="form-input" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>{timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field><button className="ghost-button focus-ring" onClick={reset}>{t.resetData}</button></div></Panel>;
+}
+
+function mapAuthUser(user: User): PublicAuthUser {
+  const metadata = user.user_metadata || {};
+  const displayName = typeof metadata.full_name === 'string' && metadata.full_name.trim()
+    ? metadata.full_name.trim()
+    : typeof metadata.name === 'string' && metadata.name.trim()
+      ? metadata.name.trim()
+      : undefined;
+  const avatarUrl = typeof metadata.avatar_url === 'string' ? metadata.avatar_url : undefined;
+  return {
+    id: user.id,
+    email: user.email || undefined,
+    displayName,
+    avatarUrl,
+    createdAt: user.created_at
+  };
+}
+
+function initialsFor(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(item => item[0])
+    .join('')
+    .toUpperCase() || 'U';
+}
+
+function validateNickname(value: string, ui: Record<string, string>) {
+  const cleaned = value.trim().replace(/\s+/g, ' ');
+  if (cleaned.length < 3) return { ok: false, message: ui.nicknameShort };
+  if (cleaned.length > 20) return { ok: false, message: ui.nicknameLong };
+  if (!/^[\p{L}\p{N} _.-]+$/u.test(cleaned)) return { ok: false, message: ui.nicknameChars };
+  if (RESERVED_NICKNAMES.has(cleaned.toLowerCase())) return { ok: false, message: ui.nicknameReserved };
+  return { ok: true, message: ui.nicknameValid };
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

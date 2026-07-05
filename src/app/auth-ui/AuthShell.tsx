@@ -13,7 +13,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
             <span className="auth-brand-badge">♕</span>
             <span>
               <strong>משחק השעשועון</strong>
-              <small>אזור מנהלים</small>
+              <small>אזור אישי מאובטח</small>
             </span>
           </Link>
           <h1 className="auth-title">{title}</h1>

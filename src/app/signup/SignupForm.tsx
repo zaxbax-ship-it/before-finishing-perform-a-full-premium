@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createAuthService } from '@/lib/auth/authService';
 import { AuthShell, AuthField, AuthMessage, GoogleButton } from '../auth-ui/AuthShell';
 
@@ -16,12 +17,19 @@ export default function SignupForm({
   emailPasswordEnabled: boolean;
   googleOAuthConfigured: boolean;
 }) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+
+  function redirectTarget() {
+    if (typeof window === 'undefined') return '/';
+    const target = new URLSearchParams(window.location.search).get('redirect');
+    return target && target.startsWith('/') ? target : '/';
+  }
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -43,7 +51,8 @@ export default function SignupForm({
       return;
     }
     if (result.status === 'ok') {
-      setNotice('החשבון נוצר. אפשר להתחבר כעת.');
+      router.replace(redirectTarget());
+      router.refresh();
       return;
     }
     setError(result.message || 'ההרשמה נכשלה. נסו שוב.');
@@ -64,7 +73,7 @@ export default function SignupForm({
   }
 
   return (
-    <AuthShell title="יצירת חשבון" subtitle="הרשמה לאזור המנהלים">
+    <AuthShell title="יצירת חשבון" subtitle="שמרו התקדמות, כינוי, סטטיסטיקות ודירוגים">
       {!supabaseConfigured && (
         <AuthMessage tone="warn">
           הרשמה אינה מופעלת בסביבה זו. יש לחבר את Supabase Auth כדי ליצור חשבון.
@@ -90,10 +99,10 @@ export default function SignupForm({
         </form>
       )}
 
-      <GoogleButton label="הרשמה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || !googleOAuthConfigured || busy} />
+      {googleOAuthConfigured && <GoogleButton label="הרשמה עם Google" onClick={onGoogle} disabled={!supabaseConfigured || busy} />}
       {!googleOAuthConfigured && supabaseConfigured && (
         <AuthMessage tone="warn">
-          הרשמה עם Google עדיין לא מחוברת בפרויקט. הרשמה באמצעות אימייל וסיסמה ממשיכה לעבוד כרגיל.
+          הרשמה עם Google תוכן בהמשך. בינתיים אפשר ליצור חשבון באימייל וסיסמה.
         </AuthMessage>
       )}
 

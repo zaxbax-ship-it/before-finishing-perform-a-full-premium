@@ -11,6 +11,22 @@ type LeaderboardPostBody = {
 };
 
 const NICKNAME_PATTERN = /^[\p{L}\p{N} _.-]{3,20}$/u;
+const RESERVED_NICKNAMES = new Set([
+  'admin',
+  'administrator',
+  'moderator',
+  'owner',
+  'support',
+  'official',
+  'system',
+  'staff',
+  'team',
+  'google',
+  'supabase',
+  'root',
+  'null',
+  'undefined'
+]);
 
 function numberFromBody(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
@@ -43,6 +59,13 @@ export async function POST(request: Request) {
     if (!NICKNAME_PATTERN.test(nickname)) {
       return NextResponse.json(
         { ok: false, error: 'Nickname must be 3-20 characters and may include letters, numbers, spaces, dots, underscores or hyphens.' },
+        { status: 400 }
+      );
+    }
+
+    if (RESERVED_NICKNAMES.has(nickname.toLowerCase())) {
+      return NextResponse.json(
+        { ok: false, status: 'nickname_reserved', error: 'This nickname is reserved. Try another one.' },
         { status: 400 }
       );
     }
