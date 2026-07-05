@@ -59,7 +59,6 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       maxPlayers: input.maxPlayers,
       locale: input.locale,
       category: input.category,
-      hostPlayerId: playerId,
       createdAt: date,
       updatedAt: date,
       expiresAt: new Date(Date.now() + LOBBY_TTL_MS).toISOString()
@@ -81,6 +80,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
 
     await repositories.multiplayer.createLobby(lobby);
     await repositories.multiplayer.createPlayer(player);
+    const hostedLobby = await repositories.multiplayer.updateLobby(lobby.id, { hostPlayerId: playerId, updatedAt: date }) || { ...lobby, hostPlayerId: playerId };
     await recordAudit('multiplayer_lobby_created', 'multiplayer_lobby', lobby.id, {
       maxPlayers: lobby.maxPlayers,
       locale: lobby.locale,
@@ -88,7 +88,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     });
     return {
       ok: true,
-      lobby: await summarizeLobby(lobby),
+      lobby: await summarizeLobby(hostedLobby),
       credentials: { playerId, playerToken: token }
     };
   }
