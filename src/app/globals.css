@@ -90,7 +90,7 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .language-corner .language-menu{width:auto}
 .language-corner .language-trigger{min-height:48px;min-width:124px;padding:6px 15px;background:linear-gradient(145deg,hsla(0,0%,100%,.18),hsla(0,0%,100%,.06));box-shadow:0 18px 46px rgba(0,0,0,.28),inset 0 1px 0 hsla(0,0%,100%,.2)}
 .language-corner .language-panel{left:0;right:auto;inset-inline-start:0;inset-inline-end:auto;width:224px}
-.public-header{padding-left:170px}
+.public-header{padding-top:78px}
 .home-actions{margin-top:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.85rem;border:1px solid hsla(0,0%,100%,.13);border-radius:28px;background:linear-gradient(145deg,hsla(0,0%,100%,.105),hsla(0,0%,100%,.035));box-shadow:0 24px 74px rgba(0,0,0,.24),inset 0 1px 0 hsla(0,0%,100%,.12);padding:1rem}
 .home-actions .ghost-button{width:100%;min-height:54px}
 .leaderboard-layout{display:grid;grid-template-columns:minmax(280px,.78fr) 1.22fr;gap:1.1rem;align-items:start}

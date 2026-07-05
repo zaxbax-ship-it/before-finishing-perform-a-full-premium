@@ -1794,22 +1794,28 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   return (
     <main className={`app-shell font-hebrew premium-typography ${screen === 'game' ? 'game-active' : ''} ${screen === 'admin' ? 'admin-active' : ''}`} dir={dir}>
       {settings.effects && <Particles />}
-      <div className="language-corner">
-        <LanguageMenu locale={locale} setLocale={setLocale} />
+      {/* Single shared utility bar: language (physical left) and account (physical
+          right) live in one flex row, so they can never overlap on any device. */}
+      <div className="top-utility-bar" dir="ltr">
+        <div className="language-corner">
+          <LanguageMenu locale={locale} setLocale={setLocale} />
+        </div>
+        {screen !== 'admin' && (
+          <div className="top-utility-auth" dir={dir}>
+            <PublicAuthArea
+              ui={authT}
+              user={authUser}
+              ready={authReady}
+              configured={authConfigured}
+              nickname={nickname}
+              leaderboardStatus={leaderboardStatus}
+              saveNickname={saveNickname}
+              open={open}
+              signOut={signOut}
+            />
+          </div>
+        )}
       </div>
-      {screen !== 'admin' && (
-        <PublicAuthArea
-          ui={authT}
-          user={authUser}
-          ready={authReady}
-          configured={authConfigured}
-          nickname={nickname}
-          leaderboardStatus={leaderboardStatus}
-          saveNickname={saveNickname}
-          open={open}
-          signOut={signOut}
-        />
-      )}
       {screen === 'admin' && adminHeader}
       {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
@@ -1945,27 +1951,54 @@ function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: Record<s
 
 function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (locale: Locale) => void }) {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const active = LANGUAGE_OPTIONS.find(item => item.value === locale) || LANGUAGE_OPTIONS[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const closeFromOutside = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const closeFromKeyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeFromOutside);
+    document.addEventListener('keydown', closeFromKeyboard);
+    return () => {
+      document.removeEventListener('pointerdown', closeFromOutside);
+      document.removeEventListener('keydown', closeFromKeyboard);
+    };
+  }, [open]);
+
   return (
-    <div className="language-menu">
-      <button className="language-trigger focus-ring" type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-label="Language">
-        <span>{active.native}</span>
-        {active.label !== active.native && <small>{active.label}</small>}
+    <div className="language-menu" ref={menuRef}>
+      <button
+        className="language-trigger language-icon-trigger focus-ring"
+        type="button"
+        onClick={() => setOpen(value => !value)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={`Language: ${active.native}`}
+        title="Language"
+      >
+        <span className="language-globe" aria-hidden="true">🌐</span>
+        <span className="sr-only">Language: {active.native}</span>
       </button>
       {open && (
-        <div className="language-panel glass">
+        <div className="language-panel glass" role="menu" aria-label="Choose language">
           {LANGUAGE_OPTIONS.map(item => (
             <button
               key={item.value}
               type="button"
               className={item.value === locale ? 'language-option active' : 'language-option'}
+              role="menuitemradio"
+              aria-checked={item.value === locale}
               onClick={() => {
                 setLocale(item.value);
                 setOpen(false);
               }}
             >
               <span>{item.native}</span>
-              {item.label !== item.native && <small>{item.label}</small>}
             </button>
           ))}
         </div>
@@ -2085,7 +2118,7 @@ function Avatar({ user, initials }: { user: PublicAuthUser; initials: string }) 
 function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, open }: { t: Record<string, string>; locale: Locale; questionCount: number; soloLabel: string; multiplayerLabel: string; start: () => void; open: (screen: Screen) => void }) {
   const formattedQuestionCount = new Intl.NumberFormat(locale === 'he' ? 'he-IL' : locale).format(questionCount);
   return (
-    <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-16 md:pt-8 lg:px-8">
+    <section className="home-landing mx-auto w-full max-w-[1680px] px-5 pb-16 lg:px-8">
       {/* Hero first: intro through the single primary Start Game button. */}
       <div className="grid items-center gap-12 lg:grid-cols-[.86fr_1fr]">
         <div className="glass relative min-h-[420px] overflow-hidden rounded-[36px] p-8 lg:min-h-[560px]">
