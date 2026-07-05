@@ -1,12 +1,15 @@
 import type { PageDataDto } from '@/lib/domain/dtos';
 import type { RepositoryProvider } from '@/lib/repositories/interfaces';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
+import { listGameplayQuestionsWithBundledFallback } from './gameplayQuestionSource';
 
 export class TriviaDataService {
   constructor(private readonly repositories: RepositoryProvider) {}
 
-  async getPageData(): Promise<PageDataDto> {
-    const questions = await this.repositories.approvedQuestions.listGameplayQuestions({ activeOnly: true });
+  async getPageData(options: { allowBundledFallback?: boolean } = {}): Promise<PageDataDto> {
+    const questions = options.allowBundledFallback
+      ? await listGameplayQuestionsWithBundledFallback(this.repositories, { activeOnly: true }, 'page_data')
+      : await this.repositories.approvedQuestions.listGameplayQuestions({ activeOnly: true });
     return {
       questions: balancedQuestionSample(questions, 1200)
     };

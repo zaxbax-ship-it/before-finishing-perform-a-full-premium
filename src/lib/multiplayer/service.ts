@@ -2,6 +2,7 @@ import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import type { RepositoryProvider } from '@/lib/repositories/interfaces';
 import type { EntityId } from '@/lib/domain/models';
 import type { Locale, Question } from '@/lib/types';
+import { listGameplayQuestionsWithBundledFallback } from '@/lib/services/gameplayQuestionSource';
 import type {
   MultiplayerActionResult,
   MultiplayerAnswer,
@@ -472,11 +473,15 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
   }
 
   async function chooseQuestions(lobby: MultiplayerLobby): Promise<Question[]> {
-    const questions = await repositories.approvedQuestions.listGameplayQuestions({
-      category: lobby.category,
-      activeOnly: true,
-      limit: 220
-    });
+    const questions = await listGameplayQuestionsWithBundledFallback(
+      repositories,
+      {
+        category: lobby.category,
+        activeOnly: true,
+        limit: 220
+      },
+      'multiplayer_gameplay'
+    );
     return shuffle(questions).slice(0, Math.min(MAX_ROUNDS, questions.length));
   }
 
