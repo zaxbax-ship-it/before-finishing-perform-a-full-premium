@@ -137,6 +137,10 @@ function eq(column: string, value: string | number | boolean) {
   return `${column}=eq.${encode(value)}`;
 }
 
+function logicEq(column: string, value: string | number | boolean) {
+  return `${column}.eq.${encode(value)}`;
+}
+
 function limitQuery(options?: ListOptions) {
   return options?.limit ? `&limit=${Math.max(1, options.limit)}` : '';
 }
@@ -1204,11 +1208,18 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       },
       async findPlayerByIdentity(lobbyId, identity) {
         const filters = [
-          identity.authUserId ? eq('auth_user_id', identity.authUserId) : undefined,
-          identity.anonymousId ? eq('anonymous_id', identity.anonymousId) : undefined
-        ].filter(Boolean);
+          identity.authUserId
+            ? { query: eq('auth_user_id', identity.authUserId), logic: logicEq('auth_user_id', identity.authUserId) }
+            : undefined,
+          identity.anonymousId
+            ? { query: eq('anonymous_id', identity.anonymousId), logic: logicEq('anonymous_id', identity.anonymousId) }
+            : undefined
+        ].filter((filter): filter is { query: string; logic: string } => Boolean(filter));
         if (!filters.length) return undefined;
-        const rows = await client.list<SupabaseRow>('multiplayer_players', `select=*&${eq('lobby_id', lobbyId)}&or=(${filters.join(',')})&limit=1`);
+        const identityQuery = filters.length === 1
+          ? filters[0].query
+          : `or=(${filters.map(filter => filter.logic).join(',')})`;
+        const rows = await client.list<SupabaseRow>('multiplayer_players', `select=*&${eq('lobby_id', lobbyId)}&${identityQuery}&limit=1`);
         return rows[0] ? mapMultiplayerPlayer(rows[0]) : undefined;
       },
       async updatePlayer(playerId, input) {
