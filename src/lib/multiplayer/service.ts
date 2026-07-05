@@ -3,11 +3,13 @@ import type { RepositoryProvider } from '@/lib/repositories/interfaces';
 import type { EntityId } from '@/lib/domain/models';
 import type { Locale, Question } from '@/lib/types';
 import { listGameplayQuestionsWithBundledFallback } from '@/lib/services/gameplayQuestionSource';
+import { createLogger } from '@/lib/infrastructure/logger';
 import type {
   MultiplayerActionResult,
   MultiplayerAnswer,
   MultiplayerAnswerInput,
   MultiplayerCreateInput,
+  MultiplayerErrorCode,
   MultiplayerGame,
   MultiplayerJoinInput,
   MultiplayerLobby,
@@ -26,6 +28,7 @@ const PLAYER_STALE_MS = 45_000;
 const ROUND_PRIZES = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 250000, 400000];
 const MAX_ROUNDS = ROUND_PRIZES.length;
 const NICKNAME_PATTERN = /^[\p{L}\p{N} _.-]{3,20}$/u;
+const multiplayerServiceLogger = createLogger('multiplayer-service');
 
 const now = () => new Date();
 const iso = () => now().toISOString();
@@ -47,7 +50,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
 
   async function createLobby(input: MultiplayerCreateInput): Promise<MultiplayerActionResult> {
     const nickname = cleanNickname(input.nickname);
-    if (!isValidNickname(nickname)) return fail('Nickname must be 3-20 characters.');
+    if (!isValidNickname(nickname)) return fail('Nickname must be 3-20 characters.', 'invalid_nickname');
 
     const date = iso();
     const token = createPlayerToken();
@@ -110,15 +113,15 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
 
   async function joinLobby(input: MultiplayerJoinInput): Promise<MultiplayerActionResult> {
     const nickname = cleanNickname(input.nickname);
-    if (!isValidNickname(nickname)) return fail('Nickname must be 3-20 characters.');
+    if (!isValidNickname(nickname)) return fail('Nickname must be 3-20 characters.', 'invalid_nickname');
 
     const lobby = await repositories.multiplayer.findLobby(input.lobbyId);
-    if (!lobby) return fail('Lobby was not found.');
+    if (!lobby) return fail('Lobby was not found.', 'lobby_not_found');
     if (isExpired(lobby.expiresAt)) {
       await repositories.multiplayer.updateLobby(lobby.id, { status: 'expired', updatedAt: iso() });
-      return fail('Lobby expired.');
+      return fail('Lobby expired.', 'lobby_expired');
     }
-    if (lobby.status !== 'waiting' && lobby.status !== 'ready') return fail('Lobby is not accepting players.');
+    if (lobby.status !== 'waiting' && lobby.status !== 'ready') return fail('Lobby is not accepting players.', 'lobby_not_accepting');
 
     const existingPlayer = await repositories.multiplayer.findPlayerByIdentity(lobby.id, {
       authUserId: input.authUserId,
@@ -143,9 +146,9 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     }
 
     const players = await repositories.multiplayer.listPlayers(lobby.id);
-    if (players.length >= lobby.maxPlayers) return fail('Lobby is full.');
+    if (players.length >= lobby.maxPlayers) return fail('Lobby is full.', 'lobby_full');
     if (players.some(player => normalizeNicknameKey(player.nickname) === normalizeNicknameKey(nickname))) {
-      return fail('Nickname is already used in this lobby.');
+      return fail('Nickname is already used in this lobby.', 'nickname_taken');
     }
 
     const date = iso();
@@ -164,7 +167,41 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       lastSeenAt: date
     };
 
-    await repositories.multiplayer.createPlayer(player);
+    try {
+      await repositories.multiplayer.createPlayer(player);
+    } catch (error) {
+      const replay = await repositories.multiplayer.findPlayerByIdentity(lobby.id, {
+        authUserId: input.authUserId,
+        anonymousId: input.anonymousId
+      });
+      if (replay) {
+        await repositories.multiplayer.updatePlayer(replay.id, {
+          nickname,
+          displayName: input.displayName || replay.displayName,
+          connectionTokenHash: await hashToken(token),
+          isConnected: true,
+          lastSeenAt: date,
+          disconnectedAt: undefined
+        });
+        return {
+          ok: true,
+          lobby: await summarizeLobby(lobby),
+          gameState: await getLobbyState(lobby.id, { playerId: replay.id, playerToken: token }),
+          credentials: { playerId: replay.id, playerToken: token }
+        };
+      }
+
+      const latestPlayers = await repositories.multiplayer.listPlayers(lobby.id);
+      if (latestPlayers.length >= lobby.maxPlayers) return fail('Lobby is full.', 'lobby_full');
+
+      multiplayerServiceLogger.error('Multiplayer player insert failed during lobby join.', {
+        lobbyId: lobby.id,
+        action: 'join_lobby',
+        code: 'MULTIPLAYER_PLAYER_INSERT_FAILED',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
     const nextStatus = players.length + 1 >= 2 ? 'ready' : 'waiting';
     const updatedLobby = await repositories.multiplayer.updateLobby(lobby.id, { status: nextStatus, updatedAt: date }) || lobby;
     await recordAudit('multiplayer_player_joined', 'multiplayer_lobby', lobby.id, {
@@ -174,8 +211,8 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     });
 
     if (players.length + 1 >= updatedLobby.maxPlayers) {
-      const started = await startReadyLobby(updatedLobby, { playerId: player.id, playerToken: token });
-      return { ...started, credentials: { playerId: player.id, playerToken: token } };
+      const started = await tryAutoStartAfterJoin(updatedLobby, { playerId: player.id, playerToken: token });
+      if (started?.ok) return { ...started, credentials: { playerId: player.id, playerToken: token } };
     }
 
     return {
@@ -188,7 +225,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
 
   async function leaveLobby(lobbyId: EntityId, credentials: MultiplayerPlayerCredentials): Promise<MultiplayerActionResult> {
     const player = await assertPlayer(credentials);
-    if (!player || player.lobbyId !== lobbyId) return fail('Player session is invalid.');
+    if (!player || player.lobbyId !== lobbyId) return fail('Player session is invalid.', 'player_session_invalid');
 
     await repositories.multiplayer.updatePlayer(player.id, {
       isConnected: false,
@@ -210,12 +247,12 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
   async function startGame(lobbyId: EntityId, credentials: MultiplayerPlayerCredentials): Promise<MultiplayerActionResult> {
     const player = await assertPlayer(credentials);
     const lobby = await repositories.multiplayer.findLobby(lobbyId);
-    if (!player || !lobby || player.lobbyId !== lobbyId) return fail('Player session is invalid.');
-    if (lobby.hostPlayerId !== player.id) return fail('Only the host can start this game.');
+    if (!player || !lobby || player.lobbyId !== lobbyId) return fail('Player session is invalid.', 'player_session_invalid');
+    if (lobby.hostPlayerId !== player.id) return fail('Only the host can start this game.', 'host_only');
     if (lobby.status === 'in_progress' && lobby.gameId) {
       return { ok: true, gameState: await getGameState(lobby.gameId, credentials) };
     }
-    if (lobby.status === 'starting') return fail('Game is already starting.');
+    if (lobby.status === 'starting') return fail('Game is already starting.', 'game_already_starting');
 
     return startReadyLobby(lobby, credentials);
   }
@@ -224,15 +261,25 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     if (lobby.gameId) return { ok: true, gameState: await getGameState(lobby.gameId, credentials) };
     const existingGame = await repositories.multiplayer.findGameByLobby(lobby.id);
     if (existingGame) {
-      await repositories.multiplayer.updateLobby(lobby.id, { status: 'in_progress', gameId: existingGame.id, updatedAt: iso() });
-      return { ok: true, gameState: await getGameState(existingGame.id, credentials) };
+      const existingRounds = await repositories.multiplayer.listRounds(existingGame.id);
+      if (existingRounds.length > 0) {
+        await repositories.multiplayer.updateLobby(lobby.id, { status: 'in_progress', gameId: existingGame.id, updatedAt: iso() });
+        return { ok: true, gameState: await getGameState(existingGame.id, credentials) };
+      }
+
+      multiplayerServiceLogger.warn('Recovering multiplayer game that exists without rounds.', {
+        lobbyId: lobby.id,
+        gameId: existingGame.id,
+        code: 'MULTIPLAYER_PARTIAL_GAME_RECOVERY'
+      });
+      return completeGameStart(lobby, existingGame, credentials);
     }
 
     const players = (await repositories.multiplayer.listPlayers(lobby.id)).filter(isPlayerPresent);
-    if (players.length < 2) return fail('At least two players are required.');
+    if (players.length < 2) return fail('At least two players are required.', 'not_enough_players');
 
     const questions = await chooseQuestions(lobby);
-    if (questions.length < 2) return fail('Not enough questions are available.');
+    if (questions.length < 2) return fail('Not enough questions are available.', 'not_enough_questions');
 
     const date = iso();
     const game: MultiplayerGame = {
@@ -246,6 +293,32 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       updatedAt: date
     };
 
+    await repositories.multiplayer.updateLobby(lobby.id, { status: 'starting', updatedAt: date });
+    try {
+      await repositories.multiplayer.createGame(game);
+    } catch {
+      const racedGame = await repositories.multiplayer.findGameByLobby(lobby.id);
+      if (racedGame) return completeGameStart(lobby, racedGame, credentials);
+      await repositories.multiplayer.updateLobby(lobby.id, { status: players.length >= 2 ? 'ready' : 'waiting', updatedAt: iso() });
+      return fail('Could not start the game right now.', 'game_start_failed');
+    }
+
+    return completeGameStart(lobby, game, credentials, questions);
+  }
+
+  async function completeGameStart(
+    lobby: MultiplayerLobby,
+    game: MultiplayerGame,
+    credentials: MultiplayerPlayerCredentials,
+    preparedQuestions?: Question[]
+  ): Promise<MultiplayerActionResult> {
+    const players = (await repositories.multiplayer.listPlayers(lobby.id)).filter(isPlayerPresent);
+    if (players.length < 2) return fail('At least two players are required.', 'not_enough_players');
+
+    const questions = preparedQuestions || await chooseQuestions(lobby);
+    if (questions.length < 2) return fail('Not enough questions are available.', 'not_enough_questions');
+
+    const date = iso();
     const roundStart = Date.now() + 2500;
     const rounds: MultiplayerRound[] = questions.map((question, index) => ({
       id: id('mp-round'),
@@ -261,16 +334,29 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       updatedAt: date
     }));
 
-    await repositories.multiplayer.updateLobby(lobby.id, { status: 'starting', updatedAt: date });
+    await repositories.multiplayer.updateGame(game.id, {
+      status: 'in_progress',
+      questionIds: questions.map(question => String(question.id)),
+      currentRoundIndex: 0,
+      startedAt: game.startedAt || date,
+      updatedAt: date
+    });
+
     try {
-      await repositories.multiplayer.createGame(game);
-    } catch {
-      const racedGame = await repositories.multiplayer.findGameByLobby(lobby.id);
-      if (racedGame) return { ok: true, gameState: await getGameState(racedGame.id, credentials) };
-      await repositories.multiplayer.updateLobby(lobby.id, { status: players.length >= 2 ? 'ready' : 'waiting', updatedAt: iso() });
-      return fail('Could not start the game right now.');
+      await repositories.multiplayer.createRounds(rounds);
+    } catch (error) {
+      const existingRounds = await repositories.multiplayer.listRounds(game.id);
+      if (existingRounds.length < rounds.length) {
+        multiplayerServiceLogger.error('Multiplayer round creation failed during game start.', {
+          lobbyId: lobby.id,
+          gameId: game.id,
+          action: 'start_game',
+          code: 'MULTIPLAYER_ROUND_CREATE_FAILED',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        throw error;
+      }
     }
-    await repositories.multiplayer.createRounds(rounds);
     await Promise.all(players.map(item => repositories.multiplayer.updatePlayer(item.id, { gameId: game.id, lastSeenAt: date })));
     await repositories.multiplayer.updateLobby(lobby.id, { status: 'in_progress', gameId: game.id, updatedAt: date });
     await recordAudit('multiplayer_game_started', 'multiplayer_game', game.id, {
@@ -282,17 +368,44 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     return { ok: true, gameState: await getGameState(game.id, credentials) };
   }
 
+  async function tryAutoStartAfterJoin(lobby: MultiplayerLobby, credentials: MultiplayerPlayerCredentials): Promise<MultiplayerActionResult | undefined> {
+    const fallbackStatus: MultiplayerLobby['status'] = lobby.status === 'waiting' ? 'ready' : lobby.status;
+    try {
+      const result = await startReadyLobby(lobby, credentials);
+      if (result.ok) return result;
+
+      await recordAudit('multiplayer_auto_start_deferred', 'multiplayer_lobby', lobby.id, {
+        reason: result.errorCode || result.error || 'unknown',
+        playerId: credentials.playerId
+      });
+      return undefined;
+    } catch (error) {
+      await repositories.multiplayer.updateLobby(lobby.id, { status: fallbackStatus, updatedAt: iso() }).catch(() => undefined);
+      multiplayerServiceLogger.error('Multiplayer auto-start failed after a successful join.', {
+        lobbyId: lobby.id,
+        action: 'auto_start_after_join',
+        code: 'MULTIPLAYER_AUTO_START_FAILED',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      await recordAudit('multiplayer_auto_start_failed', 'multiplayer_lobby', lobby.id, {
+        playerId: credentials.playerId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return undefined;
+    }
+  }
+
   async function submitAnswer(input: MultiplayerAnswerInput): Promise<MultiplayerActionResult> {
     const player = await assertPlayer(input);
-    if (!player || player.gameId !== input.gameId) return fail('Player session is invalid.');
-    if (!Number.isInteger(input.answerIndex) || input.answerIndex < 0 || input.answerIndex > 3) return fail('Answer is invalid.');
+    if (!player || player.gameId !== input.gameId) return fail('Player session is invalid.', 'player_session_invalid');
+    if (!Number.isInteger(input.answerIndex) || input.answerIndex < 0 || input.answerIndex > 3) return fail('Answer is invalid.', 'answer_invalid');
 
     const game = await repositories.multiplayer.findGame(input.gameId);
-    if (!game || game.status !== 'in_progress') return fail('Game is not active.');
+    if (!game || game.status !== 'in_progress') return fail('Game is not active.', 'game_not_active');
 
     const round = await repositories.multiplayer.findRound(input.roundId);
-    if (!round || round.gameId !== game.id) return fail('Round is invalid.');
-    if (round.roundNumber !== game.currentRoundIndex || round.status !== 'active') return fail('Round is not active.');
+    if (!round || round.gameId !== game.id) return fail('Round is invalid.', 'round_invalid');
+    if (round.roundNumber !== game.currentRoundIndex || round.status !== 'active') return fail('Round is not active.', 'round_not_active');
 
     const existing = await repositories.multiplayer.findAnswer(round.id, player.id);
     if (existing) return { ok: true, gameState: await getGameState(game.id, input) };
@@ -300,8 +413,8 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     const submittedAt = now();
     const startsAt = new Date(round.startsAt);
     const endsAt = new Date(round.endsAt);
-    if (submittedAt < startsAt) return fail('Round has not started.');
-    if (submittedAt > endsAt) return fail('Round already ended.');
+    if (submittedAt < startsAt) return fail('Round has not started.', 'round_not_started');
+    if (submittedAt > endsAt) return fail('Round already ended.', 'round_ended');
 
     const responseTimeMs = Math.max(0, submittedAt.getTime() - startsAt.getTime());
     const isCorrect = input.answerIndex === round.questionSnapshot.correctIndex;
@@ -349,7 +462,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
 
   async function advanceRound(gameId: EntityId): Promise<MultiplayerActionResult> {
     const game = await repositories.multiplayer.findGame(gameId);
-    if (!game || game.status !== 'in_progress') return fail('Game is not active.');
+    if (!game || game.status !== 'in_progress') return fail('Game is not active.', 'game_not_active');
 
     const rounds = await repositories.multiplayer.listRounds(game.id);
     const currentRound = rounds.find(round => round.roundNumber === game.currentRoundIndex);
@@ -568,8 +681,8 @@ function isExpired(value: string) {
   return new Date(value).getTime() < Date.now();
 }
 
-function fail(error: string): MultiplayerActionResult {
-  return { ok: false, error };
+function fail(error: string, errorCode?: MultiplayerErrorCode): MultiplayerActionResult {
+  return { ok: false, error, errorCode };
 }
 
 function createPlayerToken() {

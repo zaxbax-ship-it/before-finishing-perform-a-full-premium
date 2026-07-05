@@ -122,13 +122,15 @@
 /* Shared fixed utility bar: the language selector and the account area are
    siblings inside one flex row, so they can never overlap on any viewport. */
 .top-utility-bar {
-  position: fixed;
+  /* Anchored to the top of the page (not the viewport): visible on load,
+     scrolls away with the header, never floats over content. */
+  position: absolute;
   top: max(10px, env(safe-area-inset-top));
   left: max(10px, env(safe-area-inset-left));
   right: max(10px, env(safe-area-inset-right));
   z-index: 150;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   pointer-events: none;
@@ -156,6 +158,29 @@
    not relying on (possibly missing) precompiled utility classes. */
 .home-landing {
   padding-top: calc(max(10px, env(safe-area-inset-top)) + 74px);
+}
+
+/* In-game home button: always visible in the question top strip, no scrolling. */
+.game-topline-home {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid hsla(0, 0%, 100%, 0.16);
+  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.14), hsla(0, 0%, 100%, 0.05));
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.14);
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+
+.game-topline-home:hover {
+  transform: translateY(-2px);
+  border-color: hsla(41, 90%, 69%, 0.56);
+  background: hsla(41, 90%, 69%, 0.14);
 }
 
 .language-corner .language-menu {
@@ -196,9 +221,10 @@
 }
 
 .language-corner .language-panel {
-  position: fixed;
-  top: calc(max(10px, env(safe-area-inset-top)) + 58px) !important;
-  left: max(10px, env(safe-area-inset-left)) !important;
+  /* Anchored to the trigger itself so the panel scrolls with the header. */
+  position: absolute;
+  top: calc(100% + 10px) !important;
+  left: 0 !important;
   right: auto !important;
   bottom: auto !important;
   width: min(208px, calc(100vw - 20px));
@@ -251,9 +277,9 @@
 
   .language-panel,
   .language-corner .language-panel {
-    position: fixed;
-    top: calc(max(10px, env(safe-area-inset-top)) + 58px) !important;
-    left: max(10px, env(safe-area-inset-left)) !important;
+    position: absolute;
+    top: calc(100% + 10px) !important;
+    left: 0 !important;
     right: auto !important;
     bottom: auto !important;
     width: min(208px, calc(100vw - 20px));

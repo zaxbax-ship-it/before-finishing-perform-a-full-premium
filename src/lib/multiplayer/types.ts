@@ -6,6 +6,29 @@ export type MultiplayerGameStatus = 'waiting' | 'starting' | 'in_progress' | 'fi
 export type MultiplayerRoundStatus = 'pending' | 'active' | 'completed' | 'expired';
 export type MultiplayerVisibility = 'public' | 'private';
 export type MultiplayerAction = 'create' | 'quick_match' | 'join' | 'leave' | 'cancel' | 'start';
+export type MultiplayerErrorCode =
+  | 'invalid_nickname'
+  | 'lobby_not_found'
+  | 'lobby_expired'
+  | 'lobby_not_accepting'
+  | 'lobby_full'
+  | 'nickname_taken'
+  | 'player_session_invalid'
+  | 'host_only'
+  | 'game_already_starting'
+  | 'not_enough_players'
+  | 'not_enough_questions'
+  | 'game_start_failed'
+  | 'answer_invalid'
+  | 'game_not_active'
+  | 'round_invalid'
+  | 'round_not_active'
+  | 'round_not_started'
+  | 'round_ended'
+  | 'missing_identity'
+  | 'missing_session'
+  | 'rate_limited'
+  | 'server_error';
 
 export type MultiplayerQuestionSnapshot = {
   id: EntityId;
@@ -158,6 +181,7 @@ export type MultiplayerAnswerInput = MultiplayerPlayerCredentials & {
 export type MultiplayerActionResult = {
   ok: boolean;
   error?: string;
+  errorCode?: MultiplayerErrorCode;
   lobby?: MultiplayerLobbySummary;
   gameState?: MultiplayerPublicGameState;
   credentials?: MultiplayerPlayerCredentials;

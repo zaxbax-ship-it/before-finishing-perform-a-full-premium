@@ -130,7 +130,15 @@ function createInitialState(): LocalState {
   };
 }
 
-const localState = createInitialState();
+const LOCAL_STATE_KEY = '__premiumTriviaLocalRepositoryState';
+
+const localState = getSharedLocalState();
+
+function getSharedLocalState(): LocalState {
+  const globalScope = globalThis as typeof globalThis & { [LOCAL_STATE_KEY]?: LocalState };
+  globalScope[LOCAL_STATE_KEY] = globalScope[LOCAL_STATE_KEY] || createInitialState();
+  return globalScope[LOCAL_STATE_KEY];
+}
 
 function limit<T>(items: T[], size?: number) {
   return typeof size === 'number' ? items.slice(0, size) : items;

@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
     if (!input.anonymousId) {
       logMultiplayerActionFailure('multiplayer-lobbies:post', action, 400, 'MULTIPLAYER_MISSING_IDENTITY');
-      return NextResponse.json({ ok: false, error: 'Missing player identity.' }, { status: 400 });
+      return NextResponse.json({ ok: false, error: 'Missing player identity.', errorCode: 'missing_identity' }, { status: 400 });
     }
 
     const result = body.action === 'quick_match'

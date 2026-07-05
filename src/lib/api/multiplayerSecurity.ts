@@ -100,7 +100,7 @@ export async function enforceMultiplayerRateLimit(
   });
 
   return NextResponse.json(
-    { ok: false, error: 'Too many multiplayer requests. Please wait before trying again.' },
+    { ok: false, error: 'Too many multiplayer requests. Please wait before trying again.', errorCode: 'rate_limited' },
     { status: 429, headers: { 'Retry-After': String(result.retryAfterSeconds), 'Cache-Control': 'no-store' } }
   );
 }
@@ -128,13 +128,13 @@ export function multiplayerApiErrorResponse(scope: string, error: unknown, conte
 
   if (error instanceof MultiplayerApiError) {
     return NextResponse.json(
-      { ok: false, error: error.publicMessage },
+      { ok: false, error: error.publicMessage, errorCode: 'server_error' },
       { status: error.status, headers: { 'Cache-Control': 'no-store' } }
     );
   }
 
   return NextResponse.json(
-    { ok: false, error: 'Could not complete this multiplayer request right now.' },
+    { ok: false, error: 'Could not complete this multiplayer request right now.', errorCode: 'server_error' },
     { status: 500, headers: { 'Cache-Control': 'no-store' } }
   );
 }

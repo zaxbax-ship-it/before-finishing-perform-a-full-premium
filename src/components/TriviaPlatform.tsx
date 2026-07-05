@@ -508,7 +508,12 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lbSave: 'שמירת כינוי',
     lbSaved: 'הכינוי נשמר. תוצאות המשחקים הבאים ישותפו ללוח.',
     lbTaken: 'הכינוי הזה כבר תפוס. נסו כינוי אחר.',
-    lbYourBest: 'השיא האישי שלך'
+    lbYourBest: 'השיא האישי שלך',
+    exitTitle: 'לצאת מהמשחק?',
+    exitBody: 'ההתקדמות והקופה הנוכחית לא יישמרו אם תצאו עכשיו.',
+    exitStay: 'להמשיך לשחק',
+    exitLeave: 'יציאה לדף הבית',
+    exitHomeAria: 'חזרה לדף הבית'
   },
   en: {
     rulesTitle: 'Game Rules',
@@ -604,7 +609,12 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lbSave: 'Save nickname',
     lbSaved: 'Nickname saved. Your next game results will be shared to the board.',
     lbTaken: 'That nickname is already taken. Try another one.',
-    lbYourBest: 'Your personal best'
+    lbYourBest: 'Your personal best',
+    exitTitle: 'Leave the game?',
+    exitBody: 'Your progress and current bank will not be saved if you leave now.',
+    exitStay: 'Keep playing',
+    exitLeave: 'Exit to home',
+    exitHomeAria: 'Back to home'
   },
   ar: {
     rulesTitle: 'قواعد اللعبة',
@@ -700,7 +710,12 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lbSave: 'حفظ الاسم المستعار',
     lbSaved: 'تم حفظ الاسم المستعار. نتائج ألعابك القادمة ستُشارك في اللوحة.',
     lbTaken: 'هذا الاسم المستعار محجوز بالفعل. جرّب اسمًا آخر.',
-    lbYourBest: 'رقمك القياسي الشخصي'
+    lbYourBest: 'رقمك القياسي الشخصي',
+    exitTitle: 'مغادرة اللعبة؟',
+    exitBody: 'لن يتم حفظ تقدمك ورصيدك الحالي إذا غادرت الآن.',
+    exitStay: 'متابعة اللعب',
+    exitLeave: 'الخروج إلى الرئيسية',
+    exitHomeAria: 'العودة إلى الرئيسية'
   },
   ru: {
     rulesTitle: 'Правила игры',
@@ -796,7 +811,12 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lbSave: 'Сохранить ник',
     lbSaved: 'Ник сохранён. Результаты следующих игр попадут в таблицу.',
     lbTaken: 'Этот ник уже занят. Попробуйте другой.',
-    lbYourBest: 'Ваш личный рекорд'
+    lbYourBest: 'Ваш личный рекорд',
+    exitTitle: 'Выйти из игры?',
+    exitBody: 'Прогресс и текущий банк не сохранятся, если вы выйдете сейчас.',
+    exitStay: 'Продолжить игру',
+    exitLeave: 'Выйти на главную',
+    exitHomeAria: 'На главную'
   },
   am: {
     rulesTitle: 'የጨዋታው ህጎች',
@@ -892,7 +912,12 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lbSave: 'ቅጽል ስም አስቀምጥ',
     lbSaved: 'ቅጽል ስሙ ተቀምጧል። የሚቀጥሉት ጨዋታዎች ውጤቶች ወደ ሰሌዳው ይጋራሉ።',
     lbTaken: 'ይህ ቅጽል ስም አስቀድሞ ተይዟል። ሌላ ይሞክሩ።',
-    lbYourBest: 'የግል ሪከርድዎ'
+    lbYourBest: 'የግል ሪከርድዎ',
+    exitTitle: 'ከጨዋታው መውጣት?',
+    exitBody: 'አሁን ከወጡ እድገትዎ እና ያለው ሽልማት አይቀመጡም።',
+    exitStay: 'መጫወት ቀጥል',
+    exitLeave: 'ወደ መነሻ ውጣ',
+    exitHomeAria: 'ወደ መነሻ ተመለስ'
   }
 };
 
@@ -1194,6 +1219,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   const [advice, setAdvice] = useState('');
   const [notice, setNotice] = useState('');
   const [pendingPaid, setPendingPaid] = useState<{ type: Lifeline; price: number } | null>(null);
+  const [exitPrompt, setExitPrompt] = useState(false);
   const [endState, setEndState] = useState<EndState>('lost');
   const [finalPrize, setFinalPrize] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -1222,6 +1248,13 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   const multiplayerCopy = getMultiplayerCopy(locale);
   const dir = locale === 'he' || locale === 'ar' ? 'rtl' : 'ltr';
   const allQuestions = useMemo(() => [...extraQuestions, ...baseQuestions], [extraQuestions, baseQuestions]);
+  // Localization integrity: non-Hebrew players only receive questions with a
+  // complete translation for their locale, so mixed-language content can never
+  // appear in gameplay. Hebrew (the source language) gets the full bank.
+  const playableQuestions = useMemo(
+    () => (locale === 'he' ? allQuestions : allQuestions.filter(question => question.translations?.[locale])),
+    [allQuestions, locale]
+  );
   const categories = useMemo(() => Array.from(new Set(allQuestions.map(question => question.category))).sort(), [allQuestions]);
   const current = gameSet[round] ? localizeQuestion(gameSet[round], locale) : undefined;
   const currentPrize = MONEY[Math.max(0, round - 1)] || 0;
@@ -1471,7 +1504,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   function startGame(nextCategory = category) {
     clearAdvanceTimer();
     advancingRef.current = false;
-    const available = shuffle(allQuestions.filter(question => nextCategory === 'הכול' || question.category === nextCategory));
+    const available = shuffle(playableQuestions.filter(question => nextCategory === 'הכול' || question.category === nextCategory));
     if (available.length < 4) return;
     let pool = available.slice(0, 15);
     if (pool.length < 15) {
@@ -1597,7 +1630,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     }
     if (type === 'swap') {
       const usedIds = new Set(gameSet.map(item => item.id));
-      const replacement = shuffle(allQuestions.filter(question => question.category === gameSet[round].category && !usedIds.has(question.id)))[0];
+      const replacement = shuffle(playableQuestions.filter(question => question.category === gameSet[round].category && !usedIds.has(question.id)))[0];
       if (replacement) {
         setGameSet(previous => previous.map((item, index) => index === round ? replacement : item));
         setOrder(shuffle([0, 1, 2, 3]));
@@ -1818,8 +1851,8 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       </div>
       {screen === 'admin' && adminHeader}
       {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
-      {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
-      {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={allQuestions} startGame={startGame} />}
+      {screen === 'home' && <Home t={t} locale={locale} questionCount={playableQuestions.length} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
+      {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={playableQuestions} startGame={startGame} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
       {screen === 'submit' && (
@@ -1856,6 +1889,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
           advanceAfterAnswer={advanceAfterAnswer}
           triggerLifeline={triggerLifeline}
           quit={() => finish('quit', currentPrize || guaranteedPrize)}
+          requestExit={() => setExitPrompt(true)}
         />
       )}
       {screen === 'result' && <Result t={t} authUi={authT} isAuthenticated={Boolean(authUser)} state={endState} correctCount={round} elapsed={elapsed} prize={finalPrize} start={() => open('categories')} home={() => open('home')} />}
@@ -1902,6 +1936,17 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       {screen === 'profile' && <PremiumProfile t={t} authUi={authT} user={authUser} nickname={nickname} stats={stats} />}
       {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => setPendingPaid(null)} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
+      {exitPrompt && (
+        <GameExitModal
+          t={t}
+          stay={() => setExitPrompt(false)}
+          leave={() => {
+            setExitPrompt(false);
+            clearAdvanceTimer();
+            open('home');
+          }}
+        />
+      )}
     </main>
   );
 }
@@ -2221,8 +2266,9 @@ function Game(props: {
   advanceAfterAnswer: () => void;
   triggerLifeline: (type: Lifeline) => void;
   quit: () => void;
+  requestExit: () => void;
 }) {
-  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit } = props;
+  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
   const infoUi = INFO_UI[locale];
   const answerInfo = selected !== null ? {
@@ -2234,6 +2280,7 @@ function Game(props: {
     <section className="compact-game-shell game-priority-layout mx-auto grid w-full max-w-[1720px] gap-6 px-4 pb-10 lg:grid-cols-[1fr_380px] lg:px-8">
       <section className="glass question-priority rounded-[32px] p-5 md:p-8">
         <div className="game-topline">
+          <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}>⌂</button>
           <span className="game-topline-info">{t.question} {round + 1}/15 · {current.category}</span>
           <span className={`game-topline-timer ${timerUrgency}`}>◷ {timer}</span>
           <span className="game-topline-pot">{money(currentPrize)}</span>
@@ -2651,6 +2698,22 @@ function QuestionForm({ t, locale, form, setForm, save, reset }: { t: Record<str
       <div className="grid grid-cols-2 gap-3"><input className="form-input" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} /><input className="form-input" value={form.imageUrl || ''} onChange={event => setForm({ ...form, imageUrl: event.target.value })} aria-label={t.imageLink} placeholder={t.imageLink} /></div>
       <button className="premium-button focus-ring w-full" onClick={save}>{t.saveQuestion}</button>
       <button className="ghost-button focus-ring w-full" onClick={reset}>{t.clearForm}</button>
+    </div>
+  );
+}
+
+function GameExitModal({ t, stay, leave }: { t: Record<string, string>; stay: () => void; leave: () => void }) {
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="exit-title">
+      <div className="glass modal-card">
+        <div className="text-4xl text-gold" aria-hidden="true">⌂</div>
+        <h3 id="exit-title">{t.exitTitle}</h3>
+        <p>{t.exitBody}</p>
+        <div className="mt-5 flex gap-3">
+          <button className="premium-button focus-ring flex-1" type="button" autoFocus onClick={stay}>{t.exitStay}</button>
+          <button className="ghost-button focus-ring flex-1" type="button" onClick={leave}>{t.exitLeave}</button>
+        </div>
+      </div>
     </div>
   );
 }

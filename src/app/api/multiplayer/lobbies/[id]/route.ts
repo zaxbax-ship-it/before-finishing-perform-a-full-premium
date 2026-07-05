@@ -65,12 +65,15 @@ export async function POST(request: Request, context: RouteContext) {
         authUserId: user?.id,
         displayName: displayNameFromUser(user?.email)
       });
+      if (!result.ok) {
+        logMultiplayerActionFailure('multiplayer-lobbies-id:post', 'join_lobby', 400, result.errorCode || 'MULTIPLAYER_JOIN_FAILED');
+      }
       return NextResponse.json(result, { status: result.ok ? 200 : 400, headers: { 'Cache-Control': 'no-store' } });
     }
 
     if (!credentials.playerId || !credentials.playerToken) {
       logMultiplayerActionFailure('multiplayer-lobbies-id:post', action, 400, 'MULTIPLAYER_MISSING_SESSION');
-      return NextResponse.json({ ok: false, error: 'Missing player session.' }, { status: 400 });
+      return NextResponse.json({ ok: false, error: 'Missing player session.', errorCode: 'missing_session' }, { status: 400 });
     }
 
     const result = body.action === 'start'

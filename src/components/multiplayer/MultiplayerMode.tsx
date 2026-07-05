@@ -5,6 +5,7 @@ import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import type {
   MultiplayerActionResult,
+  MultiplayerErrorCode,
   MultiplayerLobbySummary,
   MultiplayerPlayerCredentials,
   MultiplayerPublicGameState
@@ -162,7 +163,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
         return;
       }
       setStatus('error');
-      setMessage(data.error || copy.error);
+      setMessage(multiplayerErrorMessage(data, copy));
       return;
     } catch {
       // Handled below.
@@ -187,7 +188,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       applyActionResult(data);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
-      if (!data.ok) setMessage(data.error || copy.error);
+      if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
@@ -207,7 +208,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       applyActionResult(data);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
-      if (!data.ok) setMessage(data.error || copy.error);
+      if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
@@ -227,7 +228,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       applyActionResult(data);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
-      if (!data.ok) setMessage(data.error || copy.error);
+      if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
@@ -271,7 +272,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
         notifications: [copy.connectionReady]
       });
     }
-    if (data.error) setMessage(data.error);
+    if (data.error) setMessage(multiplayerErrorMessage(data, copy));
   }
 
   const statusLabel = gameState?.lobby.status ? copy[statusKey(gameState.lobby.status)] || gameState.lobby.status : copy.waiting;
@@ -458,9 +459,46 @@ function localizeNotification(value: string, copy: ReturnType<typeof getMultipla
   const playerCount = value.match(/(\d+)\s*\/\s*(\d+)\s*players/i);
   if (playerCount) return `${playerCount[1]} / ${playerCount[2]} ${copy.players}`;
   if (/waiting for players/i.test(value)) return copy.waiting;
+  if (/player joined/i.test(value)) return copy.ready;
   if (/game is live/i.test(value)) return copy.inProgress;
   if (/winner/i.test(value)) return copy.results;
+  if (/game finished/i.test(value)) return copy.finished;
+  if (/question is live/i.test(value)) return copy.questionLive;
   return value;
+}
+
+function multiplayerErrorMessage(data: Pick<MultiplayerActionResult, 'error' | 'errorCode'>, copy: ReturnType<typeof getMultiplayerCopy>) {
+  if (data.errorCode && copy[data.errorCode]) return copy[data.errorCode];
+  return localizeKnownError(data.error || '', copy);
+}
+
+function localizeKnownError(value: string, copy: ReturnType<typeof getMultiplayerCopy>) {
+  if (!value) return copy.error;
+  const known: Array<[RegExp, MultiplayerErrorCode]> = [
+    [/nickname must/i, 'invalid_nickname'],
+    [/not found/i, 'lobby_not_found'],
+    [/expired/i, 'lobby_expired'],
+    [/not accepting/i, 'lobby_not_accepting'],
+    [/full/i, 'lobby_full'],
+    [/nickname is already/i, 'nickname_taken'],
+    [/session is invalid/i, 'player_session_invalid'],
+    [/only the host/i, 'host_only'],
+    [/already starting/i, 'game_already_starting'],
+    [/two players/i, 'not_enough_players'],
+    [/not enough questions/i, 'not_enough_questions'],
+    [/start the game/i, 'game_start_failed'],
+    [/answer is invalid/i, 'answer_invalid'],
+    [/game is not active/i, 'game_not_active'],
+    [/round is invalid/i, 'round_invalid'],
+    [/round is not active/i, 'round_not_active'],
+    [/not started/i, 'round_not_started'],
+    [/already ended/i, 'round_ended'],
+    [/missing player identity/i, 'missing_identity'],
+    [/missing player session/i, 'missing_session'],
+    [/too many multiplayer requests/i, 'rate_limited']
+  ];
+  const match = known.find(([pattern]) => pattern.test(value));
+  return match ? copy[match[1]] || copy.error : copy.error;
 }
 
 function readLocal<T>(key: string, fallback: T): T {
