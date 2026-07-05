@@ -27,7 +27,7 @@
 .ad-placeholder span {
   font-size: .78rem;
   font-weight: 900;
-  letter-spacing: .08em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: rgba(247, 202, 103, .72);
 }

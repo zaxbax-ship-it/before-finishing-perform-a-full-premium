@@ -1,0 +1,19 @@
+{
+  "name": "The Quiz Show",
+  "short_name": "Quiz Show",
+  "description": "Premium multilingual trivia gameplay with leaderboards and community question workflows.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030612",
+  "theme_color": "#06122b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

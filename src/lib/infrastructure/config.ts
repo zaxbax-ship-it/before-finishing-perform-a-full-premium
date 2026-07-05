@@ -13,6 +13,14 @@ export type ProductionConfig = {
     hasServiceRoleKey: boolean;
     hasDatabaseUrl: boolean;
   };
+  site: {
+    url?: string;
+    contactEmail?: string;
+  };
+  search: {
+    googleSiteVerification?: string;
+    bingSiteVerification?: string;
+  };
   ads: {
     enabled: boolean;
     provider: 'none' | 'adsense' | 'google-ad-manager' | 'media-net' | 'ezoic';
@@ -46,8 +54,17 @@ export type ProductionConfig = {
   analytics: {
     provider: 'none' | 'vercel' | 'ga4' | 'plausible' | 'posthog';
     gaMeasurementId?: string;
+    gtmId?: string;
+    clarityProjectId?: string;
     plausibleDomain?: string;
     posthogKey?: string;
+  };
+  consent: {
+    provider: 'none' | 'cookiebot' | 'usercentrics' | 'consentmanager';
+    cookiebotId?: string;
+    usercentricsSettingsId?: string;
+    consentmanagerId?: string;
+    configured: boolean;
   };
   features: ReturnType<typeof getFeatureFlags>;
 };
@@ -55,9 +72,14 @@ export type ProductionConfig = {
 export function getProductionConfig(): ProductionConfig {
   const adProvider = readEnv('NEXT_PUBLIC_AD_PROVIDER') as ProductionConfig['ads']['provider'] | undefined;
   const analyticsProvider = readEnv('NEXT_PUBLIC_ANALYTICS_PROVIDER') as ProductionConfig['analytics']['provider'] | undefined;
+  const consentProvider = readEnv('NEXT_PUBLIC_CMP_PROVIDER') as ProductionConfig['consent']['provider'] | undefined;
   const databaseMode = readEnv('NEXT_PUBLIC_DATABASE_MODE') === 'supabase' ? 'supabase' : 'local';
   const supabaseAuthConfigured = Boolean(readEnv('NEXT_PUBLIC_SUPABASE_URL') && readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'));
   const authEnforced = supabaseAuthConfigured && readEnv('AUTH_ENFORCED') !== 'false';
+  const cookiebotId = readEnv('NEXT_PUBLIC_COOKIEBOT_ID');
+  const usercentricsSettingsId = readEnv('NEXT_PUBLIC_USERCENTRICS_SETTINGS_ID');
+  const consentmanagerId = readEnv('NEXT_PUBLIC_CONSENTMANAGER_ID');
+  const activeConsentProvider = consentProvider || 'none';
 
   return {
     environment: {
@@ -70,6 +92,14 @@ export function getProductionConfig(): ProductionConfig {
       supabaseAnonKey: readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
       hasServiceRoleKey: Boolean(readEnv('SUPABASE_SERVICE_ROLE_KEY')),
       hasDatabaseUrl: Boolean(readEnv('DATABASE_URL'))
+    },
+    site: {
+      url: readEnv('NEXT_PUBLIC_SITE_URL'),
+      contactEmail: readEnv('NEXT_PUBLIC_CONTACT_EMAIL')
+    },
+    search: {
+      googleSiteVerification: readEnv('NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION'),
+      bingSiteVerification: readEnv('NEXT_PUBLIC_BING_SITE_VERIFICATION')
     },
     ads: {
       enabled: readBooleanEnv('NEXT_PUBLIC_ADS_ENABLED'),
@@ -104,8 +134,23 @@ export function getProductionConfig(): ProductionConfig {
     analytics: {
       provider: analyticsProvider || 'none',
       gaMeasurementId: readEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID'),
+      gtmId: readEnv('NEXT_PUBLIC_GTM_ID'),
+      clarityProjectId: readEnv('NEXT_PUBLIC_CLARITY_PROJECT_ID'),
       plausibleDomain: readEnv('NEXT_PUBLIC_PLAUSIBLE_DOMAIN'),
       posthogKey: readEnv('NEXT_PUBLIC_POSTHOG_KEY')
+    },
+    consent: {
+      provider: activeConsentProvider,
+      cookiebotId,
+      usercentricsSettingsId,
+      consentmanagerId,
+      configured: activeConsentProvider === 'cookiebot'
+        ? Boolean(cookiebotId)
+        : activeConsentProvider === 'usercentrics'
+          ? Boolean(usercentricsSettingsId)
+          : activeConsentProvider === 'consentmanager'
+            ? Boolean(consentmanagerId)
+            : false
     },
     features: getFeatureFlags()
   };

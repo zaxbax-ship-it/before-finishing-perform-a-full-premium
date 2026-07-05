@@ -58,7 +58,7 @@ export function AdSlot({ placement, className = '', reserveSpace = true }: AdSlo
     >
       {shouldShowPlaceholder && (
         <div className="ad-placeholder">
-          <span>Ad slot</span>
+          <span>Advertising space</span>
           <small>{slot.label}</small>
         </div>
       )}
