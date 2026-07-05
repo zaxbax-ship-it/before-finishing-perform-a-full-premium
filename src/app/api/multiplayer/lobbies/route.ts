@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth/session';
 import {
   enforceMultiplayerRateLimit,
   getMultiplayerRepositories,
+  logMultiplayerActionFailure,
   multiplayerApiErrorResponse,
   readMultiplayerJson
 } from '@/lib/api/multiplayerSecurity';
@@ -33,13 +34,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let action = 'create_lobby';
   try {
     const repositories = getMultiplayerRepositories('create_lobby');
     const body = await readMultiplayerJson<MultiplayerLobbyBody>(request);
+    action = body.action === 'quick_match' ? 'quick_match' : 'create_lobby';
     const limited = await enforceMultiplayerRateLimit(
       request,
       repositories,
-      body.action === 'quick_match' ? 'quick_match' : 'create_lobby',
+      action,
       getMultiplayerLobbyRateLimit(),
       stringValue(body.anonymousId).slice(0, 120) || 'anonymous'
     );
@@ -58,6 +61,7 @@ export async function POST(request: Request) {
     };
 
     if (!input.anonymousId) {
+      logMultiplayerActionFailure('multiplayer-lobbies:post', action, 400, 'MULTIPLAYER_MISSING_IDENTITY');
       return NextResponse.json({ ok: false, error: 'Missing player identity.' }, { status: 400 });
     }
 
@@ -65,9 +69,12 @@ export async function POST(request: Request) {
       ? await service.quickMatch(input)
       : await service.createLobby(input);
 
+    if (!result.ok) {
+      logMultiplayerActionFailure('multiplayer-lobbies:post', action, 400);
+    }
     return NextResponse.json(result, { status: result.ok ? 200 : 400, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    return multiplayerApiErrorResponse('multiplayer-lobbies:post', error);
+    return multiplayerApiErrorResponse('multiplayer-lobbies:post', error, { action });
   }
 }
 

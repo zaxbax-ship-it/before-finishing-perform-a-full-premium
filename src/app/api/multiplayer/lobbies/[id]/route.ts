@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth/session';
 import {
   enforceMultiplayerRateLimit,
   getMultiplayerRepositories,
+  logMultiplayerActionFailure,
   multiplayerApiErrorResponse,
   readMultiplayerJson
 } from '@/lib/api/multiplayerSecurity';
@@ -34,10 +35,12 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  let action = 'lobby_action';
   try {
     const { id } = await context.params;
     const repositories = getMultiplayerRepositories('update_lobby');
     const body = await readMultiplayerJson<LobbyActionBody>(request);
+    action = stringValue(body.action) || 'state';
     const limited = await enforceMultiplayerRateLimit(
       request,
       repositories,
@@ -66,6 +69,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     if (!credentials.playerId || !credentials.playerToken) {
+      logMultiplayerActionFailure('multiplayer-lobbies-id:post', action, 400, 'MULTIPLAYER_MISSING_SESSION');
       return NextResponse.json({ ok: false, error: 'Missing player session.' }, { status: 400 });
     }
 
@@ -75,9 +79,12 @@ export async function POST(request: Request, context: RouteContext) {
         ? await service.leaveLobby(id, credentials)
         : await service.getLobbyState(id, credentials).then(gameState => ({ ok: true, gameState }));
 
+    if (!result.ok) {
+      logMultiplayerActionFailure('multiplayer-lobbies-id:post', action, 400);
+    }
     return NextResponse.json(result, { status: result.ok ? 200 : 400, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    return multiplayerApiErrorResponse('multiplayer-lobbies-id:post', error);
+    return multiplayerApiErrorResponse('multiplayer-lobbies-id:post', error, { action });
   }
 }
 

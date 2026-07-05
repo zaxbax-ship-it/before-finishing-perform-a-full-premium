@@ -105,7 +105,27 @@ export async function enforceMultiplayerRateLimit(
   );
 }
 
-export function multiplayerApiErrorResponse(scope: string, error: unknown) {
+type MultiplayerFailureContext = {
+  route?: string;
+  action?: string;
+  status?: string | number;
+  code?: string;
+};
+
+export function multiplayerApiErrorResponse(scope: string, error: unknown, context: MultiplayerFailureContext = {}) {
+  const code = context.code || safeMultiplayerErrorCode(error);
+  const status = error instanceof MultiplayerApiError ? error.status : 500;
+  const route = context.route || scope;
+
+  multiplayerApiLogger.error('Multiplayer API request failed.', {
+    route,
+    action: context.action || 'unknown',
+    status: context.status || status,
+    code,
+    stage: error instanceof MultiplayerApiError ? error.stage : undefined,
+    error: error instanceof Error ? error.message : 'Unknown error'
+  });
+
   if (error instanceof MultiplayerApiError) {
     return NextResponse.json(
       { ok: false, error: error.publicMessage },
@@ -113,13 +133,24 @@ export function multiplayerApiErrorResponse(scope: string, error: unknown) {
     );
   }
 
-  multiplayerApiLogger.error('Multiplayer API request failed.', {
-    scope,
-    error: error instanceof Error ? error.message : 'Unknown error'
-  });
-
   return NextResponse.json(
     { ok: false, error: 'Could not complete this multiplayer request right now.' },
     { status: 500, headers: { 'Cache-Control': 'no-store' } }
   );
+}
+
+export function logMultiplayerActionFailure(scope: string, action: string, status: number, code = 'MULTIPLAYER_ACTION_FAILED') {
+  multiplayerApiLogger.warn('Multiplayer action failed safely.', {
+    route: scope,
+    action,
+    status,
+    code
+  });
+}
+
+function safeMultiplayerErrorCode(error: unknown) {
+  if (error instanceof MultiplayerApiError) return 'MULTIPLAYER_PROVIDER_UNAVAILABLE';
+  if (error instanceof SyntaxError) return 'MULTIPLAYER_INVALID_JSON';
+  if (error instanceof Error && /too large/i.test(error.message)) return 'MULTIPLAYER_REQUEST_TOO_LARGE';
+  return 'MULTIPLAYER_SERVER_ERROR';
 }

@@ -92,6 +92,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     const storedAnonymousId = readLocal(ANON_KEY, `anon-${crypto.randomUUID()}`);
     localStorage.setItem(ANON_KEY, JSON.stringify(storedAnonymousId));
     setAnonymousId(storedAnonymousId);
+    if (!nickname.trim()) setNickname(defaultNickname(storedAnonymousId));
     const storedSession = readLocal<StoredSession | undefined>(SESSION_KEY, undefined);
     if (storedSession?.playerId && storedSession.playerToken) setCredentials(storedSession);
     void refreshLobbies();
@@ -136,12 +137,14 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   }, [credentials, activeGameId, activeLobbyId]);
 
   async function createOrQuick(action: 'create' | 'quick_match') {
-    const cleaned = nickname.trim().replace(/\s+/g, ' ').slice(0, 20);
-    if (cleaned.length < 3 || !anonymousId) {
+    if (!anonymousId) {
       setStatus('error');
       setMessage(copy.error);
       return;
     }
+    const typedNickname = cleanNickname(nickname);
+    const cleaned = typedNickname.length >= 3 ? typedNickname : defaultNickname(anonymousId);
+    if (cleaned !== nickname) setNickname(cleaned);
 
     setStatus('loading');
     setMessage(copy.joining);
@@ -152,11 +155,15 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
         body: JSON.stringify({ action, nickname: cleaned, anonymousId, maxPlayers, locale })
       });
       const data = await response.json() as MultiplayerActionResult;
-      applyActionResult(data);
       if (response.ok && data.ok) {
+        applyActionResult(data);
         setStatus('idle');
+        setMessage('');
         return;
       }
+      setStatus('error');
+      setMessage(data.error || copy.error);
+      return;
     } catch {
       // Handled below.
     }
@@ -165,8 +172,10 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   }
 
   async function joinLobby(lobbyId: string) {
-    const cleaned = nickname.trim().replace(/\s+/g, ' ').slice(0, 20);
-    if (cleaned.length < 3 || !anonymousId) return;
+    if (!anonymousId) return;
+    const typedNickname = cleanNickname(nickname);
+    const cleaned = typedNickname.length >= 3 ? typedNickname : defaultNickname(anonymousId);
+    if (cleaned !== nickname) setNickname(cleaned);
     setStatus('loading');
     try {
       const response = await fetch(`/api/multiplayer/lobbies/${encodeURIComponent(lobbyId)}`, {
@@ -177,6 +186,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const data = await response.json() as MultiplayerActionResult;
       applyActionResult(data);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
+      if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(data.error || copy.error);
     } catch {
       setStatus('error');
@@ -196,6 +206,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const data = await response.json() as MultiplayerActionResult;
       applyActionResult(data);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
+      if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(data.error || copy.error);
     } catch {
       setStatus('error');
@@ -215,6 +226,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const data = await response.json() as MultiplayerActionResult;
       applyActionResult(data);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
+      if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(data.error || copy.error);
     } catch {
       setStatus('error');
@@ -431,6 +443,15 @@ function statusKey(status: string) {
 
 function money(value: number) {
   return `$${new Intl.NumberFormat('en-US').format(value)}`;
+}
+
+function cleanNickname(value: string) {
+  return value.trim().replace(/\s+/g, ' ').slice(0, 20);
+}
+
+function defaultNickname(seed: string) {
+  const suffix = seed.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase();
+  return `Player${suffix || Math.floor(1000 + Math.random() * 9000)}`.slice(0, 20);
 }
 
 function localizeNotification(value: string, copy: ReturnType<typeof getMultiplayerCopy>) {

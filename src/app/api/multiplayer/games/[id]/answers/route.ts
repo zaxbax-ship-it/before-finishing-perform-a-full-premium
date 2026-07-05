@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   enforceMultiplayerRateLimit,
   getMultiplayerRepositories,
+  logMultiplayerActionFailure,
   multiplayerApiErrorResponse,
   readMultiplayerJson
 } from '@/lib/api/multiplayerSecurity';
@@ -42,9 +43,12 @@ export async function POST(request: Request, context: RouteContext) {
       answerIndex: numberValue(body.answerIndex)
     });
 
+    if (!result.ok) {
+      logMultiplayerActionFailure('multiplayer-answers:post', 'submit_answer', 400);
+    }
     return NextResponse.json(result, { status: result.ok ? 200 : 400, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    return multiplayerApiErrorResponse('multiplayer-answers:post', error);
+    return multiplayerApiErrorResponse('multiplayer-answers:post', error, { action: 'submit_answer' });
   }
 }
 

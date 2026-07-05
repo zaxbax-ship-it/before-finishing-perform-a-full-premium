@@ -15,7 +15,7 @@ export async function GET(request: Request, context: RouteContext) {
     const gameState = await service.getGameState(id);
     return NextResponse.json({ ok: true, gameState }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    return multiplayerApiErrorResponse('multiplayer-games-id:get', error);
+    return multiplayerApiErrorResponse('multiplayer-games-id:get', error, { action: 'load_game_public' });
   }
 }
 
@@ -35,7 +35,7 @@ export async function POST(request: Request, context: RouteContext) {
     const gameState = await service.getGameState(id, playerId && playerToken ? { playerId, playerToken } : undefined);
     return NextResponse.json({ ok: true, gameState }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    return multiplayerApiErrorResponse('multiplayer-games-id:post', error);
+    return multiplayerApiErrorResponse('multiplayer-games-id:post', error, { action: 'load_game_private' });
   }
 }
 
