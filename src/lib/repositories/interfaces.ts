@@ -29,6 +29,14 @@ import type {
   UpsertPermissionDto,
   UpsertRoleDto
 } from '@/lib/domain/dtos';
+import type {
+  MultiplayerAnswer,
+  MultiplayerGame,
+  MultiplayerLobby,
+  MultiplayerPlayer,
+  MultiplayerResult,
+  MultiplayerRound
+} from '@/lib/multiplayer/types';
 
 export type ListOptions = {
   limit?: number;
@@ -158,6 +166,31 @@ export interface NotificationsRepository {
   markRead(id: EntityId): Promise<Notification | undefined>;
 }
 
+export interface MultiplayerRepository {
+  listOpenLobbies(options?: ListOptions): Promise<MultiplayerLobby[]>;
+  findLobby(id: EntityId): Promise<MultiplayerLobby | undefined>;
+  createLobby(lobby: MultiplayerLobby): Promise<MultiplayerLobby>;
+  updateLobby(id: EntityId, input: Partial<MultiplayerLobby>): Promise<MultiplayerLobby | undefined>;
+  createPlayer(player: MultiplayerPlayer): Promise<MultiplayerPlayer>;
+  listPlayers(lobbyId: EntityId): Promise<MultiplayerPlayer[]>;
+  findPlayer(id: EntityId): Promise<MultiplayerPlayer | undefined>;
+  findPlayerByIdentity(lobbyId: EntityId, identity: { authUserId?: EntityId; anonymousId?: EntityId }): Promise<MultiplayerPlayer | undefined>;
+  updatePlayer(id: EntityId, input: Partial<MultiplayerPlayer>): Promise<MultiplayerPlayer | undefined>;
+  createGame(game: MultiplayerGame): Promise<MultiplayerGame>;
+  findGame(id: EntityId): Promise<MultiplayerGame | undefined>;
+  findGameByLobby(lobbyId: EntityId): Promise<MultiplayerGame | undefined>;
+  updateGame(id: EntityId, input: Partial<MultiplayerGame>): Promise<MultiplayerGame | undefined>;
+  createRounds(rounds: MultiplayerRound[]): Promise<MultiplayerRound[]>;
+  listRounds(gameId: EntityId): Promise<MultiplayerRound[]>;
+  findRound(id: EntityId): Promise<MultiplayerRound | undefined>;
+  updateRound(id: EntityId, input: Partial<MultiplayerRound>): Promise<MultiplayerRound | undefined>;
+  createAnswer(answer: MultiplayerAnswer): Promise<MultiplayerAnswer>;
+  listAnswers(gameId: EntityId): Promise<MultiplayerAnswer[]>;
+  findAnswer(roundId: EntityId, playerId: EntityId): Promise<MultiplayerAnswer | undefined>;
+  createResults(results: MultiplayerResult[]): Promise<MultiplayerResult[]>;
+  listResults(gameId: EntityId): Promise<MultiplayerResult[]>;
+}
+
 export type RepositoryProviderKind = 'local-json' | 'database';
 
 export type RepositoryProvider = {
@@ -175,4 +208,5 @@ export type RepositoryProvider = {
   antiSpamEvents: AntiSpamEventsRepository;
   notifications: NotificationsRepository;
   leaderboard: LeaderboardRepository;
+  multiplayer: MultiplayerRepository;
 };

@@ -70,3 +70,17 @@ export function getAiModerationRateLimit() {
     windowMs: numberEnv('AI_MODERATION_RATE_LIMIT_WINDOW_SECONDS', 60) * 1000
   };
 }
+
+export function getMultiplayerLobbyRateLimit() {
+  return {
+    limit: numberEnv('MULTIPLAYER_LOBBY_RATE_LIMIT', 30),
+    windowMs: numberEnv('MULTIPLAYER_LOBBY_RATE_LIMIT_WINDOW_SECONDS', 60) * 1000
+  };
+}
+
+export function getMultiplayerAnswerRateLimit() {
+  return {
+    limit: numberEnv('MULTIPLAYER_ANSWER_RATE_LIMIT', 90),
+    windowMs: numberEnv('MULTIPLAYER_ANSWER_RATE_LIMIT_WINDOW_SECONDS', 60) * 1000
+  };
+}

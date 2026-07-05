@@ -9,6 +9,7 @@ import './language-menu.css';
 import './ads.css';
 import './auth.css';
 import './compliance.css';
+import './multiplayer.css';
 
 const googleSiteVerification = readEnv('NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION');
 const bingSiteVerification = readEnv('NEXT_PUBLIC_BING_SITE_VERIFICATION');

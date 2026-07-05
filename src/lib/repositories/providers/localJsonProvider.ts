@@ -20,6 +20,14 @@ import type {
   User
 } from '@/lib/domain/models';
 import type {
+  MultiplayerAnswer,
+  MultiplayerGame,
+  MultiplayerLobby,
+  MultiplayerPlayer,
+  MultiplayerResult,
+  MultiplayerRound
+} from '@/lib/multiplayer/types';
+import type {
   ApproveSubmissionDto,
   CreateAdminDto,
   CreateAuditLogDto,
@@ -72,6 +80,12 @@ type LocalState = {
   antiSpamEvents: AntiSpamEvent[];
   notifications: Notification[];
   leaderboard: LeaderboardEntry[];
+  multiplayerLobbies: MultiplayerLobby[];
+  multiplayerPlayers: MultiplayerPlayer[];
+  multiplayerGames: MultiplayerGame[];
+  multiplayerRounds: MultiplayerRound[];
+  multiplayerAnswers: MultiplayerAnswer[];
+  multiplayerResults: MultiplayerResult[];
 };
 
 function toApprovedQuestion(question: Question): ApprovedQuestion {
@@ -106,7 +120,13 @@ function createInitialState(): LocalState {
     reputationEvents: [],
     antiSpamEvents: [],
     notifications: [],
-    leaderboard: []
+    leaderboard: [],
+    multiplayerLobbies: [],
+    multiplayerPlayers: [],
+    multiplayerGames: [],
+    multiplayerRounds: [],
+    multiplayerAnswers: [],
+    multiplayerResults: []
   };
 }
 
@@ -532,6 +552,129 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
           return updated;
         });
         return updated;
+      }
+    },
+
+    multiplayer: {
+      async listOpenLobbies(options) {
+        const open = state.multiplayerLobbies
+          .filter(lobby => lobby.visibility === 'public' && (lobby.status === 'waiting' || lobby.status === 'ready'))
+          .sort((first, second) => new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime());
+        return limit(open, options?.limit ?? 20);
+      },
+      async findLobby(lobbyId) {
+        return findById(state.multiplayerLobbies, lobbyId);
+      },
+      async createLobby(lobby) {
+        state.multiplayerLobbies = [lobby, ...state.multiplayerLobbies];
+        return lobby;
+      },
+      async updateLobby(lobbyId, input) {
+        let updated: MultiplayerLobby | undefined;
+        state.multiplayerLobbies = state.multiplayerLobbies.map(lobby => {
+          if (lobby.id !== lobbyId) return lobby;
+          updated = { ...lobby, ...input, updatedAt: input.updatedAt || now() };
+          return updated;
+        });
+        return updated;
+      },
+      async createPlayer(player) {
+        state.multiplayerPlayers = [...state.multiplayerPlayers, player];
+        return player;
+      },
+      async listPlayers(lobbyId) {
+        return state.multiplayerPlayers
+          .filter(player => player.lobbyId === lobbyId)
+          .sort((first, second) => first.position - second.position);
+      },
+      async findPlayer(playerId) {
+        return findById(state.multiplayerPlayers, playerId);
+      },
+      async findPlayerByIdentity(lobbyId, identity) {
+        return state.multiplayerPlayers.find(player =>
+          player.lobbyId === lobbyId &&
+          ((identity.authUserId && player.authUserId === identity.authUserId) ||
+            (identity.anonymousId && player.anonymousId === identity.anonymousId))
+        );
+      },
+      async updatePlayer(playerId, input) {
+        let updated: MultiplayerPlayer | undefined;
+        state.multiplayerPlayers = state.multiplayerPlayers.map(player => {
+          if (player.id !== playerId) return player;
+          updated = { ...player, ...input, lastSeenAt: input.lastSeenAt || player.lastSeenAt };
+          return updated;
+        });
+        return updated;
+      },
+      async createGame(game) {
+        state.multiplayerGames = [game, ...state.multiplayerGames];
+        return game;
+      },
+      async findGame(gameId) {
+        return findById(state.multiplayerGames, gameId);
+      },
+      async findGameByLobby(lobbyId) {
+        return state.multiplayerGames.find(game => game.lobbyId === lobbyId);
+      },
+      async updateGame(gameId, input) {
+        let updated: MultiplayerGame | undefined;
+        state.multiplayerGames = state.multiplayerGames.map(game => {
+          if (game.id !== gameId) return game;
+          updated = { ...game, ...input, updatedAt: input.updatedAt || now() };
+          return updated;
+        });
+        return updated;
+      },
+      async createRounds(rounds) {
+        state.multiplayerRounds = [...state.multiplayerRounds, ...rounds];
+        return rounds;
+      },
+      async listRounds(gameId) {
+        return state.multiplayerRounds
+          .filter(round => round.gameId === gameId)
+          .sort((first, second) => first.roundNumber - second.roundNumber);
+      },
+      async findRound(roundId) {
+        return findById(state.multiplayerRounds, roundId);
+      },
+      async updateRound(roundId, input) {
+        let updated: MultiplayerRound | undefined;
+        state.multiplayerRounds = state.multiplayerRounds.map(round => {
+          if (round.id !== roundId) return round;
+          updated = { ...round, ...input, updatedAt: input.updatedAt || now() };
+          return updated;
+        });
+        return updated;
+      },
+      async createAnswer(answer) {
+        const existing = state.multiplayerAnswers.find(item => item.roundId === answer.roundId && item.playerId === answer.playerId);
+        if (existing) return existing;
+        if (answer.isCorrect && answer.awardedPrize > 0 && state.multiplayerAnswers.some(item => item.roundId === answer.roundId && item.awardedPrize > 0)) {
+          const withoutPrize = { ...answer, awardedPrize: 0 };
+          state.multiplayerAnswers = [...state.multiplayerAnswers, withoutPrize];
+          return withoutPrize;
+        }
+        state.multiplayerAnswers = [...state.multiplayerAnswers, answer];
+        return answer;
+      },
+      async listAnswers(gameId) {
+        return state.multiplayerAnswers.filter(answer => answer.gameId === gameId);
+      },
+      async findAnswer(roundId, playerId) {
+        return state.multiplayerAnswers.find(answer => answer.roundId === roundId && answer.playerId === playerId);
+      },
+      async createResults(results) {
+        const existingGameIds = new Set(results.map(result => result.gameId));
+        state.multiplayerResults = [
+          ...state.multiplayerResults.filter(result => !existingGameIds.has(result.gameId)),
+          ...results
+        ];
+        return results;
+      },
+      async listResults(gameId) {
+        return state.multiplayerResults
+          .filter(result => result.gameId === gameId)
+          .sort((first, second) => first.rank - second.rank);
       }
     }
   };

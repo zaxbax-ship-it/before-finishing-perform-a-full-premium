@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
+import { MultiplayerMode } from '@/components/multiplayer/MultiplayerMode';
 import {
   type AuditLogEntry,
   type CommunityDraft,
@@ -12,11 +13,12 @@ import {
   submissionToQuestion
 } from '@/lib/community';
 import { localizeCategory, localizeCategoryDescription, localizeQuestion } from '@/lib/localization';
+import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import type { LeaderboardEntry } from '@/lib/domain/models';
 import type { Locale, Question } from '@/lib/types';
 
 type GameQuestion = Question & { answers: string[]; imageUrl?: string };
-type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings' | 'submit' | 'leaderboard';
+type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings' | 'submit' | 'leaderboard' | 'multiplayer';
 type EndState = 'win' | 'quit' | 'timeout' | 'lost';
 type Lifeline = 'fifty' | 'swap' | 'phone' | 'audience';
 type LeaderboardStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'taken' | 'error';
@@ -1034,6 +1036,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
 
   const t = { ...UI[locale], ...UI_EXT[locale] };
   const communityT = COMMUNITY_UI[locale] || COMMUNITY_UI.he;
+  const multiplayerCopy = getMultiplayerCopy(locale);
   const dir = locale === 'he' || locale === 'ar' ? 'rtl' : 'ltr';
   const allQuestions = useMemo(() => [...extraQuestions, ...baseQuestions], [extraQuestions, baseQuestions]);
   const categories = useMemo(() => Array.from(new Set(allQuestions.map(question => question.category))).sort(), [allQuestions]);
@@ -1579,9 +1582,10 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
         <LanguageMenu locale={locale} setLocale={setLocale} />
       </div>
       {screen === 'admin' && adminHeader}
-      {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} open={open} start={() => open('categories')} />}
-      {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} start={() => open('categories')} open={open} />}
+      {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
+      {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={allQuestions} startGame={startGame} />}
+      {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
       {screen === 'submit' && (
         <CommunitySubmit
@@ -1685,7 +1689,7 @@ function Particles() {
   );
 }
 
-function Header({ t, submitLabel, open, start }: { t: Record<string, string>; submitLabel: string; open: (screen: Screen) => void; start: () => void }) {
+function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: Record<string, string>; submitLabel: string; multiplayerLabel: string; open: (screen: Screen) => void; start: () => void }) {
   // Public header: admin/editor tools are intentionally absent. The admin
   // dashboard is reachable only through the protected /admin route.
   return (
@@ -1696,6 +1700,7 @@ function Header({ t, submitLabel, open, start }: { t: Record<string, string>; su
       </button>
       <nav className="flex flex-wrap items-center gap-3">
         <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('multiplayer')}>{multiplayerLabel}</button>
         <button className="ghost-button focus-ring" onClick={() => open('leaderboard')}>{t.lbNav}</button>
         <button className="ghost-button focus-ring" onClick={() => open('submit')}>{submitLabel}</button>
         <button className="ghost-button focus-ring" onClick={() => open('contact')}>{t.contact}</button>
@@ -1738,7 +1743,7 @@ function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (local
   );
 }
 
-function Home({ t, locale, questionCount, start, open }: { t: Record<string, string>; locale: Locale; questionCount: number; start: () => void; open: (screen: Screen) => void }) {
+function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, open }: { t: Record<string, string>; locale: Locale; questionCount: number; soloLabel: string; multiplayerLabel: string; start: () => void; open: (screen: Screen) => void }) {
   const formattedQuestionCount = new Intl.NumberFormat(locale === 'he' ? 'he-IL' : locale).format(questionCount);
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-16 md:pt-8 lg:px-8">
@@ -1760,7 +1765,8 @@ function Home({ t, locale, questionCount, start, open }: { t: Record<string, str
           <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
           <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
           <div className="mt-9 flex flex-wrap gap-4">
-            <button className="premium-button focus-ring text-lg" onClick={start}>{t.start}</button>
+            <button className="premium-button focus-ring text-lg" onClick={start}>{soloLabel}</button>
+            <button className="ghost-button focus-ring text-lg" onClick={() => open('multiplayer')}>{multiplayerLabel}</button>
           </div>
         </div>
       </div>
@@ -1769,6 +1775,7 @@ function Home({ t, locale, questionCount, start, open }: { t: Record<string, str
       <nav className="home-actions" aria-label={t.homeActionsLabel}>
         <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
         <button className="ghost-button focus-ring" onClick={() => open('categories')}>{t.catNav}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('multiplayer')}>{multiplayerLabel}</button>
         <button className="ghost-button focus-ring" onClick={() => open('leaderboard')}>{t.lbNav}</button>
         <button className="ghost-button focus-ring" onClick={() => open('submit')}>{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
         <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>

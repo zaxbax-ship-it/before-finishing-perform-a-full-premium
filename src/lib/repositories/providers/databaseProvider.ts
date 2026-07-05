@@ -31,6 +31,14 @@ import type {
   UpsertRoleDto
 } from '@/lib/domain/dtos';
 import type { Locale, Question, QuestionTranslation } from '@/lib/types';
+import type {
+  MultiplayerAnswer,
+  MultiplayerGame,
+  MultiplayerLobby,
+  MultiplayerPlayer,
+  MultiplayerResult,
+  MultiplayerRound
+} from '@/lib/multiplayer/types';
 import type { ListOptions, QuestionFilters, RepositoryProvider, SubmissionFilters, SubmitScoreInput } from '../interfaces';
 
 type JsonRecord = Record<string, unknown>;
@@ -475,6 +483,190 @@ function mapLeaderboardEntry(row: SupabaseRow): LeaderboardEntry {
     isHidden: boolValue(row.is_hidden),
     createdAt: stringValue(row.created_at),
     updatedAt: stringValue(row.updated_at)
+  };
+}
+
+function mapMultiplayerLobby(row: SupabaseRow): MultiplayerLobby {
+  return {
+    id: stringValue(row.id),
+    status: stringValue(row.status, 'waiting') as MultiplayerLobby['status'],
+    visibility: stringValue(row.visibility, 'public') as MultiplayerLobby['visibility'],
+    maxPlayers: numberValue(row.max_players, 2) as MultiplayerLobby['maxPlayers'],
+    locale: stringValue(row.locale, 'he') as Locale,
+    category: stringValue(row.category) || undefined,
+    hostPlayerId: stringValue(row.host_player_id) || undefined,
+    gameId: stringValue(row.game_id) || undefined,
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at),
+    expiresAt: stringValue(row.expires_at)
+  };
+}
+
+function multiplayerLobbyPayload(lobby: Partial<MultiplayerLobby>): JsonRecord {
+  return {
+    id: lobby.id,
+    status: lobby.status,
+    visibility: lobby.visibility,
+    max_players: lobby.maxPlayers,
+    locale: lobby.locale,
+    category: lobby.category,
+    host_player_id: lobby.hostPlayerId,
+    game_id: lobby.gameId,
+    created_at: lobby.createdAt,
+    updated_at: lobby.updatedAt,
+    expires_at: lobby.expiresAt
+  };
+}
+
+function mapMultiplayerPlayer(row: SupabaseRow): MultiplayerPlayer {
+  return {
+    id: stringValue(row.id),
+    lobbyId: stringValue(row.lobby_id),
+    gameId: stringValue(row.game_id) || undefined,
+    authUserId: stringValue(row.auth_user_id) || undefined,
+    anonymousId: stringValue(row.anonymous_id),
+    nickname: stringValue(row.nickname),
+    displayName: stringValue(row.display_name) || undefined,
+    connectionTokenHash: stringValue(row.connection_token_hash),
+    position: numberValue(row.position, 1),
+    isConnected: boolValue(row.is_connected, true),
+    joinedAt: stringValue(row.joined_at),
+    lastSeenAt: stringValue(row.last_seen_at),
+    disconnectedAt: stringValue(row.disconnected_at) || undefined
+  };
+}
+
+function multiplayerPlayerPayload(player: Partial<MultiplayerPlayer>): JsonRecord {
+  return {
+    id: player.id,
+    lobby_id: player.lobbyId,
+    game_id: player.gameId,
+    auth_user_id: player.authUserId,
+    anonymous_id: player.anonymousId,
+    nickname: player.nickname,
+    display_name: player.displayName,
+    connection_token_hash: player.connectionTokenHash,
+    position: player.position,
+    is_connected: player.isConnected,
+    joined_at: player.joinedAt,
+    last_seen_at: player.lastSeenAt,
+    disconnected_at: player.disconnectedAt
+  };
+}
+
+function mapMultiplayerGame(row: SupabaseRow): MultiplayerGame {
+  return {
+    id: stringValue(row.id),
+    lobbyId: stringValue(row.lobby_id),
+    status: stringValue(row.status, 'waiting') as MultiplayerGame['status'],
+    questionIds: textArray(row.question_ids),
+    currentRoundIndex: numberValue(row.current_round_index),
+    startedAt: stringValue(row.started_at) || undefined,
+    finishedAt: stringValue(row.finished_at) || undefined,
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at)
+  };
+}
+
+function multiplayerGamePayload(game: Partial<MultiplayerGame>): JsonRecord {
+  return {
+    id: game.id,
+    lobby_id: game.lobbyId,
+    status: game.status,
+    question_ids: game.questionIds,
+    current_round_index: game.currentRoundIndex,
+    started_at: game.startedAt,
+    finished_at: game.finishedAt,
+    created_at: game.createdAt,
+    updated_at: game.updatedAt
+  };
+}
+
+function mapMultiplayerRound(row: SupabaseRow): MultiplayerRound {
+  return {
+    id: stringValue(row.id),
+    gameId: stringValue(row.game_id),
+    roundNumber: numberValue(row.round_number),
+    questionId: stringValue(row.question_id),
+    questionSnapshot: recordValue(row.question_snapshot) as MultiplayerRound['questionSnapshot'],
+    prize: numberValue(row.prize),
+    status: stringValue(row.status, 'pending') as MultiplayerRound['status'],
+    startsAt: stringValue(row.starts_at),
+    endsAt: stringValue(row.ends_at),
+    winnerPlayerId: stringValue(row.winner_player_id) || undefined,
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at)
+  };
+}
+
+function multiplayerRoundPayload(round: Partial<MultiplayerRound>): JsonRecord {
+  return {
+    id: round.id,
+    game_id: round.gameId,
+    round_number: round.roundNumber,
+    question_id: round.questionId,
+    question_snapshot: round.questionSnapshot,
+    prize: round.prize,
+    status: round.status,
+    starts_at: round.startsAt,
+    ends_at: round.endsAt,
+    winner_player_id: round.winnerPlayerId,
+    created_at: round.createdAt,
+    updated_at: round.updatedAt
+  };
+}
+
+function mapMultiplayerAnswer(row: SupabaseRow): MultiplayerAnswer {
+  return {
+    id: stringValue(row.id),
+    gameId: stringValue(row.game_id),
+    roundId: stringValue(row.round_id),
+    playerId: stringValue(row.player_id),
+    answerIndex: numberValue(row.answer_index),
+    isCorrect: boolValue(row.is_correct),
+    responseTimeMs: numberValue(row.response_time_ms),
+    awardedPrize: numberValue(row.awarded_prize),
+    submittedAt: stringValue(row.submitted_at)
+  };
+}
+
+function multiplayerAnswerPayload(answer: MultiplayerAnswer): JsonRecord {
+  return {
+    id: answer.id,
+    game_id: answer.gameId,
+    round_id: answer.roundId,
+    player_id: answer.playerId,
+    answer_index: answer.answerIndex,
+    is_correct: answer.isCorrect,
+    response_time_ms: answer.responseTimeMs,
+    awarded_prize: answer.awardedPrize,
+    submitted_at: answer.submittedAt
+  };
+}
+
+function mapMultiplayerResult(row: SupabaseRow): MultiplayerResult {
+  return {
+    id: stringValue(row.id),
+    gameId: stringValue(row.game_id),
+    playerId: stringValue(row.player_id),
+    rank: numberValue(row.rank),
+    totalPrize: numberValue(row.total_prize),
+    correctAnswers: numberValue(row.correct_answers),
+    averageResponseTimeMs: numberValue(row.average_response_time_ms),
+    createdAt: stringValue(row.created_at)
+  };
+}
+
+function multiplayerResultPayload(result: MultiplayerResult): JsonRecord {
+  return {
+    id: result.id,
+    game_id: result.gameId,
+    player_id: result.playerId,
+    rank: result.rank,
+    total_prize: result.totalPrize,
+    correct_answers: result.correctAnswers,
+    average_response_time_ms: result.averageResponseTimeMs,
+    created_at: result.createdAt
   };
 }
 
@@ -978,6 +1170,102 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
           });
           return updated;
         }
+      }
+    },
+    multiplayer: {
+      async listOpenLobbies(options) {
+        const query = `select=*&visibility=eq.public&status=in.(waiting,ready)&order=updated_at.desc${limitQuery({ limit: options?.limit ?? 20 })}`;
+        const rows = await client.list<SupabaseRow>('multiplayer_lobbies', query);
+        return rows.map(mapMultiplayerLobby);
+      },
+      async findLobby(lobbyId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_lobbies', `select=*&${eq('id', lobbyId)}&limit=1`);
+        return rows[0] ? mapMultiplayerLobby(rows[0]) : undefined;
+      },
+      async createLobby(lobby) {
+        const row = await client.insert<SupabaseRow>('multiplayer_lobbies', multiplayerLobbyPayload(lobby));
+        return mapMultiplayerLobby(row);
+      },
+      async updateLobby(lobbyId, input) {
+        const row = await client.update<SupabaseRow>('multiplayer_lobbies', eq('id', lobbyId), multiplayerLobbyPayload(input));
+        return row ? mapMultiplayerLobby(row) : undefined;
+      },
+      async createPlayer(player) {
+        const row = await client.insert<SupabaseRow>('multiplayer_players', multiplayerPlayerPayload(player));
+        return mapMultiplayerPlayer(row);
+      },
+      async listPlayers(lobbyId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_players', `select=*&${eq('lobby_id', lobbyId)}&order=position.asc`);
+        return rows.map(mapMultiplayerPlayer);
+      },
+      async findPlayer(playerId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_players', `select=*&${eq('id', playerId)}&limit=1`);
+        return rows[0] ? mapMultiplayerPlayer(rows[0]) : undefined;
+      },
+      async findPlayerByIdentity(lobbyId, identity) {
+        const filters = [
+          identity.authUserId ? eq('auth_user_id', identity.authUserId) : undefined,
+          identity.anonymousId ? eq('anonymous_id', identity.anonymousId) : undefined
+        ].filter(Boolean);
+        if (!filters.length) return undefined;
+        const rows = await client.list<SupabaseRow>('multiplayer_players', `select=*&${eq('lobby_id', lobbyId)}&or=(${filters.join(',')})&limit=1`);
+        return rows[0] ? mapMultiplayerPlayer(rows[0]) : undefined;
+      },
+      async updatePlayer(playerId, input) {
+        const row = await client.update<SupabaseRow>('multiplayer_players', eq('id', playerId), multiplayerPlayerPayload(input));
+        return row ? mapMultiplayerPlayer(row) : undefined;
+      },
+      async createGame(game) {
+        const row = await client.insert<SupabaseRow>('multiplayer_games', multiplayerGamePayload(game));
+        return mapMultiplayerGame(row);
+      },
+      async findGame(gameId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_games', `select=*&${eq('id', gameId)}&limit=1`);
+        return rows[0] ? mapMultiplayerGame(rows[0]) : undefined;
+      },
+      async findGameByLobby(lobbyId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_games', `select=*&${eq('lobby_id', lobbyId)}&limit=1`);
+        return rows[0] ? mapMultiplayerGame(rows[0]) : undefined;
+      },
+      async updateGame(gameId, input) {
+        const row = await client.update<SupabaseRow>('multiplayer_games', eq('id', gameId), multiplayerGamePayload(input));
+        return row ? mapMultiplayerGame(row) : undefined;
+      },
+      async createRounds(rounds) {
+        const created = await Promise.all(rounds.map(round => client.insert<SupabaseRow>('multiplayer_rounds', multiplayerRoundPayload(round))));
+        return created.map(mapMultiplayerRound);
+      },
+      async listRounds(gameId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_rounds', `select=*&${eq('game_id', gameId)}&order=round_number.asc`);
+        return rows.map(mapMultiplayerRound);
+      },
+      async findRound(roundId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_rounds', `select=*&${eq('id', roundId)}&limit=1`);
+        return rows[0] ? mapMultiplayerRound(rows[0]) : undefined;
+      },
+      async updateRound(roundId, input) {
+        const row = await client.update<SupabaseRow>('multiplayer_rounds', eq('id', roundId), multiplayerRoundPayload(input));
+        return row ? mapMultiplayerRound(row) : undefined;
+      },
+      async createAnswer(answer) {
+        const row = await client.insert<SupabaseRow>('multiplayer_answers', multiplayerAnswerPayload(answer));
+        return mapMultiplayerAnswer(row);
+      },
+      async listAnswers(gameId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_answers', `select=*&${eq('game_id', gameId)}&order=submitted_at.asc`);
+        return rows.map(mapMultiplayerAnswer);
+      },
+      async findAnswer(roundId, playerId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_answers', `select=*&${eq('round_id', roundId)}&${eq('player_id', playerId)}&limit=1`);
+        return rows[0] ? mapMultiplayerAnswer(rows[0]) : undefined;
+      },
+      async createResults(results) {
+        const created = await Promise.all(results.map(result => client.insert<SupabaseRow>('multiplayer_results', multiplayerResultPayload(result))));
+        return created.map(mapMultiplayerResult);
+      },
+      async listResults(gameId) {
+        const rows = await client.list<SupabaseRow>('multiplayer_results', `select=*&${eq('game_id', gameId)}&order=rank.asc`);
+        return rows.map(mapMultiplayerResult);
       }
     }
   };
