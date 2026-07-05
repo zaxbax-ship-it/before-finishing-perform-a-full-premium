@@ -12,12 +12,14 @@ import {
   submissionToQuestion
 } from '@/lib/community';
 import { localizeCategory, localizeCategoryDescription, localizeQuestion } from '@/lib/localization';
+import type { LeaderboardEntry } from '@/lib/domain/models';
 import type { Locale, Question } from '@/lib/types';
 
 type GameQuestion = Question & { answers: string[]; imageUrl?: string };
-type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings' | 'submit';
+type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings' | 'submit' | 'leaderboard';
 type EndState = 'win' | 'quit' | 'timeout' | 'lost';
 type Lifeline = 'fifty' | 'swap' | 'phone' | 'audience';
+type LeaderboardStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'taken' | 'error';
 
 type Settings = {
   sound: boolean;
@@ -59,6 +61,7 @@ const SETTINGS_KEY = 'premium-trivia-settings-v3';
 const EXTRA_KEY = 'premium-trivia-extra-questions-v3';
 const COMMUNITY_KEY = 'premium-trivia-community-submissions-v1';
 const AUDIT_KEY = 'premium-trivia-audit-log-v1';
+const NICKNAME_KEY = 'premium-trivia-public-nickname-v1';
 
 const UI: Record<Locale, Record<string, string>> = {
   he: {
@@ -69,7 +72,7 @@ const UI: Record<Locale, Record<string, string>> = {
     subtitle: 'טריוויה עברית יוקרתית',
     pill: 'חוויית שעשועון פרימיום בעברית מלאה',
     intro: 'מסע טריוויה דרמטי עם 15 שאלות, שלוש הזדמנויות, קופה חיה, גלגלי הצלה אסטרטגיים וסולם זכייה נוצץ.',
-    enter: 'כניסה לאולפן',
+    enter: 'התחלת משחק',
     manage: 'ניהול מאגר השאלות',
     live: 'שידור חי',
     choose: 'בחרו קטגוריה והתחילו משחק ממוקד',
@@ -99,7 +102,7 @@ const UI: Record<Locale, Record<string, string>> = {
     subtitle: 'Premium Hebrew Trivia',
     pill: 'A full premium Hebrew quiz show experience',
     intro: 'A dramatic 15-question trivia journey with three chances, a live bank, strategic lifelines and a glittering prize ladder.',
-    enter: 'Enter the Studio',
+    enter: 'Start Game',
     manage: 'Manage Questions',
     live: 'Live Broadcast',
     choose: 'Choose a Category and Start a Focused Game',
@@ -129,7 +132,7 @@ const UI: Record<Locale, Record<string, string>> = {
     subtitle: 'تريفيا عبرية فاخرة',
     pill: 'تجربة مسابقات عبرية فاخرة كاملة',
     intro: 'رحلة تريفيا درامية من 15 سؤالا مع ثلاث فرص، رصيد حي، وسائل مساعدة استراتيجية وسلم جوائز لامع.',
-    enter: 'دخول الاستوديو',
+    enter: 'ابدأ اللعبة',
     manage: 'إدارة بنك الأسئلة',
     live: 'بث مباشر',
     choose: 'اختر فئة وابدأ لعبة مركزة',
@@ -159,7 +162,7 @@ const UI: Record<Locale, Record<string, string>> = {
     subtitle: 'Премиальная ивритская викторина',
     pill: 'Полный премиальный формат телевизионной викторины на иврите',
     intro: 'Драматическая игра из 15 вопросов, три попытки, живой банк, стратегические подсказки и сияющая призовая лестница.',
-    enter: 'Войти в студию',
+    enter: 'Начать игру',
     manage: 'Управление вопросами',
     live: 'Прямой эфир',
     choose: 'Выберите категорию и начните игру',
@@ -189,7 +192,7 @@ const UI: Record<Locale, Record<string, string>> = {
     subtitle: 'ፕሪሚየም የዕብራይስጥ ትሪቪያ',
     pill: 'ሙሉ የፕሪሚየም የትሪቪያ ስቱዲዮ ልምድ',
     intro: '15 ጥያቄዎች፣ ሶስት እድሎች፣ ቀጥታ ሽልማት፣ የእርዳታ መንገዶች እና የሚያበራ የሽልማት መደብ።',
-    enter: 'ወደ ስቱዲዮ ግባ',
+    enter: 'ጨዋታ ጀምር',
     manage: 'የጥያቄዎች ባንክ አስተዳድር',
     live: 'ቀጥታ ስርጭት',
     choose: 'ምድብ ይምረጡና ጨዋታ ይጀምሩ',
@@ -275,7 +278,7 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lifelinesUsed: 'שימוש בגלגלי הצלה',
     achievementsLbl: 'הישגים',
     achStudio: 'כניסה לאולפן',
-    achMillion: 'מיליון שקלים',
+    achMillion: 'מיליון דולר',
     achSenior: 'שחקן בכיר',
     achDone: 'משחק הושלם',
     soundLbl: 'סאונד',
@@ -307,7 +310,24 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     diffEasy: 'קל',
     diffMedium: 'בינוני',
     diffHard: 'קשה',
-    diffExpert: 'מומחה'
+    diffExpert: 'מומחה',
+    catNav: 'קטגוריות',
+    homeActionsLabel: 'ניווט ראשי',
+    lbNav: 'לוח שיאים',
+    lbTitle: 'לוח השיאים',
+    lbSubtitle: 'השחקנים המובילים בפלטפורמה',
+    lbRank: 'מקום',
+    lbPlayer: 'שחקן',
+    lbBest: 'שיא זכייה',
+    lbEmpty: 'עדיין אין שיאים. היו הראשונים לקבוע תוצאה!',
+    lbLoading: 'טוען את לוח השיאים…',
+    lbError: 'לא הצלחנו לטעון את לוח השיאים כרגע.',
+    lbNickname: 'כינוי ציבורי',
+    lbNicknameHint: 'בחרו כינוי ייחודי (3–20 תווים) שיוצג בלוח השיאים. בלי כינוי — התוצאות לא ישותפו.',
+    lbSave: 'שמירת כינוי',
+    lbSaved: 'הכינוי נשמר. תוצאות המשחקים הבאים ישותפו ללוח.',
+    lbTaken: 'הכינוי הזה כבר תפוס. נסו כינוי אחר.',
+    lbYourBest: 'השיא האישי שלך'
   },
   en: {
     rulesTitle: 'Game Rules',
@@ -354,7 +374,7 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lifelinesUsed: 'Lifelines Used',
     achievementsLbl: 'Achievements',
     achStudio: 'Entered the Studio',
-    achMillion: 'One Million Shekels',
+    achMillion: 'One Million Dollars',
     achSenior: 'Top Player',
     achDone: 'Game Completed',
     soundLbl: 'Sound',
@@ -386,7 +406,24 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     diffEasy: 'Easy',
     diffMedium: 'Medium',
     diffHard: 'Hard',
-    diffExpert: 'Expert'
+    diffExpert: 'Expert',
+    catNav: 'Categories',
+    homeActionsLabel: 'Main navigation',
+    lbNav: 'Leaderboard',
+    lbTitle: 'Leaderboard',
+    lbSubtitle: 'The top players on the platform',
+    lbRank: 'Rank',
+    lbPlayer: 'Player',
+    lbBest: 'Best Win',
+    lbEmpty: 'No records yet. Be the first to set a score!',
+    lbLoading: 'Loading the leaderboard…',
+    lbError: 'We could not load the leaderboard right now.',
+    lbNickname: 'Public nickname',
+    lbNicknameHint: 'Pick a unique nickname (3–20 characters) shown on the leaderboard. Without a nickname your results are not shared.',
+    lbSave: 'Save nickname',
+    lbSaved: 'Nickname saved. Your next game results will be shared to the board.',
+    lbTaken: 'That nickname is already taken. Try another one.',
+    lbYourBest: 'Your personal best'
   },
   ar: {
     rulesTitle: 'قواعد اللعبة',
@@ -433,7 +470,7 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lifelinesUsed: 'وسائل مساعدة مستخدمة',
     achievementsLbl: 'إنجازات',
     achStudio: 'دخول الاستوديو',
-    achMillion: 'مليون شيكل',
+    achMillion: 'مليون دولار',
     achSenior: 'لاعب كبير',
     achDone: 'اكتملت اللعبة',
     soundLbl: 'الصوت',
@@ -465,7 +502,24 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     diffEasy: 'سهل',
     diffMedium: 'متوسط',
     diffHard: 'صعب',
-    diffExpert: 'خبير'
+    diffExpert: 'خبير',
+    catNav: 'الفئات',
+    homeActionsLabel: 'التنقل الرئيسي',
+    lbNav: 'لوحة الصدارة',
+    lbTitle: 'لوحة الصدارة',
+    lbSubtitle: 'أفضل اللاعبين على المنصة',
+    lbRank: 'المركز',
+    lbPlayer: 'اللاعب',
+    lbBest: 'أعلى ربح',
+    lbEmpty: 'لا توجد أرقام قياسية بعد. كن أول من يسجل نتيجة!',
+    lbLoading: 'جارٍ تحميل لوحة الصدارة…',
+    lbError: 'تعذر تحميل لوحة الصدارة حاليًا.',
+    lbNickname: 'الاسم المستعار العام',
+    lbNicknameHint: 'اختر اسمًا مستعارًا فريدًا (3–20 حرفًا) يظهر في لوحة الصدارة. بدون اسم مستعار لن تُشارك نتائجك.',
+    lbSave: 'حفظ الاسم المستعار',
+    lbSaved: 'تم حفظ الاسم المستعار. نتائج ألعابك القادمة ستُشارك في اللوحة.',
+    lbTaken: 'هذا الاسم المستعار محجوز بالفعل. جرّب اسمًا آخر.',
+    lbYourBest: 'رقمك القياسي الشخصي'
   },
   ru: {
     rulesTitle: 'Правила игры',
@@ -512,7 +566,7 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lifelinesUsed: 'Использовано подсказок',
     achievementsLbl: 'Достижения',
     achStudio: 'Вход в студию',
-    achMillion: 'Миллион шекелей',
+    achMillion: 'Миллион долларов',
     achSenior: 'Опытный игрок',
     achDone: 'Игра завершена',
     soundLbl: 'Звук',
@@ -544,7 +598,24 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     diffEasy: 'Легкий',
     diffMedium: 'Средний',
     diffHard: 'Сложный',
-    diffExpert: 'Эксперт'
+    diffExpert: 'Эксперт',
+    catNav: 'Категории',
+    homeActionsLabel: 'Главная навигация',
+    lbNav: 'Таблица лидеров',
+    lbTitle: 'Таблица лидеров',
+    lbSubtitle: 'Лучшие игроки платформы',
+    lbRank: 'Место',
+    lbPlayer: 'Игрок',
+    lbBest: 'Рекордный выигрыш',
+    lbEmpty: 'Рекордов пока нет. Станьте первым!',
+    lbLoading: 'Загружаем таблицу лидеров…',
+    lbError: 'Не удалось загрузить таблицу лидеров.',
+    lbNickname: 'Публичный ник',
+    lbNicknameHint: 'Выберите уникальный ник (3–20 символов) для таблицы лидеров. Без ника результаты не публикуются.',
+    lbSave: 'Сохранить ник',
+    lbSaved: 'Ник сохранён. Результаты следующих игр попадут в таблицу.',
+    lbTaken: 'Этот ник уже занят. Попробуйте другой.',
+    lbYourBest: 'Ваш личный рекорд'
   },
   am: {
     rulesTitle: 'የጨዋታው ህጎች',
@@ -591,7 +662,7 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     lifelinesUsed: 'የተጠቀሙ እርዳታዎች',
     achievementsLbl: 'ስኬቶች',
     achStudio: 'ወደ ስቱዲዮ መግባት',
-    achMillion: 'አንድ ሚሊዮን ሼቄል',
+    achMillion: 'አንድ ሚሊዮን ዶላር',
     achSenior: 'ከፍተኛ ተጫዋች',
     achDone: 'ጨዋታ ተጠናቋል',
     soundLbl: 'ድምጽ',
@@ -623,7 +694,24 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
     diffEasy: 'ቀላል',
     diffMedium: 'መካከለኛ',
     diffHard: 'ከባድ',
-    diffExpert: 'ባለሙያ'
+    diffExpert: 'ባለሙያ',
+    catNav: 'ምድቦች',
+    homeActionsLabel: 'ዋና ዳሰሳ',
+    lbNav: 'የደረጃ ሰሌዳ',
+    lbTitle: 'የደረጃ ሰሌዳ',
+    lbSubtitle: 'በመድረኩ ላይ ምርጥ ተጫዋቾች',
+    lbRank: 'ደረጃ',
+    lbPlayer: 'ተጫዋች',
+    lbBest: 'ከፍተኛ ሽልማት',
+    lbEmpty: 'እስካሁን ምንም ሪከርድ የለም። የመጀመሪያው ይሁኑ!',
+    lbLoading: 'የደረጃ ሰሌዳውን በመጫን ላይ…',
+    lbError: 'የደረጃ ሰሌዳውን አሁን መጫን አልቻልንም።',
+    lbNickname: 'የሕዝብ ቅጽል ስም',
+    lbNicknameHint: 'በሰሌዳው ላይ የሚታይ ልዩ ቅጽል ስም ይምረጡ (3–20 ፊደላት)። ያለ ቅጽል ስም ውጤቶችዎ አይጋሩም።',
+    lbSave: 'ቅጽል ስም አስቀምጥ',
+    lbSaved: 'ቅጽል ስሙ ተቀምጧል። የሚቀጥሉት ጨዋታዎች ውጤቶች ወደ ሰሌዳው ይጋራሉ።',
+    lbTaken: 'ይህ ቅጽል ስም አስቀድሞ ተይዟል። ሌላ ይሞክሩ።',
+    lbYourBest: 'የግል ሪከርድዎ'
   }
 };
 
@@ -647,9 +735,10 @@ function normalize(question: Question): GameQuestion {
 }
 
 function money(value: number) {
-  return new Intl.NumberFormat('he-IL', {
+  // Global audience: all prizes are shown in US dollars.
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'ILS',
+    currency: 'USD',
     maximumFractionDigits: 0
   }).format(value);
 }
@@ -893,6 +982,17 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 
+function legacyCurrencyAchievement() {
+  return `מיליון ${String.fromCharCode(1513, 1511, 1500, 1497, 1501)}`;
+}
+
+function normalizeStats(stats: Stats): Stats {
+  return {
+    ...stats,
+    achievements: stats.achievements.map(item => item === legacyCurrencyAchievement() ? 'מיליון דולר' : item)
+  };
+}
+
 export default function TriviaPlatform({ questions, initialScreen = 'home', adminHeader }: { questions: Question[]; initialScreen?: Screen; adminHeader?: ReactNode }) {
   const [loadedQuestions, setLoadedQuestions] = useState<Question[]>(questions);
   const baseQuestions = useMemo(() => loadedQuestions.map(normalize), [loadedQuestions]);
@@ -926,6 +1026,9 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   const [communityForm, setCommunityForm] = useState<CommunityDraft>(() => emptyCommunityDraft('he'));
   const [communityMessage, setCommunityMessage] = useState('');
   const [communityProviderLabel, setCommunityProviderLabel] = useState('Local automation ready');
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardStatus, setLeaderboardStatus] = useState<LeaderboardStatus>('idle');
+  const [nickname, setNicknameState] = useState('');
   const advanceTimeoutRef = useRef<number | null>(null);
   const advancingRef = useRef(false);
 
@@ -954,7 +1057,9 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     setCommunitySubmissions(readLocal(COMMUNITY_KEY, []));
     setAuditLogs(readLocal(AUDIT_KEY, []));
     setSettings(readLocal(SETTINGS_KEY, { sound: true, effects: true, timer: 'דרמטית' }));
-    setStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] }));
+    setStats(normalizeStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] })));
+    setNicknameState(readLocal(NICKNAME_KEY, ''));
+    void refreshLeaderboard();
   }, []);
 
   useEffect(() => {
@@ -1069,7 +1174,76 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     }, AUTO_ADVANCE_MS);
   }
 
+  async function refreshLeaderboard() {
+    setLeaderboardStatus(currentStatus => currentStatus === 'saving' ? currentStatus : 'loading');
+    try {
+      const response = await fetch('/api/leaderboard', { cache: 'no-store' });
+      const data = await response.json();
+      if (response.ok && Array.isArray(data?.entries)) {
+        setLeaderboardEntries(data.entries as LeaderboardEntry[]);
+        setLeaderboardStatus(currentStatus => currentStatus === 'saving' ? currentStatus : 'idle');
+        return;
+      }
+    } catch {
+      // The game remains fully playable if the optional leaderboard endpoint is unavailable.
+    }
+    setLeaderboardStatus(currentStatus => currentStatus === 'saving' ? currentStatus : 'error');
+  }
+
+  async function saveNickname(value: string) {
+    const cleaned = value.trim().replace(/\s+/g, ' ').slice(0, 20);
+    if (cleaned.length < 3) {
+      setLeaderboardStatus('error');
+      return;
+    }
+
+    setLeaderboardStatus('saving');
+    try {
+      const response = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: cleaned, prize: 0, correctCount: 0, claimOnly: true })
+      });
+      const data = await response.json();
+
+      if (response.status === 409 || data?.status === 'nickname_taken') {
+        setLeaderboardStatus('taken');
+        return;
+      }
+
+      if (response.ok && data?.ok) {
+        localStorage.setItem(NICKNAME_KEY, JSON.stringify(cleaned));
+        setNicknameState(cleaned);
+        if (Array.isArray(data.entries)) setLeaderboardEntries(data.entries as LeaderboardEntry[]);
+        setLeaderboardStatus('saved');
+        return;
+      }
+    } catch {
+      // Handled by the error state below.
+    }
+    setLeaderboardStatus('error');
+  }
+
+  async function submitLeaderboardScore(publicNickname: string, prize: number, correctCount: number) {
+    if (!publicNickname.trim()) return;
+    try {
+      const response = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: publicNickname, prize, correctCount })
+      });
+      const data = await response.json();
+      if (response.ok && Array.isArray(data?.entries)) setLeaderboardEntries(data.entries as LeaderboardEntry[]);
+      if (response.status === 409) setLeaderboardStatus('taken');
+    } catch {
+      setLeaderboardStatus('error');
+    }
+  }
+
   function open(next: Screen) {
+    // The admin dashboard is only reachable through the protected /admin route;
+    // the public app never navigates to it (server-side guards protect the data).
+    if (next === 'admin' && initialScreen !== 'admin') return;
     clearAdvanceTimer();
     setScreen(next);
     tone('click', settings.sound);
@@ -1174,8 +1348,12 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       totalMoney: previous.totalMoney + prize,
       correct: previous.correct + round,
       lifelines: previous.lifelines + lifelines,
-      achievements: Array.from(new Set([...previous.achievements, prize >= 1000000 ? 'מיליון שקלים' : prize >= 250000 ? 'שחקן בכיר' : 'משחק הושלם']))
+      achievements: Array.from(new Set([...previous.achievements, prize >= 1000000 ? 'מיליון דולר' : prize >= 250000 ? 'שחקן בכיר' : 'משחק הושלם']))
     }));
+    const publicNickname = nickname || readLocal(NICKNAME_KEY, '');
+    if (publicNickname) {
+      void submitLeaderboardScore(publicNickname, prize, Math.min(15, state === 'win' ? 15 : round));
+    }
   }
 
   function triggerLifeline(type: Lifeline) {
@@ -1397,9 +1575,12 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   return (
     <main className={`app-shell font-hebrew premium-typography ${screen === 'game' ? 'game-active' : ''} ${screen === 'admin' ? 'admin-active' : ''}`} dir={dir}>
       {settings.effects && <Particles />}
+      <div className="language-corner">
+        <LanguageMenu locale={locale} setLocale={setLocale} />
+      </div>
       {screen === 'admin' && adminHeader}
-      <Header t={t} locale={locale} setLocale={setLocale} open={open} start={() => open('categories')} />
-      {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} start={() => open('categories')} admin={() => open('admin')} />}
+      {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} open={open} start={() => open('categories')} />}
+      {screen === 'home' && <Home t={t} locale={locale} questionCount={allQuestions.length} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={allQuestions} startGame={startGame} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
       {screen === 'submit' && (
@@ -1467,7 +1648,16 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
         />
       )}
       {screen === 'contact' && <Contact t={t} sent={sent} setSent={setSent} />}
-      {screen === 'add' && <Panel title={t.add} icon="✎"><QuestionForm t={t} locale={locale} form={form} setForm={setForm} save={saveQuestion} reset={() => setForm(emptyQuestion())} />{sent && <Success text={t.addSaved} />}</Panel>}
+      {screen === 'leaderboard' && (
+        <Leaderboard
+          t={t}
+          entries={leaderboardEntries}
+          status={leaderboardStatus}
+          nickname={nickname}
+          setNickname={saveNickname}
+          bestPrize={stats.bestPrize}
+        />
+      )}
       {screen === 'profile' && <Profile t={t} stats={stats} />}
       {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => setPendingPaid(null)} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
@@ -1495,21 +1685,22 @@ function Particles() {
   );
 }
 
-function Header({ t, locale, setLocale, open, start }: { t: Record<string, string>; locale: Locale; setLocale: (locale: Locale) => void; open: (screen: Screen) => void; start: () => void }) {
+function Header({ t, submitLabel, open, start }: { t: Record<string, string>; submitLabel: string; open: (screen: Screen) => void; start: () => void }) {
+  // Public header: admin/editor tools are intentionally absent. The admin
+  // dashboard is reachable only through the protected /admin route.
   return (
-    <header className="relative z-20 mx-auto flex w-full max-w-[1680px] flex-col gap-4 px-5 pt-5 md:flex-row md:items-center md:justify-between lg:px-8">
+    <header className="public-header relative z-20 mx-auto flex w-full max-w-[1680px] flex-col gap-4 px-5 pt-5 md:flex-row md:items-center md:justify-between lg:px-8">
       <button className="focus-ring flex items-center gap-3 text-right" onClick={() => open('home')}>
         <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-gold text-royal shadow-gold">♕</span>
         <span><strong className="block text-xl font-black">{t.headline}</strong><small className="text-white/65">{t.subtitle}</small></span>
       </button>
       <nav className="flex flex-wrap items-center gap-3">
         <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('admin')}>{t.admin}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('submit')}>{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('leaderboard')}>{t.lbNav}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('submit')}>{submitLabel}</button>
         <button className="ghost-button focus-ring" onClick={() => open('contact')}>{t.contact}</button>
         <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>
         <button className="ghost-button focus-ring" onClick={() => open('settings')}>{t.settings}</button>
-        <LanguageMenu locale={locale} setLocale={setLocale} />
         <button className="premium-button focus-ring" onClick={start}>{t.start}</button>
       </nav>
     </header>
@@ -1547,12 +1738,13 @@ function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (local
   );
 }
 
-function Home({ t, locale, questionCount, start, admin }: { t: Record<string, string>; locale: Locale; questionCount: number; start: () => void; admin: () => void }) {
+function Home({ t, locale, questionCount, start, open }: { t: Record<string, string>; locale: Locale; questionCount: number; start: () => void; open: (screen: Screen) => void }) {
   const formattedQuestionCount = new Intl.NumberFormat(locale === 'he' ? 'he-IL' : locale).format(questionCount);
   return (
-    <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
-      <div className="grid min-h-[calc(100vh-104px)] items-center gap-12 lg:grid-cols-[.86fr_1fr]">
-        <div className="glass relative min-h-[620px] overflow-hidden rounded-[36px] p-8">
+    <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-16 md:pt-8 lg:px-8">
+      {/* Hero first: intro through the single primary Start Game button. */}
+      <div className="grid items-center gap-12 lg:grid-cols-[.86fr_1fr]">
+        <div className="glass relative min-h-[420px] overflow-hidden rounded-[36px] p-8 lg:min-h-[560px]">
           <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
           <div className="relative grid h-full place-items-center text-center">
             <div>
@@ -1568,15 +1760,26 @@ function Home({ t, locale, questionCount, start, admin }: { t: Record<string, st
           <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
           <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
           <div className="mt-9 flex flex-wrap gap-4">
-            <button className="premium-button focus-ring text-lg" onClick={start}>{t.enter}</button>
-            <button className="ghost-button focus-ring text-lg" onClick={admin}>{t.manage}</button>
-          </div>
-          <div className="mt-9 grid gap-4 md:grid-cols-3">
-            <Metric value={`${formattedQuestionCount}+`} label={t.homeQuestions} />
-            <Metric value="3" label={t.chancesLabel} />
-            <Metric value={money(1000000)} label={t.homePrize} gold />
+            <button className="premium-button focus-ring text-lg" onClick={start}>{t.start}</button>
           </div>
         </div>
+      </div>
+
+      {/* Public navigation/actions below the hero. No admin/editor tools here. */}
+      <nav className="home-actions" aria-label={t.homeActionsLabel}>
+        <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('categories')}>{t.catNav}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('leaderboard')}>{t.lbNav}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('submit')}>{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('contact')}>{t.contact}</button>
+        <button className="ghost-button focus-ring" onClick={() => open('settings')}>{t.settings}</button>
+      </nav>
+
+      <div className="mt-9 grid gap-4 md:grid-cols-3">
+        <Metric value={`${formattedQuestionCount}+`} label={t.homeQuestions} />
+        <Metric value="3" label={t.chancesLabel} />
+        <Metric value={money(1000000)} label={t.homePrize} gold />
       </div>
       <AdSlot placement="homepage-hero-below" className="mt-4" />
       <AdSlot placement="homepage-content" className="mt-8" />
@@ -1692,7 +1895,7 @@ function Game(props: {
             <div className="text-sm font-bold text-gold">{t.question} {round + 1} {t.of} 15 · {current.category} · {current.difficulty}</div>
             <div className="mt-2 text-2xl font-extrabold">{t.currentPrize}: {money(nextPrize)}</div>
           </div>
-          <div className="money-pot"><span>₪</span><div><small>{t.currentPot}</small><strong>{money(currentPrize)}</strong></div></div>
+          <div className="money-pot"><span>$</span><div><small>{t.currentPot}</small><strong>{money(currentPrize)}</strong></div></div>
           <div className={`timer-badge ${timerUrgency}`}><span>◷</span><span>{timer}</span><small>{t.seconds}</small></div>
         </div>
         <div className="chance-row mt-4"><span>{t.chancesLabel}</span>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}>♥</span>)}</div>
@@ -1823,6 +2026,83 @@ function Result({ t, state, correctCount, elapsed, prize, start, home }: { t: Re
         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row"><button className="premium-button focus-ring" onClick={start}>{t.playAgain}</button><button className="ghost-button focus-ring" onClick={() => navigator.share?.({ title: t.headline, text: fmt(t.shareText, { prize: money(prize) }) })}>{t.shareBtn}</button><button className="ghost-button focus-ring" onClick={home}>{t.home}</button></div>
       </div>
     </section>
+  );
+}
+
+function Leaderboard({ t, entries, status, nickname, setNickname, bestPrize }: {
+  t: Record<string, string>;
+  entries: LeaderboardEntry[];
+  status: LeaderboardStatus;
+  nickname: string;
+  setNickname: (value: string) => void | Promise<void>;
+  bestPrize: number;
+}) {
+  const [draft, setDraft] = useState(nickname);
+
+  useEffect(() => {
+    setDraft(nickname);
+  }, [nickname]);
+
+  const message = status === 'loading' || status === 'saving'
+    ? t.lbLoading
+    : status === 'saved'
+      ? t.lbSaved
+      : status === 'taken'
+        ? t.lbTaken
+        : status === 'error'
+          ? t.lbError
+          : '';
+
+  return (
+    <Panel title={t.lbTitle} icon="★">
+      <div className="leaderboard-layout">
+        <section className="leaderboard-profile-card">
+          <p className="leaderboard-eyebrow">{t.lbSubtitle}</p>
+          <div className="leaderboard-personal-best">
+            <span>{t.lbYourBest}</span>
+            <strong>{money(bestPrize)}</strong>
+          </div>
+          <Field label={t.lbNickname}>
+            <input
+              className="form-input"
+              value={draft}
+              maxLength={20}
+              onChange={event => setDraft(event.target.value)}
+              placeholder={t.lbNickname}
+            />
+          </Field>
+          <p className="leaderboard-hint">{t.lbNicknameHint}</p>
+          <button
+            className="premium-button focus-ring w-full"
+            disabled={status === 'saving' || draft.trim().length < 3}
+            onClick={() => void setNickname(draft)}
+          >
+            {t.lbSave}
+          </button>
+          {message && <div className={`leaderboard-message ${status}`} aria-live="polite">{message}</div>}
+        </section>
+
+        <section className="leaderboard-table-card">
+          {entries.length === 0 && <p className="leaderboard-empty">{status === 'loading' ? t.lbLoading : t.lbEmpty}</p>}
+          {entries.length > 0 && (
+            <div className="leaderboard-list" role="table" aria-label={t.lbTitle}>
+              <div className="leaderboard-row leaderboard-head" role="row">
+                <span role="columnheader">{t.lbRank}</span>
+                <span role="columnheader">{t.lbPlayer}</span>
+                <span role="columnheader">{t.lbBest}</span>
+              </div>
+              {entries.map((entry, index) => (
+                <div key={entry.id} className="leaderboard-row" role="row">
+                  <span className="leaderboard-rank" role="cell">{index + 1}</span>
+                  <strong role="cell">{entry.nickname || entry.displayName}</strong>
+                  <span className="leaderboard-prize" role="cell">{money(entry.bestPrize)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </Panel>
   );
 }
 
@@ -1983,7 +2263,7 @@ function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, str
   return (
     <div className="modal-backdrop">
       <div className="glass modal-card">
-        <div className="text-4xl text-gold">₪</div>
+        <div className="text-4xl text-gold">$</div>
         <h3>{t.paidTitle}</h3>
         <p>{fmt(t.paidBody, { label: t[pending.type], price: money(pending.price) })}</p>
         <div className="rounded-2xl bg-white/[0.07] p-4 text-sm text-white/65">{fmt(t.paidPotInfo, { pot: money(pot) })}</div>
@@ -1999,7 +2279,7 @@ function Contact({ t, sent, setSent }: { t: Record<string, string>; sent: boolea
 
 const ACHIEVEMENT_KEYS: Record<string, string> = {
   'כניסה לאולפן': 'achStudio',
-  'מיליון שקלים': 'achMillion',
+  'מיליון דולר': 'achMillion',
   'שחקן בכיר': 'achSenior',
   'משחק הושלם': 'achDone'
 };

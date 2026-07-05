@@ -9,6 +9,7 @@ import type {
   AuditLog,
   ContributorReputation,
   EntityId,
+  LeaderboardEntry,
   ModerationResultEntity,
   Notification,
   Permission,
@@ -30,7 +31,7 @@ import type {
   UpsertRoleDto
 } from '@/lib/domain/dtos';
 import type { Question } from '@/lib/types';
-import type { RepositoryProvider } from '../interfaces';
+import type { RepositoryProvider, SubmitScoreInput } from '../interfaces';
 
 const now = () => new Date().toISOString();
 const id = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -70,6 +71,7 @@ type LocalState = {
   reputationEvents: ReputationEvent[];
   antiSpamEvents: AntiSpamEvent[];
   notifications: Notification[];
+  leaderboard: LeaderboardEntry[];
 };
 
 function toApprovedQuestion(question: Question): ApprovedQuestion {
@@ -103,7 +105,8 @@ function createInitialState(): LocalState {
     reputation: [],
     reputationEvents: [],
     antiSpamEvents: [],
-    notifications: []
+    notifications: [],
+    leaderboard: []
   };
 }
 
@@ -115,6 +118,65 @@ function limit<T>(items: T[], size?: number) {
 
 function findById<T extends { id: string | number }>(items: T[], itemId: string | number) {
   return items.find(item => String(item.id) === String(itemId));
+}
+
+function normalizeNickname(value: string) {
+  return value.trim().replace(/\s+/g, ' ').slice(0, 20);
+}
+
+function nicknameKey(value: string) {
+  return normalizeNickname(value).toLocaleLowerCase('en-US');
+}
+
+function sortLeaderboard(entries: LeaderboardEntry[]) {
+  return [...entries].sort((first, second) =>
+    second.bestPrize - first.bestPrize ||
+    second.bestCorrectCount - first.bestCorrectCount ||
+    new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime()
+  );
+}
+
+function upsertLocalLeaderboardScore(state: LocalState, input: SubmitScoreInput) {
+  const nickname = normalizeNickname(input.nickname);
+  const key = nicknameKey(nickname);
+  const existing = state.leaderboard.find(entry => nicknameKey(entry.nickname) === key);
+  const date = now();
+
+  if (existing) {
+    if (input.authUserId && existing.authUserId && existing.authUserId !== input.authUserId) {
+      return { status: 'nickname_taken' as const };
+    }
+
+    const updated: LeaderboardEntry = {
+      ...existing,
+      nickname,
+      displayName: input.displayName || existing.displayName,
+      authUserId: existing.authUserId || input.authUserId,
+      bestPrize: input.claimOnly ? existing.bestPrize : Math.max(existing.bestPrize, input.prize),
+      bestCorrectCount: input.claimOnly ? existing.bestCorrectCount : Math.max(existing.bestCorrectCount, input.correctCount),
+      gamesCount: input.claimOnly ? existing.gamesCount : existing.gamesCount + 1,
+      updatedAt: date
+    };
+
+    state.leaderboard = state.leaderboard.map(entry => entry.id === existing.id ? updated : entry);
+    return { status: 'ok' as const, entry: updated };
+  }
+
+  const entry: LeaderboardEntry = {
+    id: id('leaderboard'),
+    nickname,
+    displayName: input.displayName,
+    authUserId: input.authUserId,
+    bestPrize: input.claimOnly ? 0 : input.prize,
+    bestCorrectCount: input.claimOnly ? 0 : input.correctCount,
+    gamesCount: input.claimOnly ? 0 : 1,
+    isHidden: false,
+    createdAt: date,
+    updatedAt: date
+  };
+
+  state.leaderboard = [entry, ...state.leaderboard];
+  return { status: 'ok' as const, entry };
 }
 
 export function createLocalJsonRepositoryProvider(state = localState): RepositoryProvider {
@@ -448,6 +510,25 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
         state.notifications = state.notifications.map(notification => {
           if (notification.id !== notificationId) return notification;
           updated = { ...notification, readAt: now() };
+          return updated;
+        });
+        return updated;
+      }
+    },
+
+    leaderboard: {
+      async listTop(options) {
+        return limit(sortLeaderboard(state.leaderboard.filter(entry => !entry.isHidden)), options?.limit ?? 25);
+      },
+      async submitScore(input) {
+        return upsertLocalLeaderboardScore(state, input);
+      },
+      async setHidden(nickname, hidden) {
+        const key = nicknameKey(nickname);
+        let updated: LeaderboardEntry | undefined;
+        state.leaderboard = state.leaderboard.map(entry => {
+          if (nicknameKey(entry.nickname) !== key) return entry;
+          updated = { ...entry, isHidden: hidden, updatedAt: now() };
           return updated;
         });
         return updated;

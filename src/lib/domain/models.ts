@@ -137,5 +137,22 @@ export type Notification = {
   createdAt: ISODateTime;
 };
 
+export type LeaderboardEntry = {
+  id: EntityId;
+  /** Unique public nickname (case-insensitive uniqueness). */
+  nickname: string;
+  /** Optional display name fallback shown when moderation hides a nickname. */
+  displayName?: string;
+  /** Supabase auth user id when the score was submitted by a logged-in user. */
+  authUserId?: EntityId;
+  bestPrize: number;
+  bestCorrectCount: number;
+  gamesCount: number;
+  /** Set by admins when a nickname is moderated; hidden from the public board. */
+  isHidden?: boolean;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+};
+
 export type QuestionSubmission = CommunitySubmission;
 export type AuditLog = AuditLogEntry;

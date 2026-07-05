@@ -9,6 +9,7 @@ import type {
   AuditLog,
   ContributorReputation,
   EntityId,
+  LeaderboardEntry,
   ModerationResultEntity,
   Notification,
   Permission,
@@ -30,7 +31,7 @@ import type {
   UpsertRoleDto
 } from '@/lib/domain/dtos';
 import type { Locale, Question, QuestionTranslation } from '@/lib/types';
-import type { ListOptions, QuestionFilters, RepositoryProvider, SubmissionFilters } from '../interfaces';
+import type { ListOptions, QuestionFilters, RepositoryProvider, SubmissionFilters, SubmitScoreInput } from '../interfaces';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -47,6 +48,7 @@ type SupabaseClientConfig = {
 
 const now = () => new Date().toISOString();
 const id = (prefix: string) => `${prefix}-${Date.now()}-${crypto.randomUUID()}`;
+let databaseLeaderboardFallback: LeaderboardEntry[] = [];
 
 function getSupabaseConfig(): SupabaseClientConfig {
   const url = readEnv('NEXT_PUBLIC_SUPABASE_URL');
@@ -445,6 +447,78 @@ function mapNotification(row: SupabaseRow): Notification {
   };
 }
 
+function normalizeNickname(value: string) {
+  return value.trim().replace(/\s+/g, ' ').slice(0, 20);
+}
+
+function nicknameKey(value: string) {
+  return normalizeNickname(value).toLocaleLowerCase('en-US');
+}
+
+function sortLeaderboard(entries: LeaderboardEntry[]) {
+  return [...entries].sort((first, second) =>
+    second.bestPrize - first.bestPrize ||
+    second.bestCorrectCount - first.bestCorrectCount ||
+    new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime()
+  );
+}
+
+function mapLeaderboardEntry(row: SupabaseRow): LeaderboardEntry {
+  return {
+    id: stringValue(row.id),
+    nickname: stringValue(row.nickname),
+    displayName: stringValue(row.display_name) || undefined,
+    authUserId: stringValue(row.auth_user_id) || undefined,
+    bestPrize: numberValue(row.best_prize),
+    bestCorrectCount: numberValue(row.best_correct_count),
+    gamesCount: numberValue(row.games_count),
+    isHidden: boolValue(row.is_hidden),
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at)
+  };
+}
+
+function upsertLeaderboardFallback(input: SubmitScoreInput) {
+  const nickname = normalizeNickname(input.nickname);
+  const key = nicknameKey(nickname);
+  const existing = databaseLeaderboardFallback.find(entry => nicknameKey(entry.nickname) === key);
+  const date = now();
+
+  if (existing) {
+    if (input.authUserId && existing.authUserId && existing.authUserId !== input.authUserId) {
+      return { status: 'nickname_taken' as const };
+    }
+
+    const updated: LeaderboardEntry = {
+      ...existing,
+      nickname,
+      displayName: input.displayName || existing.displayName,
+      authUserId: existing.authUserId || input.authUserId,
+      bestPrize: input.claimOnly ? existing.bestPrize : Math.max(existing.bestPrize, input.prize),
+      bestCorrectCount: input.claimOnly ? existing.bestCorrectCount : Math.max(existing.bestCorrectCount, input.correctCount),
+      gamesCount: input.claimOnly ? existing.gamesCount : existing.gamesCount + 1,
+      updatedAt: date
+    };
+    databaseLeaderboardFallback = databaseLeaderboardFallback.map(entry => entry.id === existing.id ? updated : entry);
+    return { status: 'ok' as const, entry: updated };
+  }
+
+  const entry: LeaderboardEntry = {
+    id: id('leaderboard'),
+    nickname,
+    displayName: input.displayName,
+    authUserId: input.authUserId,
+    bestPrize: input.claimOnly ? 0 : input.prize,
+    bestCorrectCount: input.claimOnly ? 0 : input.correctCount,
+    gamesCount: input.claimOnly ? 0 : 1,
+    isHidden: false,
+    createdAt: date,
+    updatedAt: date
+  };
+  databaseLeaderboardFallback = [entry, ...databaseLeaderboardFallback];
+  return { status: 'ok' as const, entry };
+}
+
 function toGameplayQuestion(question: ApprovedQuestion): Question {
   const {
     locale,
@@ -829,6 +903,81 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       async markRead(notificationId) {
         const row = await client.update<SupabaseRow>('notifications', eq('id', notificationId), { read_at: now() });
         return row ? mapNotification(row) : undefined;
+      }
+    },
+    leaderboard: {
+      async listTop(options) {
+        try {
+          const query = `select=*&is_hidden=eq.false&order=best_prize.desc,best_correct_count.desc,updated_at.desc${limitQuery({ limit: options?.limit ?? 25 })}`;
+          const rows = await client.list<SupabaseRow>('leaderboard_entries', query);
+          return rows.map(mapLeaderboardEntry);
+        } catch {
+          return sortLeaderboard(databaseLeaderboardFallback.filter(entry => !entry.isHidden)).slice(0, options?.limit ?? 25);
+        }
+      },
+      async submitScore(input) {
+        const nickname = normalizeNickname(input.nickname);
+        const key = nicknameKey(nickname);
+
+        try {
+          const rows = await client.list<SupabaseRow>('leaderboard_entries', `select=*&${eq('nickname_key', key)}&limit=1`);
+          const existing = rows[0] ? mapLeaderboardEntry(rows[0]) : undefined;
+          const date = now();
+
+          if (existing) {
+            if (input.authUserId && existing.authUserId && existing.authUserId !== input.authUserId) {
+              return { status: 'nickname_taken' as const };
+            }
+
+            const row = await client.update<SupabaseRow>('leaderboard_entries', eq('id', existing.id), {
+              nickname,
+              display_name: input.displayName || existing.displayName,
+              auth_user_id: existing.authUserId || input.authUserId,
+              best_prize: input.claimOnly ? existing.bestPrize : Math.max(existing.bestPrize, input.prize),
+              best_correct_count: input.claimOnly ? existing.bestCorrectCount : Math.max(existing.bestCorrectCount, input.correctCount),
+              games_count: input.claimOnly ? existing.gamesCount : existing.gamesCount + 1,
+              updated_at: date
+            });
+            return { status: 'ok' as const, entry: mapLeaderboardEntry(row) };
+          }
+
+          const row = await client.insert<SupabaseRow>('leaderboard_entries', {
+            id: id('leaderboard'),
+            nickname,
+            nickname_key: key,
+            display_name: input.displayName,
+            auth_user_id: input.authUserId,
+            best_prize: input.claimOnly ? 0 : input.prize,
+            best_correct_count: input.claimOnly ? 0 : input.correctCount,
+            games_count: input.claimOnly ? 0 : 1,
+            is_hidden: false,
+            created_at: date,
+            updated_at: date
+          });
+          return { status: 'ok' as const, entry: mapLeaderboardEntry(row) };
+        } catch {
+          return upsertLeaderboardFallback(input);
+        }
+      },
+      async setHidden(nickname, hidden) {
+        const key = nicknameKey(nickname);
+        try {
+          const rows = await client.list<SupabaseRow>('leaderboard_entries', `select=*&${eq('nickname_key', key)}&limit=1`);
+          if (!rows[0]) return undefined;
+          const row = await client.update<SupabaseRow>('leaderboard_entries', eq('id', stringValue(rows[0].id)), {
+            is_hidden: hidden,
+            updated_at: now()
+          });
+          return row ? mapLeaderboardEntry(row) : undefined;
+        } catch {
+          let updated: LeaderboardEntry | undefined;
+          databaseLeaderboardFallback = databaseLeaderboardFallback.map(entry => {
+            if (nicknameKey(entry.nickname) !== key) return entry;
+            updated = { ...entry, isHidden: hidden, updatedAt: now() };
+            return updated;
+          });
+          return updated;
+        }
       }
     }
   };

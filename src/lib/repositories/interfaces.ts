@@ -8,6 +8,7 @@ import type {
   AuditLog,
   ContributorReputation,
   EntityId,
+  LeaderboardEntry,
   ModerationResultEntity,
   Notification,
   Permission,
@@ -124,6 +125,32 @@ export interface AntiSpamEventsRepository {
   listRecentByIdentity(identity: { emailHash?: string; ipHash?: string }, options?: ListOptions): Promise<AntiSpamEvent[]>;
 }
 
+export type SubmitScoreInput = {
+  nickname: string;
+  prize: number;
+  correctCount: number;
+  displayName?: string;
+  authUserId?: EntityId;
+  /** Register the nickname without recording a game result. */
+  claimOnly?: boolean;
+};
+
+export type SubmitScoreResult =
+  | { status: 'ok'; entry: LeaderboardEntry }
+  | { status: 'nickname_taken' };
+
+export interface LeaderboardRepository {
+  /** Top visible entries ordered by best prize (desc). */
+  listTop(options?: ListOptions): Promise<LeaderboardEntry[]>;
+  /**
+   * Upserts a score for a nickname. Nicknames are unique (case-insensitive):
+   * a nickname bound to another auth user cannot be reused.
+   */
+  submitScore(input: SubmitScoreInput): Promise<SubmitScoreResult>;
+  /** Admin moderation hook: hide or restore a nickname on the public board. */
+  setHidden(nickname: string, hidden: boolean): Promise<LeaderboardEntry | undefined>;
+}
+
 export interface NotificationsRepository {
   listForUser(userId: EntityId, options?: ListOptions): Promise<Notification[]>;
   listForAdmin(adminId: EntityId, options?: ListOptions): Promise<Notification[]>;
@@ -147,4 +174,5 @@ export type RepositoryProvider = {
   reputation: ReputationRepository;
   antiSpamEvents: AntiSpamEventsRepository;
   notifications: NotificationsRepository;
+  leaderboard: LeaderboardRepository;
 };
