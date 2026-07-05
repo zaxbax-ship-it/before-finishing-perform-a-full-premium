@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
-import { enforceMultiplayerRateLimit, readMultiplayerJson } from '@/lib/api/multiplayerSecurity';
+import {
+  enforceMultiplayerRateLimit,
+  getMultiplayerRepositories,
+  multiplayerApiErrorResponse,
+  readMultiplayerJson
+} from '@/lib/api/multiplayerSecurity';
 import { getMultiplayerAnswerRateLimit } from '@/lib/infrastructure/rateLimit';
 import { createMultiplayerService } from '@/lib/multiplayer/service';
-import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -18,7 +22,7 @@ type SubmitAnswerBody = {
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const repositories = getRepositoryProvider();
+    const repositories = getMultiplayerRepositories('submit_answer');
     const body = await readMultiplayerJson<SubmitAnswerBody>(request);
     const limited = await enforceMultiplayerRateLimit(
       request,
@@ -39,8 +43,8 @@ export async function POST(request: Request, context: RouteContext) {
     });
 
     return NextResponse.json(result, { status: result.ok ? 200 : 400, headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Could not submit answer.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    return multiplayerApiErrorResponse('multiplayer-answers:post', error);
   }
 }
 

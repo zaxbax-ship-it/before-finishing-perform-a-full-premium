@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth/session';
-import { enforceMultiplayerRateLimit, readMultiplayerJson } from '@/lib/api/multiplayerSecurity';
+import {
+  enforceMultiplayerRateLimit,
+  getMultiplayerRepositories,
+  multiplayerApiErrorResponse,
+  readMultiplayerJson
+} from '@/lib/api/multiplayerSecurity';
 import { getMultiplayerLobbyRateLimit } from '@/lib/infrastructure/rateLimit';
 import { createMultiplayerService } from '@/lib/multiplayer/service';
-import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -20,18 +24,19 @@ type LobbyActionBody = {
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const service = createMultiplayerService();
+    const repositories = getMultiplayerRepositories('load_lobby');
+    const service = createMultiplayerService(repositories);
     const state = await service.getLobbyState(id);
     return NextResponse.json({ ok: true, gameState: state }, { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Could not load lobby.' }, { status: 404 });
+  } catch (error) {
+    return multiplayerApiErrorResponse('multiplayer-lobbies-id:get', error);
   }
 }
 
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const repositories = getRepositoryProvider();
+    const repositories = getMultiplayerRepositories('update_lobby');
     const body = await readMultiplayerJson<LobbyActionBody>(request);
     const limited = await enforceMultiplayerRateLimit(
       request,
@@ -43,13 +48,13 @@ export async function POST(request: Request, context: RouteContext) {
     if (limited) return limited;
 
     const service = createMultiplayerService(repositories);
-    const user = await getAuthUser();
     const credentials = {
       playerId: stringValue(body.playerId),
       playerToken: stringValue(body.playerToken)
     };
 
     if (body.action === 'join') {
+      const user = await getAuthUser();
       const result = await service.joinLobby({
         lobbyId: id,
         nickname: stringValue(body.nickname).slice(0, 40),
@@ -71,8 +76,8 @@ export async function POST(request: Request, context: RouteContext) {
         : await service.getLobbyState(id, credentials).then(gameState => ({ ok: true, gameState }));
 
     return NextResponse.json(result, { status: result.ok ? 200 : 400, headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Could not update lobby.' }, { status: 500 });
+  } catch (error) {
+    return multiplayerApiErrorResponse('multiplayer-lobbies-id:post', error);
   }
 }
 

@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth/session';
-import { enforceMultiplayerRateLimit, readMultiplayerJson } from '@/lib/api/multiplayerSecurity';
+import {
+  enforceMultiplayerRateLimit,
+  getMultiplayerRepositories,
+  multiplayerApiErrorResponse,
+  readMultiplayerJson
+} from '@/lib/api/multiplayerSecurity';
 import { getMultiplayerLobbyRateLimit } from '@/lib/infrastructure/rateLimit';
 import { createMultiplayerService } from '@/lib/multiplayer/service';
-import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import type { Locale } from '@/lib/types';
 
 type MultiplayerLobbyBody = {
@@ -19,17 +23,18 @@ const LOCALES: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
 
 export async function GET() {
   try {
-    const service = createMultiplayerService();
+    const repositories = getMultiplayerRepositories('list_lobbies');
+    const service = createMultiplayerService(repositories);
     const lobbies = await service.listOpenLobbies();
     return NextResponse.json({ ok: true, lobbies }, { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ ok: false, lobbies: [] }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    return multiplayerApiErrorResponse('multiplayer-lobbies:get', error);
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const repositories = getRepositoryProvider();
+    const repositories = getMultiplayerRepositories('create_lobby');
     const body = await readMultiplayerJson<MultiplayerLobbyBody>(request);
     const limited = await enforceMultiplayerRateLimit(
       request,
@@ -61,8 +66,8 @@ export async function POST(request: Request) {
       : await service.createLobby(input);
 
     return NextResponse.json(result, { status: result.ok ? 200 : 400, headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Could not create multiplayer lobby.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    return multiplayerApiErrorResponse('multiplayer-lobbies:post', error);
   }
 }
 

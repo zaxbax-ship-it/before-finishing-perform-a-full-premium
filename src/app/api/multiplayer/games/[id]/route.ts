@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readMultiplayerJson } from '@/lib/api/multiplayerSecurity';
+import { getMultiplayerRepositories, multiplayerApiErrorResponse, readMultiplayerJson } from '@/lib/api/multiplayerSecurity';
 import { createMultiplayerService } from '@/lib/multiplayer/service';
 
 type RouteContext = {
@@ -10,11 +10,12 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     void request;
-    const service = createMultiplayerService();
+    const repositories = getMultiplayerRepositories('load_game_public');
+    const service = createMultiplayerService(repositories);
     const gameState = await service.getGameState(id);
     return NextResponse.json({ ok: true, gameState }, { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Could not load game.' }, { status: 404 });
+  } catch (error) {
+    return multiplayerApiErrorResponse('multiplayer-games-id:get', error);
   }
 }
 
@@ -29,11 +30,12 @@ export async function POST(request: Request, context: RouteContext) {
     const body = await readMultiplayerJson<GameStateBody>(request);
     const playerId = stringValue(body.playerId);
     const playerToken = stringValue(body.playerToken);
-    const service = createMultiplayerService();
+    const repositories = getMultiplayerRepositories('load_game_private');
+    const service = createMultiplayerService(repositories);
     const gameState = await service.getGameState(id, playerId && playerToken ? { playerId, playerToken } : undefined);
     return NextResponse.json({ ok: true, gameState }, { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Could not load game.' }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    return multiplayerApiErrorResponse('multiplayer-games-id:post', error);
   }
 }
 
