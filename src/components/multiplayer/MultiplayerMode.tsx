@@ -6,6 +6,7 @@ import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import type {
   MultiplayerActionResult,
   MultiplayerErrorCode,
+  MultiplayerLifelineId,
   MultiplayerLobbySummary,
   MultiplayerPlayerCredentials,
   MultiplayerPublicGameState
@@ -19,6 +20,8 @@ type MultiplayerModeProps = {
 
 const ANON_KEY = 'premium-trivia-multiplayer-anonymous-id-v1';
 const SESSION_KEY = 'premium-trivia-multiplayer-session-v1';
+const LIFELINE_COST = 5000;
+const LIFELINES: MultiplayerLifelineId[] = ['fifty_fifty', 'audience', 'friend'];
 
 type StoredSession = MultiplayerPlayerCredentials & {
   lobbyId?: string;
@@ -35,10 +38,14 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [anonymousId, setAnonymousId] = useState('');
+  const [nowMs, setNowMs] = useState(0);
 
   const activeGameId = gameState?.game?.id || credentials?.gameId;
   const activeLobbyId = gameState?.lobby?.id || credentials?.lobbyId;
   const currentRound = gameState?.currentRound;
+  const timer = currentRound ? roundTimer(currentRound.startsAt, currentRound.endsAt, nowMs) : undefined;
+  const activeEffects = gameState?.myLifelineEffects?.filter(effect => effect.roundId === currentRound?.id) || [];
+  const hiddenOptionIndexes = new Set(activeEffects.flatMap(effect => effect.type === 'fifty_fifty' ? effect.hiddenOptionIndexes : []));
   const myResult = useMemo(() => {
     if (!gameState?.me) return undefined;
     return gameState.results.find(result => result.playerId === gameState.me?.id);
@@ -129,6 +136,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     const channel = supabase.channel(`multiplayer:${activeGameId || activeLobbyId || credentials.playerId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'multiplayer_lobbies', filter: activeLobbyId ? `id=eq.${activeLobbyId}` : undefined }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'multiplayer_games', filter: activeGameId ? `id=eq.${activeGameId}` : activeLobbyId ? `lobby_id=eq.${activeLobbyId}` : undefined }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'multiplayer_players', filter: activeLobbyId ? `lobby_id=eq.${activeLobbyId}` : undefined }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'multiplayer_results', filter: activeGameId ? `game_id=eq.${activeGameId}` : undefined }, refresh)
       .subscribe();
 
@@ -136,6 +144,13 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       void supabase.removeChannel(channel);
     };
   }, [credentials, activeGameId, activeLobbyId]);
+
+  useEffect(() => {
+    if (!currentRound) return;
+    setNowMs(Date.now());
+    const interval = window.setInterval(() => setNowMs(Date.now()), 250);
+    return () => window.clearInterval(interval);
+  }, [currentRound?.id]);
 
   async function createOrQuick(action: 'create' | 'quick_match') {
     if (!anonymousId) {
@@ -223,6 +238,46 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...credentials, roundId: currentRound.id, answerIndex })
+      });
+      const data = await response.json() as MultiplayerActionResult;
+      applyActionResult(data);
+      setStatus(response.ok && data.ok ? 'idle' : 'error');
+      if (response.ok && data.ok) setMessage('');
+      if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
+    } catch {
+      setStatus('error');
+      setMessage(copy.error);
+    }
+  }
+
+  async function useLifeline(lifeline: MultiplayerLifelineId) {
+    if (!credentials?.playerId || !credentials.playerToken || !activeGameId || !currentRound || currentRound.hasAnswered) return;
+    setStatus('loading');
+    try {
+      const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/lifelines`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...credentials, roundId: currentRound.id, lifeline })
+      });
+      const data = await response.json() as MultiplayerActionResult;
+      applyActionResult(data);
+      setStatus(response.ok && data.ok ? 'idle' : 'error');
+      if (response.ok && data.ok) setMessage('');
+      if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
+    } catch {
+      setStatus('error');
+      setMessage(copy.error);
+    }
+  }
+
+  async function buyLifeline(lifeline: MultiplayerLifelineId) {
+    if (!credentials?.playerId || !credentials.playerToken || !activeGameId) return;
+    setStatus('loading');
+    try {
+      const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/lifelines`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'buy', ...credentials, lifeline })
       });
       const data = await response.json() as MultiplayerActionResult;
       applyActionResult(data);
@@ -364,15 +419,35 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
         <section className="glass multiplayer-game">
           <div className="multiplayer-round-meta">
             <span>{copy.questionLive}</span>
+            {timer && (
+              <div className={timer.remainingMs <= 6000 ? 'multiplayer-timer urgent' : 'multiplayer-timer'} aria-label={`${copy.timer}: ${timer.seconds}`}>
+                <span>{timer.seconds}{copy.secondsShort}</span>
+                <i style={{ transform: `scaleX(${timer.progress})` }} />
+              </div>
+            )}
             <strong>{money(currentRound.prize)}</strong>
           </div>
           <h2>{currentRound.question.question}</h2>
+          <MultiplayerLifelines
+            copy={copy}
+            effects={activeEffects}
+            lifelines={gameState.myLifelines}
+            options={currentRound.question.options}
+            availablePrize={gameState.myAvailablePrize || 0}
+            disabled={currentRound.hasAnswered || status === 'loading'}
+            onUse={useLifeline}
+            onBuy={buyLifeline}
+          />
           <div className="multiplayer-answer-grid">
             {currentRound.question.options.map((option, index) => (
               <button
                 key={`${currentRound.id}-${index}`}
-                className={currentRound.selectedAnswerIndex === index ? 'answer-button selected' : 'answer-button'}
-                disabled={currentRound.hasAnswered || status === 'loading'}
+                className={[
+                  'answer-button',
+                  currentRound.selectedAnswerIndex === index ? 'selected pending' : '',
+                  hiddenOptionIndexes.has(index) ? 'lifeline-hidden' : ''
+                ].filter(Boolean).join(' ')}
+                disabled={currentRound.hasAnswered || status === 'loading' || hiddenOptionIndexes.has(index)}
                 onClick={() => submitAnswer(index)}
               >
                 <span>{String.fromCharCode(65 + index)}</span>
@@ -381,6 +456,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
             ))}
           </div>
           {currentRound.hasAnswered && <div className="multiplayer-toast">{copy.answered}</div>}
+          {gameState.roundSummary && <RoundSummary copy={copy} state={gameState} />}
           <MultiplayerScoreboard copy={copy} state={gameState} />
         </section>
       )}
@@ -407,16 +483,116 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   );
 }
 
+function MultiplayerLifelines({
+  copy,
+  effects,
+  lifelines,
+  options,
+  availablePrize,
+  disabled,
+  onUse,
+  onBuy
+}: {
+  copy: ReturnType<typeof getMultiplayerCopy>;
+  effects: MultiplayerPublicGameState['myLifelineEffects'];
+  lifelines: MultiplayerPublicGameState['myLifelines'];
+  options: string[];
+  availablePrize: number;
+  disabled: boolean;
+  onUse: (lifeline: MultiplayerLifelineId) => void;
+  onBuy: (lifeline: MultiplayerLifelineId) => void;
+}) {
+  const counts = lifelines || { fifty_fifty: 0, audience: 0, friend: 0 };
+  return (
+    <section className="multiplayer-lifelines" aria-label={copy.lifelines}>
+      <div className="multiplayer-lifeline-head">
+        <span>{copy.lifelines}</span>
+        <strong>{copy.availableWinnings}: {money(availablePrize)}</strong>
+      </div>
+      <div className="multiplayer-lifeline-grid">
+        {LIFELINES.map(lifeline => {
+          const count = counts[lifeline] || 0;
+          return (
+            <article key={lifeline} className="multiplayer-lifeline-card">
+              <button
+                className="ghost-button focus-ring"
+                disabled={disabled || count <= 0}
+                onClick={() => onUse(lifeline)}
+                type="button"
+              >
+                <span>{lifelineLabel(lifeline, copy)}</span>
+                <strong>{count}</strong>
+              </button>
+              <button
+                className="multiplayer-buy-link focus-ring"
+                disabled={availablePrize < LIFELINE_COST}
+                onClick={() => onBuy(lifeline)}
+                type="button"
+              >
+                {copy.buyExtra} {money(LIFELINE_COST)}
+              </button>
+            </article>
+          );
+        })}
+      </div>
+      {effects?.map(effect => (
+        <div key={`${effect.type}-${effect.roundId}-${effect.createdAt}`} className="multiplayer-lifeline-effect">
+          {effect.type === 'fifty_fifty' && <span>{copy.hiddenOptions}: {effect.hiddenOptionIndexes.map(index => String.fromCharCode(65 + index)).join(', ')}</span>}
+          {effect.type === 'audience' && (
+            <span>{copy.audienceThinks}: {effect.poll.map((share, index) => `${String.fromCharCode(65 + index)} ${share}%`).join(' · ')}</span>
+          )}
+          {effect.type === 'friend' && (
+            <span>{copy.friendThinks}: {String.fromCharCode(65 + effect.suggestedIndex)} · {copy.confidence} {effect.confidence}% · {options[effect.suggestedIndex]}</span>
+          )}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function RoundSummary({ copy, state }: { copy: ReturnType<typeof getMultiplayerCopy>; state: MultiplayerPublicGameState }) {
+  if (!state.roundSummary) return null;
+  const summary = state.roundSummary;
+  const winner = summary.players.find(player => player.playerId === summary.winnerPlayerId);
+  return (
+    <section className="multiplayer-round-summary" aria-label={copy.roundSummary}>
+      <div>
+        <span>{copy.roundSummary}</span>
+        <h3>{copy.correctAnswer}: {String.fromCharCode(65 + summary.correctIndex)} · {summary.correctAnswer}</h3>
+        {summary.explanation && <p>{summary.explanation}</p>}
+      </div>
+      <div className="multiplayer-round-summary-grid">
+        {summary.players.map(player => (
+          <article
+            key={`${summary.roundId}-${player.playerId}`}
+            className={[
+              'multiplayer-round-player',
+              player.playerId === winner?.playerId ? 'winner' : '',
+              player.timedOut ? 'timeout' : player.isCorrect ? 'correct' : 'wrong'
+            ].filter(Boolean).join(' ')}
+          >
+            <strong>{player.nickname}</strong>
+            <span>{roundPlayerStatus(player, copy)}</span>
+            {player.awardedPrize > 0 && <em>{money(player.awardedPrize)}</em>}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function MultiplayerScoreboard({ copy, state }: { copy: ReturnType<typeof getMultiplayerCopy>; state: MultiplayerPublicGameState }) {
   const totals = state.players.map(player => {
     const result = state.results.find(item => item.playerId === player.id);
     const playerAnswers = state.answers.filter(answer => answer.playerId === player.id);
+    const summaryPlayer = state.roundSummary?.players.find(item => item.playerId === player.id);
     const livePrize = playerAnswers.reduce((sum, answer) => sum + answer.awardedPrize, 0);
     return {
       player,
       totalPrize: result?.totalPrize ?? livePrize,
       correctAnswers: result?.correctAnswers ?? playerAnswers.filter(answer => answer.isCorrect).length,
-      rank: result?.rank
+      rank: result?.rank,
+      status: summaryPlayer ? roundPlayerStatus(summaryPlayer, copy) : livePlayerStatus(player.id, state, copy)
     };
   }).sort((first, second) => (first.rank || 99) - (second.rank || 99) || second.totalPrize - first.totalPrize);
 
@@ -426,12 +602,16 @@ function MultiplayerScoreboard({ copy, state }: { copy: ReturnType<typeof getMul
         <span role="columnheader">{copy.rank}</span>
         <span role="columnheader">{copy.players}</span>
         <span role="columnheader">{copy.prize}</span>
+        <span role="columnheader">{copy.lifelinesRemaining}</span>
+        <span role="columnheader">{copy.responseStatus}</span>
       </div>
       {totals.map((row, index) => (
         <div key={row.player.id} className="multiplayer-score-row" role="row">
           <span role="cell">{row.rank || index + 1}</span>
           <strong role="cell">{row.player.nickname}</strong>
           <span role="cell">{money(row.totalPrize)}</span>
+          <span role="cell">{row.player.lifelinesRemaining ?? 0}</span>
+          <span role="cell">{row.status}</span>
         </div>
       ))}
     </div>
@@ -444,6 +624,40 @@ function statusKey(status: string) {
 
 function money(value: number) {
   return `$${new Intl.NumberFormat('en-US').format(value)}`;
+}
+
+function lifelineLabel(lifeline: MultiplayerLifelineId, copy: ReturnType<typeof getMultiplayerCopy>) {
+  if (lifeline === 'fifty_fifty') return copy.fiftyFifty;
+  if (lifeline === 'audience') return copy.audience;
+  return copy.friend;
+}
+
+function roundTimer(startsAt: string, endsAt: string, nowValue: number) {
+  const start = new Date(startsAt).getTime();
+  const end = new Date(endsAt).getTime();
+  const total = Math.max(1, end - start);
+  const remainingMs = Math.max(0, end - nowValue);
+  return {
+    remainingMs,
+    seconds: Math.ceil(remainingMs / 1000),
+    progress: Math.max(0, Math.min(1, remainingMs / total))
+  };
+}
+
+function roundPlayerStatus(
+  player: NonNullable<MultiplayerPublicGameState['roundSummary']>['players'][number],
+  copy: ReturnType<typeof getMultiplayerCopy>
+) {
+  if (player.timedOut) return copy.timedOut;
+  if (player.awardedPrize > 0) return copy.winner;
+  return player.isCorrect ? copy.lateCorrect : copy.wrong;
+}
+
+function livePlayerStatus(playerId: string, state: MultiplayerPublicGameState, copy: ReturnType<typeof getMultiplayerCopy>) {
+  if (!state.currentRound) return copy.waiting;
+  const answer = state.answers.find(item => item.roundId === state.currentRound?.id && item.playerId === playerId);
+  if (answer) return copy.answeredStatus;
+  return copy.pending;
 }
 
 function cleanNickname(value: string) {
@@ -495,7 +709,12 @@ function localizeKnownError(value: string, copy: ReturnType<typeof getMultiplaye
     [/already ended/i, 'round_ended'],
     [/missing player identity/i, 'missing_identity'],
     [/missing player session/i, 'missing_session'],
-    [/too many multiplayer requests/i, 'rate_limited']
+    [/too many multiplayer requests/i, 'rate_limited'],
+    [/lifeline is invalid/i, 'lifeline_invalid'],
+    [/lifeline is unavailable/i, 'lifeline_unavailable'],
+    [/no lifelines/i, 'lifeline_unavailable'],
+    [/already used/i, 'lifeline_already_used'],
+    [/not enough fictional winnings/i, 'insufficient_winnings']
   ];
   const match = known.find(([pattern]) => pattern.test(value));
   return match ? copy[match[1]] || copy.error : copy.error;

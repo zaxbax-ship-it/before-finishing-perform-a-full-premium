@@ -8,10 +8,15 @@ import type {
   MultiplayerActionResult,
   MultiplayerAnswer,
   MultiplayerAnswerInput,
+  MultiplayerBuyLifelineInput,
   MultiplayerCreateInput,
   MultiplayerErrorCode,
   MultiplayerGame,
   MultiplayerJoinInput,
+  MultiplayerLifelineEffect,
+  MultiplayerLifelineId,
+  MultiplayerLifelineInput,
+  MultiplayerLifelineInventory,
   MultiplayerLobby,
   MultiplayerLobbySummary,
   MultiplayerPlayer,
@@ -28,6 +33,8 @@ const PLAYER_STALE_MS = 45_000;
 const ROUND_PRIZES = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 250000, 400000];
 const MAX_ROUNDS = ROUND_PRIZES.length;
 const NICKNAME_PATTERN = /^[\p{L}\p{N} _.-]{3,20}$/u;
+const DEFAULT_LIFELINES: MultiplayerLifelineInventory = { fifty_fifty: 1, audience: 1, friend: 1 };
+const EXTRA_LIFELINE_COST = 5000;
 const multiplayerServiceLogger = createLogger('multiplayer-service');
 
 const now = () => new Date();
@@ -75,6 +82,9 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       nickname,
       displayName: input.displayName,
       connectionTokenHash: await hashToken(token),
+      lifelines: initialLifelines(),
+      lifelineUses: [],
+      spentPrize: 0,
       position: 1,
       isConnected: true,
       joinedAt: date,
@@ -133,6 +143,9 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
         nickname,
         displayName: input.displayName || existingPlayer.displayName,
         connectionTokenHash: await hashToken(token),
+        lifelines: normalizeLifelines(existingPlayer.lifelines),
+        lifelineUses: existingPlayer.lifelineUses || [],
+        spentPrize: existingPlayer.spentPrize || 0,
         isConnected: true,
         lastSeenAt: iso(),
         disconnectedAt: undefined
@@ -161,6 +174,9 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       nickname,
       displayName: input.displayName,
       connectionTokenHash: await hashToken(token),
+      lifelines: initialLifelines(),
+      lifelineUses: [],
+      spentPrize: 0,
       position: players.length + 1,
       isConnected: true,
       joinedAt: date,
@@ -179,6 +195,9 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
           nickname,
           displayName: input.displayName || replay.displayName,
           connectionTokenHash: await hashToken(token),
+          lifelines: normalizeLifelines(replay.lifelines),
+          lifelineUses: replay.lifelineUses || [],
+          spentPrize: replay.spentPrize || 0,
           isConnected: true,
           lastSeenAt: date,
           disconnectedAt: undefined
@@ -460,6 +479,91 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     return { ok: true, gameState: await getGameState(game.id, input) };
   }
 
+  async function useLifeline(input: MultiplayerLifelineInput): Promise<MultiplayerActionResult> {
+    const player = await assertPlayer(input);
+    if (!player || player.gameId !== input.gameId) return fail('Player session is invalid.', 'player_session_invalid');
+    if (!isLifelineId(input.lifeline)) return fail('Lifeline is invalid.', 'lifeline_invalid');
+
+    const game = await repositories.multiplayer.findGame(input.gameId);
+    if (!game || game.status !== 'in_progress') return fail('Game is not active.', 'game_not_active');
+
+    const round = await repositories.multiplayer.findRound(input.roundId);
+    if (!round || round.gameId !== game.id) return fail('Round is invalid.', 'round_invalid');
+    if (round.roundNumber !== game.currentRoundIndex || round.status !== 'active') return fail('Round is not active.', 'round_not_active');
+    if (new Date(round.endsAt).getTime() < Date.now()) return fail('Round already ended.', 'round_ended');
+
+    const existingAnswer = await repositories.multiplayer.findAnswer(round.id, player.id);
+    if (existingAnswer) return fail('Lifeline is unavailable after answering.', 'lifeline_unavailable');
+
+    const lifelines = normalizeLifelines(player.lifelines);
+    if (lifelines[input.lifeline] <= 0) return fail('No lifelines are available.', 'lifeline_unavailable');
+
+    const uses = player.lifelineUses || [];
+    if (uses.some(use => use.roundId === round.id && use.type === input.lifeline)) {
+      return fail('This lifeline was already used for this round.', 'lifeline_already_used');
+    }
+
+    const effect = buildLifelineEffect(input.lifeline, round);
+    const lifelineUse = {
+      ...effect,
+      id: id('mp-lifeline'),
+      gameId: game.id,
+      playerId: player.id,
+      cost: 0
+    };
+
+    await repositories.multiplayer.updatePlayer(player.id, {
+      lifelines: {
+        ...lifelines,
+        [input.lifeline]: Math.max(0, lifelines[input.lifeline] - 1)
+      },
+      lifelineUses: [...uses, lifelineUse],
+      lastSeenAt: iso()
+    });
+
+    await recordAudit('multiplayer_lifeline_used', 'multiplayer_game', game.id, {
+      playerId: player.id,
+      roundId: round.id,
+      lifeline: input.lifeline
+    });
+
+    return { ok: true, gameState: await getGameState(game.id, input) };
+  }
+
+  async function buyLifeline(input: MultiplayerBuyLifelineInput): Promise<MultiplayerActionResult> {
+    const player = await assertPlayer(input);
+    if (!player || player.gameId !== input.gameId) return fail('Player session is invalid.', 'player_session_invalid');
+    if (!isLifelineId(input.lifeline)) return fail('Lifeline is invalid.', 'lifeline_invalid');
+
+    const game = await repositories.multiplayer.findGame(input.gameId);
+    if (!game || (game.status !== 'in_progress' && game.status !== 'finished')) {
+      return fail('Game is not active.', 'game_not_active');
+    }
+
+    const answers = await repositories.multiplayer.listAnswers(game.id);
+    if (playerAvailablePrize(answers, player) < EXTRA_LIFELINE_COST) {
+      return fail('Not enough fictional winnings are available.', 'insufficient_winnings');
+    }
+
+    const lifelines = normalizeLifelines(player.lifelines);
+    await repositories.multiplayer.updatePlayer(player.id, {
+      lifelines: {
+        ...lifelines,
+        [input.lifeline]: lifelines[input.lifeline] + 1
+      },
+      spentPrize: (player.spentPrize || 0) + EXTRA_LIFELINE_COST,
+      lastSeenAt: iso()
+    });
+
+    await recordAudit('multiplayer_lifeline_purchased', 'multiplayer_game', game.id, {
+      playerId: player.id,
+      lifeline: input.lifeline,
+      cost: EXTRA_LIFELINE_COST
+    });
+
+    return { ok: true, gameState: await getGameState(game.id, input) };
+  }
+
   async function advanceRound(gameId: EntityId): Promise<MultiplayerActionResult> {
     const game = await repositories.multiplayer.findGame(gameId);
     if (!game || game.status !== 'in_progress') return fail('Game is not active.', 'game_not_active');
@@ -525,6 +629,12 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       return getGameState(game.id, credentials);
     }
     const myAnswer = activeRound && me ? answers.find(answer => answer.roundId === activeRound.id && answer.playerId === me.id) : undefined;
+    const resolvedRound = [...rounds]
+      .filter(round => round.status === 'completed' || round.status === 'expired' || round.roundNumber < game.currentRoundIndex)
+      .sort((first, second) => second.roundNumber - first.roundNumber)[0];
+    const myLifelineEffects = me && activeRound
+      ? (me.lifelineUses || []).filter(use => use.roundId === activeRound.id).map(publicLifelineEffect)
+      : undefined;
 
     return {
       lobby: await summarizeLobby(lobby, players),
@@ -543,6 +653,10 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
         .map(answer => sanitizeAnswer(answer, answer.playerId === me?.id)),
       results,
       me: me ? sanitizePlayer(me) : undefined,
+      myLifelines: me ? normalizeLifelines(me.lifelines) : undefined,
+      myLifelineEffects,
+      myAvailablePrize: me ? playerAvailablePrize(answers, me) : undefined,
+      roundSummary: resolvedRound ? buildRoundSummary(resolvedRound, players, answers) : undefined,
       notifications: buildGameNotifications(game, players, answers, results)
     };
   }
@@ -555,6 +669,8 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     leaveLobby,
     startGame,
     submitAnswer,
+    useLifeline,
+    buyLifeline,
     advanceRound,
     getLobbyState,
     getGameState
@@ -665,6 +781,140 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
   }
 }
 
+function initialLifelines(): MultiplayerLifelineInventory {
+  return { ...DEFAULT_LIFELINES };
+}
+
+function normalizeLifelines(value?: Partial<MultiplayerLifelineInventory>): MultiplayerLifelineInventory {
+  return {
+    fifty_fifty: safeCount(value?.fifty_fifty, DEFAULT_LIFELINES.fifty_fifty),
+    audience: safeCount(value?.audience, DEFAULT_LIFELINES.audience),
+    friend: safeCount(value?.friend, DEFAULT_LIFELINES.friend)
+  };
+}
+
+function safeCount(value: unknown, fallback: number) {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : fallback;
+}
+
+function isLifelineId(value: string): value is MultiplayerLifelineId {
+  return Object.prototype.hasOwnProperty.call(DEFAULT_LIFELINES, value);
+}
+
+function totalLifelines(player: MultiplayerPlayer) {
+  const lifelines = normalizeLifelines(player.lifelines);
+  return lifelines.fifty_fifty + lifelines.audience + lifelines.friend;
+}
+
+function playerEarnedPrize(answers: MultiplayerAnswer[], playerId: EntityId) {
+  return answers
+    .filter(answer => answer.playerId === playerId)
+    .reduce((sum, answer) => sum + answer.awardedPrize, 0);
+}
+
+function playerAvailablePrize(answers: MultiplayerAnswer[], player: MultiplayerPlayer) {
+  return Math.max(0, playerEarnedPrize(answers, player.id) - (player.spentPrize || 0));
+}
+
+function buildLifelineEffect(type: MultiplayerLifelineId, round: MultiplayerRound): MultiplayerLifelineEffect {
+  const correctIndex = round.questionSnapshot.correctIndex;
+  const wrongIndexes = [0, 1, 2, 3].filter(index => index !== correctIndex);
+
+  if (type === 'fifty_fifty') {
+    return {
+      type,
+      roundId: round.id,
+      hiddenOptionIndexes: shuffle(wrongIndexes).slice(0, 2),
+      createdAt: iso()
+    };
+  }
+
+  if (type === 'audience') {
+    const correctShare = 54 + Math.floor(Math.random() * 22);
+    const remaining = 100 - correctShare;
+    const first = Math.floor(remaining * (0.35 + Math.random() * 0.2));
+    const second = Math.floor((remaining - first) * (0.45 + Math.random() * 0.2));
+    const shares = [0, 0, 0, 0];
+    shares[correctIndex] = correctShare;
+    wrongIndexes.forEach((index, position) => {
+      shares[index] = position === 0 ? first : position === 1 ? second : Math.max(0, 100 - correctShare - first - second);
+    });
+    return {
+      type,
+      roundId: round.id,
+      poll: shares,
+      suggestedIndex: correctIndex,
+      createdAt: iso()
+    };
+  }
+
+  const accurate = Math.random() >= 0.22;
+  const suggestedIndex = accurate ? correctIndex : shuffle(wrongIndexes)[0] ?? correctIndex;
+  return {
+    type,
+    roundId: round.id,
+    suggestedIndex,
+    confidence: accurate ? 72 + Math.floor(Math.random() * 18) : 48 + Math.floor(Math.random() * 16),
+    createdAt: iso()
+  };
+}
+
+function publicLifelineEffect(effect: MultiplayerLifelineEffect): MultiplayerLifelineEffect {
+  if (effect.type === 'fifty_fifty') {
+    return {
+      type: effect.type,
+      roundId: effect.roundId,
+      hiddenOptionIndexes: effect.hiddenOptionIndexes,
+      createdAt: effect.createdAt
+    };
+  }
+  if (effect.type === 'audience') {
+    return {
+      type: effect.type,
+      roundId: effect.roundId,
+      poll: effect.poll,
+      suggestedIndex: effect.suggestedIndex,
+      createdAt: effect.createdAt
+    };
+  }
+  return {
+    type: effect.type,
+    roundId: effect.roundId,
+    suggestedIndex: effect.suggestedIndex,
+    confidence: effect.confidence,
+    createdAt: effect.createdAt
+  };
+}
+
+function buildRoundSummary(round: MultiplayerRound, players: MultiplayerPlayer[], answers: MultiplayerAnswer[]) {
+  const roundAnswers = answers.filter(answer => answer.roundId === round.id);
+  return {
+    roundId: round.id,
+    roundNumber: round.roundNumber,
+    question: publicQuestion(round.questionSnapshot),
+    correctIndex: round.questionSnapshot.correctIndex,
+    correctAnswer: round.questionSnapshot.options[round.questionSnapshot.correctIndex] || '',
+    explanation: round.questionSnapshot.explanation,
+    winnerPlayerId: round.winnerPlayerId,
+    prizeAwarded: roundAnswers.reduce((sum, answer) => sum + answer.awardedPrize, 0),
+    players: players
+      .sort((first, second) => first.position - second.position)
+      .map(player => {
+        const answer = roundAnswers.find(item => item.playerId === player.id);
+        return {
+          playerId: player.id,
+          nickname: player.nickname,
+          answerIndex: answer?.answerIndex,
+          isCorrect: Boolean(answer?.isCorrect),
+          timedOut: !answer,
+          awardedPrize: answer?.awardedPrize || 0,
+          responseTimeMs: answer?.responseTimeMs
+        };
+      })
+  };
+}
+
 function cleanNickname(value: string) {
   return value.trim().replace(/\s+/g, ' ').slice(0, 20);
 }
@@ -718,7 +968,8 @@ function sanitizePlayer(player: MultiplayerPlayer) {
     id: player.id,
     nickname: player.nickname,
     position: player.position,
-    isConnected: isPlayerPresent(player)
+    isConnected: isPlayerPresent(player),
+    lifelinesRemaining: totalLifelines(player)
   };
 }
 

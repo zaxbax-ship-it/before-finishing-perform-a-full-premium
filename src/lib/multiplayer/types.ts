@@ -6,6 +6,18 @@ export type MultiplayerGameStatus = 'waiting' | 'starting' | 'in_progress' | 'fi
 export type MultiplayerRoundStatus = 'pending' | 'active' | 'completed' | 'expired';
 export type MultiplayerVisibility = 'public' | 'private';
 export type MultiplayerAction = 'create' | 'quick_match' | 'join' | 'leave' | 'cancel' | 'start';
+export type MultiplayerLifelineId = 'fifty_fifty' | 'audience' | 'friend';
+export type MultiplayerLifelineInventory = Record<MultiplayerLifelineId, number>;
+export type MultiplayerLifelineEffect =
+  | { type: 'fifty_fifty'; roundId: EntityId; hiddenOptionIndexes: number[]; createdAt: ISODateTime }
+  | { type: 'audience'; roundId: EntityId; poll: number[]; suggestedIndex: number; createdAt: ISODateTime }
+  | { type: 'friend'; roundId: EntityId; suggestedIndex: number; confidence: number; createdAt: ISODateTime };
+export type MultiplayerLifelineUse = MultiplayerLifelineEffect & {
+  id: EntityId;
+  gameId: EntityId;
+  playerId: EntityId;
+  cost: number;
+};
 export type MultiplayerErrorCode =
   | 'invalid_nickname'
   | 'lobby_not_found'
@@ -28,6 +40,10 @@ export type MultiplayerErrorCode =
   | 'missing_identity'
   | 'missing_session'
   | 'rate_limited'
+  | 'lifeline_unavailable'
+  | 'lifeline_invalid'
+  | 'lifeline_already_used'
+  | 'insufficient_winnings'
   | 'server_error';
 
 export type MultiplayerQuestionSnapshot = {
@@ -41,7 +57,9 @@ export type MultiplayerQuestionSnapshot = {
 };
 
 export type PublicMultiplayerQuestion = Omit<MultiplayerQuestionSnapshot, 'correctIndex'>;
-export type PublicMultiplayerPlayer = Pick<MultiplayerPlayer, 'id' | 'nickname' | 'position' | 'isConnected'>;
+export type PublicMultiplayerPlayer = Pick<MultiplayerPlayer, 'id' | 'nickname' | 'position' | 'isConnected'> & {
+  lifelinesRemaining?: number;
+};
 export type PublicMultiplayerAnswer = Pick<
   MultiplayerAnswer,
   'id' | 'gameId' | 'roundId' | 'playerId' | 'isCorrect' | 'responseTimeMs' | 'awardedPrize' | 'submittedAt'
@@ -72,6 +90,9 @@ export type MultiplayerPlayer = {
   nickname: string;
   displayName?: string;
   connectionTokenHash: string;
+  lifelines?: MultiplayerLifelineInventory;
+  lifelineUses?: MultiplayerLifelineUse[];
+  spentPrize?: number;
   position: number;
   isConnected: boolean;
   joinedAt: ISODateTime;
@@ -134,6 +155,26 @@ export type MultiplayerLobbySummary = MultiplayerLobby & {
   players: Array<Pick<MultiplayerPlayer, 'id' | 'nickname' | 'position' | 'isConnected'>>;
 };
 
+export type PublicMultiplayerRoundSummary = {
+  roundId: EntityId;
+  roundNumber: number;
+  question: PublicMultiplayerQuestion;
+  correctIndex: number;
+  correctAnswer: string;
+  explanation?: string;
+  winnerPlayerId?: EntityId;
+  prizeAwarded: number;
+  players: Array<{
+    playerId: EntityId;
+    nickname: string;
+    answerIndex?: number;
+    isCorrect: boolean;
+    timedOut: boolean;
+    awardedPrize: number;
+    responseTimeMs?: number;
+  }>;
+};
+
 export type MultiplayerPublicGameState = {
   lobby: MultiplayerLobbySummary;
   game?: MultiplayerGame;
@@ -146,6 +187,10 @@ export type MultiplayerPublicGameState = {
   answers: PublicMultiplayerAnswer[];
   results: MultiplayerResult[];
   me?: PublicMultiplayerPlayer;
+  myLifelines?: MultiplayerLifelineInventory;
+  myLifelineEffects?: MultiplayerLifelineEffect[];
+  myAvailablePrize?: number;
+  roundSummary?: PublicMultiplayerRoundSummary;
   notifications: string[];
 };
 
@@ -176,6 +221,17 @@ export type MultiplayerAnswerInput = MultiplayerPlayerCredentials & {
   gameId: EntityId;
   roundId: EntityId;
   answerIndex: number;
+};
+
+export type MultiplayerLifelineInput = MultiplayerPlayerCredentials & {
+  gameId: EntityId;
+  roundId: EntityId;
+  lifeline: MultiplayerLifelineId;
+};
+
+export type MultiplayerBuyLifelineInput = MultiplayerPlayerCredentials & {
+  gameId: EntityId;
+  lifeline: MultiplayerLifelineId;
 };
 
 export type MultiplayerActionResult = {

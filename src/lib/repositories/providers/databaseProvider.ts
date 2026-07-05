@@ -34,6 +34,8 @@ import type { Locale, Question, QuestionTranslation } from '@/lib/types';
 import type {
   MultiplayerAnswer,
   MultiplayerGame,
+  MultiplayerLifelineInventory,
+  MultiplayerLifelineUse,
   MultiplayerLobby,
   MultiplayerPlayer,
   MultiplayerResult,
@@ -163,6 +165,19 @@ function numberValue(value: unknown, fallback = 0) {
 
 function recordValue(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function multiplayerLifelinesValue(value: unknown): MultiplayerLifelineInventory {
+  const record = recordValue(value);
+  return {
+    fifty_fifty: numberValue(record.fifty_fifty, 1),
+    audience: numberValue(record.audience, 1),
+    friend: numberValue(record.friend, 1)
+  };
+}
+
+function multiplayerLifelineUsesValue(value: unknown): MultiplayerLifelineUse[] {
+  return Array.isArray(value) ? value as MultiplayerLifelineUse[] : [];
 }
 
 function mapUser(row: SupabaseRow): User {
@@ -532,6 +547,9 @@ function mapMultiplayerPlayer(row: SupabaseRow): MultiplayerPlayer {
     nickname: stringValue(row.nickname),
     displayName: stringValue(row.display_name) || undefined,
     connectionTokenHash: stringValue(row.connection_token_hash),
+    lifelines: multiplayerLifelinesValue(row.lifelines),
+    lifelineUses: multiplayerLifelineUsesValue(row.lifeline_uses),
+    spentPrize: numberValue(row.spent_prize),
     position: numberValue(row.position, 1),
     isConnected: boolValue(row.is_connected, true),
     joinedAt: stringValue(row.joined_at),
@@ -550,6 +568,9 @@ function multiplayerPlayerPayload(player: Partial<MultiplayerPlayer>): JsonRecor
     nickname: player.nickname,
     display_name: player.displayName,
     connection_token_hash: player.connectionTokenHash,
+    lifelines: player.lifelines,
+    lifeline_uses: player.lifelineUses,
+    spent_prize: player.spentPrize,
     position: player.position,
     is_connected: player.isConnected,
     joined_at: player.joinedAt,

@@ -243,6 +243,130 @@
   font-weight: 950;
 }
 
+.multiplayer-timer {
+  position: relative;
+  min-width: 138px;
+  overflow: hidden;
+  border: 1px solid hsla(195, 100%, 70%, .24);
+  border-radius: 999px;
+  background: rgba(7, 16, 34, .72);
+  box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, .08), 0 0 26px rgba(69, 194, 255, .08);
+  padding: .44rem .72rem;
+  text-align: center;
+}
+
+.multiplayer-timer span {
+  position: relative;
+  z-index: 1;
+  color: #dff6ff;
+  font-size: .9rem;
+  font-weight: 950;
+}
+
+.multiplayer-timer i {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(69, 194, 255, .38), rgba(255, 214, 102, .44));
+  transition: transform .24s ease;
+}
+
+[dir="rtl"] .multiplayer-timer i {
+  transform-origin: right center;
+}
+
+.multiplayer-timer.urgent {
+  border-color: rgba(255, 97, 114, .46);
+  box-shadow: 0 0 30px rgba(255, 97, 114, .14);
+}
+
+.multiplayer-timer.urgent i {
+  background: linear-gradient(90deg, rgba(255, 97, 114, .5), rgba(255, 214, 102, .36));
+}
+
+.multiplayer-lifelines {
+  margin-top: 1rem;
+  border: 1px solid hsla(0, 0%, 100%, .1);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .07), rgba(69, 194, 255, .045));
+  box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, .08);
+  padding: 1rem;
+}
+
+.multiplayer-lifeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .8rem;
+  color: hsla(0, 0%, 100%, .7);
+  font-size: .88rem;
+  font-weight: 900;
+}
+
+.multiplayer-lifeline-head strong {
+  color: #fff4c8;
+  font-size: .86rem;
+}
+
+.multiplayer-lifeline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .7rem;
+}
+
+.multiplayer-lifeline-card {
+  min-width: 0;
+  border: 1px solid hsla(41, 90%, 69%, .16);
+  border-radius: 18px;
+  background: rgba(4, 10, 22, .34);
+  padding: .55rem;
+}
+
+.multiplayer-lifeline-card .ghost-button {
+  width: 100%;
+  justify-content: space-between;
+  gap: .5rem;
+  min-height: 44px;
+  padding-inline: .8rem;
+}
+
+.multiplayer-lifeline-card .ghost-button strong {
+  color: #fff4c8;
+}
+
+.multiplayer-buy-link {
+  width: 100%;
+  margin-top: .45rem;
+  border: 0;
+  background: transparent;
+  color: hsla(0, 0%, 100%, .62);
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.multiplayer-buy-link:not(:disabled):hover {
+  color: #fff4c8;
+}
+
+.multiplayer-buy-link:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.multiplayer-lifeline-effect {
+  margin-top: .65rem;
+  border: 1px solid hsla(195, 100%, 70%, .18);
+  border-radius: 16px;
+  background: rgba(69, 194, 255, .075);
+  color: #dff6ff;
+  padding: .72rem .85rem;
+  font-size: .88rem;
+  font-weight: 850;
+}
+
 .multiplayer-answer-grid {
   margin-top: 1.2rem;
   display: grid;
@@ -255,6 +379,95 @@
   box-shadow: 0 0 34px hsla(41, 90%, 69%, .18), inset 0 1px 0 hsla(0, 0%, 100%, .18);
 }
 
+.multiplayer-answer-grid .answer-button.pending {
+  background: linear-gradient(135deg, rgba(255, 214, 102, .18), rgba(255, 255, 255, .07));
+}
+
+.multiplayer-answer-grid .answer-button.lifeline-hidden {
+  opacity: .38;
+  filter: grayscale(.8);
+  text-decoration: line-through;
+}
+
+.multiplayer-round-summary {
+  margin-top: 1.15rem;
+  border: 1px solid hsla(41, 90%, 69%, .24);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 214, 102, .18), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, .095), rgba(7, 16, 34, .62));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .22), inset 0 1px 0 hsla(0, 0%, 100%, .1);
+  padding: 1rem;
+}
+
+.multiplayer-round-summary span {
+  color: hsla(0, 0%, 100%, .62);
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+.multiplayer-round-summary h3 {
+  margin-top: .25rem;
+  color: #fff4c8;
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  font-weight: 950;
+}
+
+.multiplayer-round-summary p {
+  margin-top: .55rem;
+  max-width: 70ch;
+  color: hsla(0, 0%, 100%, .76);
+  line-height: 1.65;
+}
+
+.multiplayer-round-summary-grid {
+  margin-top: .9rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+}
+
+.multiplayer-round-player {
+  min-width: 0;
+  border: 1px solid hsla(0, 0%, 100%, .1);
+  border-radius: 18px;
+  background: rgba(4, 10, 22, .34);
+  padding: .75rem .85rem;
+}
+
+.multiplayer-round-player strong,
+.multiplayer-round-player span,
+.multiplayer-round-player em {
+  display: block;
+}
+
+.multiplayer-round-player strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-weight: 950;
+}
+
+.multiplayer-round-player em {
+  color: #fff4c8;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.multiplayer-round-player.correct {
+  border-color: rgba(80, 220, 150, .24);
+}
+
+.multiplayer-round-player.wrong,
+.multiplayer-round-player.timeout {
+  border-color: rgba(255, 97, 114, .2);
+}
+
+.multiplayer-round-player.winner {
+  background: linear-gradient(135deg, rgba(255, 214, 102, .16), rgba(69, 194, 255, .08));
+}
+
 .multiplayer-scoreboard {
   margin-top: 1.2rem;
   display: grid;
@@ -263,7 +476,7 @@
 
 .multiplayer-score-row {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr) minmax(110px, auto);
+  grid-template-columns: 60px minmax(0, 1fr) minmax(95px, auto) minmax(70px, auto) minmax(95px, auto);
   gap: .7rem;
   align-items: center;
   padding: .85rem 1rem;
@@ -343,15 +556,25 @@
   }
 
   .multiplayer-player-count,
-  .multiplayer-answer-grid {
+  .multiplayer-answer-grid,
+  .multiplayer-lifeline-grid,
+  .multiplayer-round-summary-grid {
     grid-template-columns: 1fr;
   }
 
-  .multiplayer-score-row {
-    grid-template-columns: 42px minmax(0, 1fr);
+  .multiplayer-round-meta,
+  .multiplayer-lifeline-head {
+    align-items: stretch;
+    border-radius: 22px;
+    flex-direction: column;
   }
 
-  .multiplayer-score-row span:last-child {
-    grid-column: 2;
+  .multiplayer-score-row {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+  }
+
+  .multiplayer-score-row span:nth-child(4),
+  .multiplayer-score-row span:nth-child(5) {
+    grid-column: 2 / -1;
   }
 }
