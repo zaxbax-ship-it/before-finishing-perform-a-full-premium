@@ -691,11 +691,11 @@ const TONES: Record<string, { notes: number[]; type: OscillatorType; step: numbe
 };
 
 const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string; action: string }> = {
-  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'אפשר להמשיך מיד או לתת לשאלה הבאה להיפתח לבד', action: 'לשאלה הבאה' },
-  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'Continue now or let the next question open automatically', action: 'Next question' },
-  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'يمكنك المتابعة الآن أو انتظار السؤال التالي تلقائيا', action: 'السؤال التالي' },
-  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Можно продолжить сразу или дождаться следующего вопроса', action: 'Следующий вопрос' },
-  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'አሁን መቀጠል ወይም ቀጣዩን ጥያቄ በራሱ መጠበቅ ይችላሉ', action: 'ቀጣዩ ጥያቄ' }
+  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'קראו את ההסבר והמשיכו כשתהיו מוכנים', action: 'לשאלה הבאה' },
+  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'Read the explanation and continue when you are ready', action: 'Next question' },
+  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'اقرأ التوضيح وتابع عندما تكون جاهزًا', action: 'السؤال التالي' },
+  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Прочитайте пояснение и продолжите, когда будете готовы', action: 'Следующий вопрос' },
+  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ማብራሪያውን አንብበው ዝግጁ ሲሆኑ ይቀጥሉ', action: 'ቀጣዩ ጥያቄ' }
 };
 
 const COMMUNITY_UI: Record<Locale, Record<string, string>> = {
@@ -927,6 +927,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   const [communityMessage, setCommunityMessage] = useState('');
   const [communityProviderLabel, setCommunityProviderLabel] = useState('Local automation ready');
   const advanceTimeoutRef = useRef<number | null>(null);
+  const advancingRef = useRef(false);
 
   const t = { ...UI[locale], ...UI_EXT[locale] };
   const communityT = COMMUNITY_UI[locale] || COMMUNITY_UI.he;
@@ -1042,6 +1043,18 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
 
   useEffect(() => () => clearAdvanceTimer(), []);
 
+  // Keyboard shortcut: Enter advances to the next question after answering.
+  useEffect(() => {
+    if (screen !== 'game' || selected === null) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      advanceAfterAnswer();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [screen, selected]);
+
   function clearAdvanceTimer() {
     if (advanceTimeoutRef.current === null) return;
     window.clearTimeout(advanceTimeoutRef.current);
@@ -1064,6 +1077,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
 
   function startGame(nextCategory = category) {
     clearAdvanceTimer();
+    advancingRef.current = false;
     const available = shuffle(allQuestions.filter(question => nextCategory === 'הכול' || question.category === nextCategory));
     if (available.length < 4) return;
     let pool = available.slice(0, 15);
@@ -1090,6 +1104,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
 
   function nextQuestion() {
     clearAdvanceTimer();
+    advancingRef.current = false;
     if (round >= 14) {
       finish('win', MONEY[14]);
       return;
@@ -1119,7 +1134,8 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   }
 
   function advanceAfterAnswer() {
-    if (selected === null) return;
+    if (selected === null || advancingRef.current) return;
+    advancingRef.current = true;
     clearAdvanceTimer();
     completeAnsweredQuestion(selected);
   }
@@ -1129,7 +1145,9 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     setSelected(index);
     const correct = index === current.correctIndex;
     tone(correct ? 'correct' : 'wrong', settings.sound);
-    scheduleAdvance(() => completeAnsweredQuestion(index));
+    // No auto-advance after answering: the player reviews the explanation and
+    // chooses when to continue via the Next button (or keyboard). The timeout
+    // path below still expires unanswered questions automatically.
   }
 
   function loseChance(reason: EndState) {
@@ -1644,7 +1662,7 @@ function Game(props: {
           {order.map((answerIndex, displayIndex) => {
             const state = selected === null ? '' : answerIndex === current.correctIndex ? 'correct' : selected === answerIndex ? 'wrong' : '';
             return (
-              <button key={answerIndex} disabled={selected !== null || hiddenAnswers.includes(answerIndex)} onClick={() => chooseAnswer(answerIndex)} className={['answer-button focus-ring', state, hiddenAnswers.includes(answerIndex) ? 'hidden' : ''].join(' ')}>
+              <button key={answerIndex} disabled={selected !== null || hiddenAnswers.includes(answerIndex)} onClick={() => chooseAnswer(answerIndex)} className={['answer-button focus-ring', state, hiddenAnswers.includes(answerIndex) ? 'eliminated' : ''].join(' ')}>
                 <span className="ml-3 inline-grid h-9 w-9 place-items-center rounded-full bg-white/12 text-gold font-black">{optionLetters[displayIndex]}</span>
                 <span className="text-xl font-bold">{current.answers[answerIndex]}</span>
               </button>
@@ -1652,7 +1670,7 @@ function Game(props: {
           })}
         </div>
         {answerInfo && (
-          <div className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
+          <div role="status" aria-live="polite" className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
             <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? '✓' : '!'}</div>
             <div className="answer-info-content">
               <div className="answer-info-header">
@@ -1662,7 +1680,7 @@ function Game(props: {
               <p>{answerInfo.explanation}</p>
               <div className="answer-info-actions">
                 <em>{infoUi.next}</em>
-                <button className="answer-info-next focus-ring" type="button" onClick={advanceAfterAnswer}>{infoUi.action}</button>
+                <button className="answer-info-next focus-ring" type="button" autoFocus onClick={advanceAfterAnswer}>{infoUi.action} ↵</button>
               </div>
             </div>
           </div>
