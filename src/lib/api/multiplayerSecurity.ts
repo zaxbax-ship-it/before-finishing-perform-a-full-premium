@@ -80,7 +80,7 @@ export async function enforceMultiplayerRateLimit(
   identityPart = 'anonymous'
 ) {
   const client = getClientIdentity(request);
-  const result = checkRateLimit({
+  const result = await checkRateLimit({
     key: `multiplayer:${scope}:${client.ipHash || 'unknown'}:${identityPart}`,
     ...rule
   });

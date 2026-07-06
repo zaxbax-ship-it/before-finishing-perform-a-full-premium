@@ -1,5 +1,6 @@
 import { getFeatureFlags } from './featureFlags';
 import { readBooleanEnv, readEnv, validateEnvironment } from './environment';
+import { getRateLimitProviderInfo } from './rateLimit';
 
 export type ProductionConfig = {
   environment: {
@@ -52,6 +53,12 @@ export type ProductionConfig = {
     sentryEnvironment?: string;
     sentryRelease?: string;
   };
+  rateLimiting: {
+    provider: 'memory' | 'upstash';
+    distributed: boolean;
+    configured: boolean;
+    reason: string;
+  };
   captcha: {
     turnstileConfigured: boolean;
     siteKey?: string;
@@ -85,6 +92,7 @@ export function getProductionConfig(): ProductionConfig {
   const usercentricsSettingsId = readEnv('NEXT_PUBLIC_USERCENTRICS_SETTINGS_ID');
   const consentmanagerId = readEnv('NEXT_PUBLIC_CONSENTMANAGER_ID');
   const activeConsentProvider = consentProvider || 'none';
+  const rateLimitProvider = getRateLimitProviderInfo();
 
   return {
     environment: {
@@ -136,6 +144,12 @@ export function getProductionConfig(): ProductionConfig {
       sentryConfigured: Boolean(readEnv('NEXT_PUBLIC_SENTRY_DSN')),
       sentryEnvironment: readEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT'),
       sentryRelease: readEnv('NEXT_PUBLIC_SENTRY_RELEASE')
+    },
+    rateLimiting: {
+      provider: rateLimitProvider.kind,
+      distributed: rateLimitProvider.distributed,
+      configured: rateLimitProvider.configured,
+      reason: rateLimitProvider.reason
     },
     captcha: {
       turnstileConfigured: Boolean(readEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY') && readEnv('TURNSTILE_SECRET_KEY')),

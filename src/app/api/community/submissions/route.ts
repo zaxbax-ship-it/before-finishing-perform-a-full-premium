@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     const emailHash = hashIdentity(body.draft.contributorEmail);
     const submitLimit = getCommunitySubmissionRateLimit();
-    const submissionRate = checkRateLimit({
+    const submissionRate = await checkRateLimit({
       key: `community-submission:${client.ipHash || 'unknown'}:${emailHash || 'anonymous'}`,
       ...submitLimit
     });
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     }
 
     const aiLimit = getAiModerationRateLimit();
-    const aiRate = checkRateLimit({
+    const aiRate = await checkRateLimit({
       key: `ai-moderation:${client.ipHash || 'unknown'}`,
       ...aiLimit
     });

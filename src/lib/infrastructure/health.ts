@@ -58,6 +58,22 @@ export function createHealthChecks(): HealthCheck[] {
         ].filter(Boolean).length;
         return result('optional-services', 'ok', `${enabled} optional external services configured.`);
       }
+    },
+    {
+      name: 'rate-limiting',
+      async run() {
+        const config = getProductionConfig();
+        if (config.environment.runtime === 'production' && !config.rateLimiting.distributed) {
+          return result('rate-limiting', 'degraded', 'Distributed rate limiting is not configured; in-memory fallback is active.');
+        }
+        return result(
+          'rate-limiting',
+          'ok',
+          config.rateLimiting.distributed
+            ? `Distributed ${config.rateLimiting.provider} rate limiting is active.`
+            : 'Local in-memory rate limiting is active.'
+        );
+      }
     }
   ];
 }

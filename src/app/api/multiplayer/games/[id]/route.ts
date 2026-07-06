@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getMultiplayerRepositories, multiplayerApiErrorResponse, readMultiplayerJson } from '@/lib/api/multiplayerSecurity';
+import { enforceMultiplayerRateLimit, getMultiplayerRepositories, multiplayerApiErrorResponse, readMultiplayerJson } from '@/lib/api/multiplayerSecurity';
+import { getMultiplayerStateRateLimit } from '@/lib/infrastructure/rateLimit';
 import { createMultiplayerService } from '@/lib/multiplayer/service';
 
 type RouteContext = {
@@ -9,8 +10,15 @@ type RouteContext = {
 export async function GET(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    void request;
     const repositories = getMultiplayerRepositories('load_game_public');
+    const limited = await enforceMultiplayerRateLimit(
+      request,
+      repositories,
+      'load_game_public',
+      getMultiplayerStateRateLimit()
+    );
+    if (limited) return limited;
+
     const service = createMultiplayerService(repositories);
     const gameState = await service.getGameState(id);
     return NextResponse.json({ ok: true, gameState }, { headers: { 'Cache-Control': 'no-store' } });
@@ -31,6 +39,15 @@ export async function POST(request: Request, context: RouteContext) {
     const playerId = stringValue(body.playerId);
     const playerToken = stringValue(body.playerToken);
     const repositories = getMultiplayerRepositories('load_game_private');
+    const limited = await enforceMultiplayerRateLimit(
+      request,
+      repositories,
+      'load_game_private',
+      getMultiplayerStateRateLimit(),
+      playerId || 'anonymous'
+    );
+    if (limited) return limited;
+
     const service = createMultiplayerService(repositories);
     const gameState = await service.getGameState(id, playerId && playerToken ? { playerId, playerToken } : undefined);
     return NextResponse.json({ ok: true, gameState }, { headers: { 'Cache-Control': 'no-store' } });

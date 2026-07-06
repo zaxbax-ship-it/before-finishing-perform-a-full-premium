@@ -22,6 +22,12 @@ export async function GET() {
         sentryConfigured: isSentryConfigured(),
         sentryEnvironment: getSentryEnvironment()
       },
+      rateLimiting: {
+        provider: config.rateLimiting.provider,
+        distributed: config.rateLimiting.distributed,
+        configured: config.rateLimiting.configured,
+        reason: config.rateLimiting.reason
+      },
       database: {
         mode: config.database.mode
       },

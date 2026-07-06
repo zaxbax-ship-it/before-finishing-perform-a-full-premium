@@ -28,8 +28,13 @@ export const ENVIRONMENT_SPECS: EnvironmentVariableSpec[] = [
   { name: 'COMMUNITY_SUBMISSION_RATE_LIMIT_WINDOW_SECONDS', visibility: 'server', description: 'Community submission rate-limit window in seconds.' },
   { name: 'AI_MODERATION_RATE_LIMIT', visibility: 'server', description: 'Maximum AI moderation attempts per identity and window.' },
   { name: 'AI_MODERATION_RATE_LIMIT_WINDOW_SECONDS', visibility: 'server', description: 'AI moderation rate-limit window in seconds.' },
+  { name: 'RATE_LIMIT_PROVIDER', visibility: 'server', allowedValues: ['auto', 'memory', 'upstash'], description: 'Rate-limiter provider selection. Auto uses Upstash when configured, otherwise local memory.' },
+  { name: 'UPSTASH_REDIS_REST_URL', visibility: 'server', description: 'Upstash Redis REST URL for distributed rate limiting.' },
+  { name: 'UPSTASH_REDIS_REST_TOKEN', visibility: 'server', description: 'Upstash Redis REST token for distributed rate limiting.' },
   { name: 'MULTIPLAYER_LOBBY_RATE_LIMIT', visibility: 'server', description: 'Maximum multiplayer lobby create/join/start actions per identity and window.' },
   { name: 'MULTIPLAYER_LOBBY_RATE_LIMIT_WINDOW_SECONDS', visibility: 'server', description: 'Multiplayer lobby action rate-limit window in seconds.' },
+  { name: 'MULTIPLAYER_STATE_RATE_LIMIT', visibility: 'server', description: 'Maximum multiplayer waiting-room and game-state refresh requests per identity and window.' },
+  { name: 'MULTIPLAYER_STATE_RATE_LIMIT_WINDOW_SECONDS', visibility: 'server', description: 'Multiplayer state-refresh rate-limit window in seconds.' },
   { name: 'MULTIPLAYER_ANSWER_RATE_LIMIT', visibility: 'server', description: 'Maximum multiplayer answer submissions per identity and window.' },
   { name: 'MULTIPLAYER_ANSWER_RATE_LIMIT_WINDOW_SECONDS', visibility: 'server', description: 'Multiplayer answer rate-limit window in seconds.' },
   { name: 'AI_MODERATION_TIMEOUT_MS', visibility: 'server', description: 'Timeout for one AI moderation provider call.' },
@@ -116,6 +121,16 @@ export function validateEnvironment(): EnvironmentValidationIssue[] {
   const databaseMode = readEnv('NEXT_PUBLIC_DATABASE_MODE') || 'local';
   if (databaseMode === 'supabase' && (!readEnv('NEXT_PUBLIC_SUPABASE_URL') || !readEnv('SUPABASE_SERVICE_ROLE_KEY'))) {
     issues.push({ name: 'NEXT_PUBLIC_DATABASE_MODE', severity: 'warning', message: 'Supabase mode requested without a project URL and server-only service role key. The app should fall back to local mode.' });
+  }
+
+  const rateLimitProvider = readEnv('RATE_LIMIT_PROVIDER') || 'auto';
+  const hasUpstashConfig = Boolean(readEnv('UPSTASH_REDIS_REST_URL') && readEnv('UPSTASH_REDIS_REST_TOKEN'));
+  if ((runtime === 'production' || rateLimitProvider === 'upstash') && !hasUpstashConfig) {
+    issues.push({
+      name: 'UPSTASH_REDIS_REST_URL',
+      severity: 'warning',
+      message: 'Distributed rate limiting is not configured. The app will fall back to in-memory limits.'
+    });
   }
 
   const adsEnabled = readBooleanEnv('NEXT_PUBLIC_ADS_ENABLED');
