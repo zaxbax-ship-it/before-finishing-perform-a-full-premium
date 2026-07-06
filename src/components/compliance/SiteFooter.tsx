@@ -20,9 +20,18 @@ export function SiteFooter() {
         </div>
         <nav aria-label="Compliance links">
           {footerLinks.map(link => (
-            <Link key={link.href} href={link.href}>
-              {link.label}
-            </Link>
+            // File routes like /sitemap.xml are served outside the App Router,
+            // so they must be plain document links — client-side <Link>
+            // navigation would land on the app's 404 page.
+            link.href.endsWith('.xml') ? (
+              <a key={link.href} href={link.href}>
+                {link.label}
+              </a>
+            ) : (
+              <Link key={link.href} href={link.href}>
+                {link.label}
+              </Link>
+            )
           ))}
         </nav>
       </div>

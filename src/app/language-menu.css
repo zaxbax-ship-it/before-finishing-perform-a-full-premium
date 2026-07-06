@@ -313,3 +313,6 @@
 /* Solo topline: compact chance hearts (replaces the removed duplicate meta row). */
 .game-topline-chances { display: inline-flex; align-items: center; gap: 3px; }
 .game-topline-chances svg { display: block; }
+
+/* Programmatic focus target for revealed sections: no mouse outline. */
+.screen-section:focus { outline: none; }

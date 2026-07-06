@@ -14,6 +14,7 @@ import {
   submissionToQuestion
 } from '@/lib/community';
 import { localizeCategory, localizeCategoryDescription, localizeQuestion } from '@/lib/localization';
+import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import type { LeaderboardEntry } from '@/lib/domain/models';
 import { createAuthService } from '@/lib/auth/authService';
@@ -1221,6 +1222,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   const [notice, setNotice] = useState('');
   const [pendingPaid, setPendingPaid] = useState<{ type: Lifeline; price: number } | null>(null);
   const [exitPrompt, setExitPrompt] = useState(false);
+  const screenSectionRef = useRef<HTMLDivElement | null>(null);
   const [endState, setEndState] = useState<EndState>('lost');
   const [finalPrize, setFinalPrize] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -1373,8 +1375,10 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     setCommunityForm(previous => ({ ...previous, language: locale }));
   }, [locale]);
 
+  // One reusable reveal for every dynamically opened section: scroll its
+  // heading under the fixed bar and move focus there (see revealSection).
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    revealSection(screenSectionRef.current);
   }, [screen, round]);
 
   useEffect(() => {
@@ -1856,6 +1860,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       </div>
       {screen === 'admin' && adminHeader}
       {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
+      <div ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} questionCount={playableQuestions.length} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={playableQuestions} startGame={startGame} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
@@ -1940,6 +1945,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       )}
       {screen === 'profile' && <PremiumProfile t={t} authUi={authT} user={authUser} nickname={nickname} stats={stats} />}
       {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
+      </div>
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => setPendingPaid(null)} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
       {exitPrompt && (
         <GameExitModal

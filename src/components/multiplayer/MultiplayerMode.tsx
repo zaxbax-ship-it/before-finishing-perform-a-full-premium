@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
 import { getMultiplayerCopy, multiplayerOptionLetter } from '@/lib/multiplayer/localization';
+import { revealSection } from '@/lib/ui/revealSection';
 import { localizeCategory } from '@/lib/localization';
 import { Copy, Crown, PartyPopper, Share2, Trophy } from 'lucide-react';
 import type {
@@ -43,6 +44,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   const [nowMs, setNowMs] = useState(0);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [pendingJoin, setPendingJoin] = useState<string | undefined>();
+  const shellRef = useRef<HTMLElement | null>(null);
 
   const activeGameId = gameState?.game?.id || credentials?.gameId;
   const activeLobbyId = gameState?.lobby?.id || credentials?.lobbyId;
@@ -368,10 +370,23 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     void joinLobby(pendingJoin);
   }, [pendingJoin, anonymousId]);
 
+  // Reveal the multiplayer area whenever its phase changes (entry, waiting
+  // room, each round, results) — same reusable behavior as screen changes.
+  const phaseKey = !gameState
+    ? 'entry'
+    : gameState.game?.status === 'finished'
+      ? 'results'
+      : currentRound
+        ? `round-${currentRound.id}`
+        : 'waiting';
+  useEffect(() => {
+    revealSection(shellRef.current);
+  }, [phaseKey]);
+
   const statusLabel = gameState?.lobby.status ? copy[statusKey(gameState.lobby.status)] || gameState.lobby.status : copy.waiting;
 
   return (
-    <section className="multiplayer-shell mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8" aria-live="polite">
+    <section ref={shellRef} tabIndex={-1} className="multiplayer-shell screen-section mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8" aria-live="polite">
       {/* The hero only frames the entry and waiting phases; during a live round
           and on the results screen the gameplay content owns the top of the page. */}
       {!currentRound && gameState?.game?.status !== 'finished' && (
