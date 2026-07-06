@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { GoogleAnalyticsPageViews } from '@/components/compliance/GoogleAnalyticsPageViews';
 import { IntegrationScripts } from '@/components/compliance/IntegrationScripts';
@@ -94,7 +95,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body>
         <IntegrationScripts />
-        {analyticsProvider === 'ga4' && gaMeasurementId ? <GoogleAnalyticsPageViews measurementId={gaMeasurementId} /> : null}
+        {analyticsProvider === 'ga4' && gaMeasurementId ? (
+          <Suspense fallback={null}>
+            <GoogleAnalyticsPageViews measurementId={gaMeasurementId} />
+          </Suspense>
+        ) : null}
         {children}
         <SiteFooter />
         <StructuredData />
