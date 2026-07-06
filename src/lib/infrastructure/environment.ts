@@ -61,6 +61,7 @@ export const ENVIRONMENT_SPECS: EnvironmentVariableSpec[] = [
   { name: 'NEXT_PUBLIC_ADS_ENABLED', visibility: 'public', allowedValues: ['true', 'false'], description: 'Enables prepared ad slots.' },
   { name: 'NEXT_PUBLIC_AD_PROVIDER', visibility: 'public', allowedValues: ['none', 'adsense', 'google-ad-manager', 'media-net', 'ezoic'], description: 'Advertising provider.' },
   { name: 'NEXT_PUBLIC_AD_PLACEHOLDERS', visibility: 'public', allowedValues: ['true', 'false'], description: 'Show inactive ad placeholders.' },
+  { name: 'NEXT_PUBLIC_ADSENSE_CLIENT_ID', visibility: 'public', description: 'Google AdSense client id used by the optional verification/bootstrap script.' },
   { name: 'NEXT_PUBLIC_ADSENSE_PUBLISHER_ID', visibility: 'public', description: 'Google AdSense publisher id.' },
   { name: 'GOOGLE_AD_MANAGER_NETWORK_CODE', visibility: 'server', description: 'Google Ad Manager network code.' },
   { name: 'STRIPE_SECRET_KEY', visibility: 'server', description: 'Stripe server secret key.' },
@@ -135,8 +136,8 @@ export function validateEnvironment(): EnvironmentValidationIssue[] {
 
   const adsEnabled = readBooleanEnv('NEXT_PUBLIC_ADS_ENABLED');
   const adProvider = readEnv('NEXT_PUBLIC_AD_PROVIDER') || 'none';
-  if (adsEnabled && adProvider === 'adsense' && !readEnv('NEXT_PUBLIC_ADSENSE_PUBLISHER_ID')) {
-    issues.push({ name: 'NEXT_PUBLIC_ADSENSE_PUBLISHER_ID', severity: 'warning', message: 'AdSense is enabled but publisher id is missing.' });
+  if (adsEnabled && adProvider === 'adsense' && !readEnv('NEXT_PUBLIC_ADSENSE_PUBLISHER_ID') && !readEnv('NEXT_PUBLIC_ADSENSE_CLIENT_ID')) {
+    issues.push({ name: 'NEXT_PUBLIC_ADSENSE_CLIENT_ID', severity: 'warning', message: 'AdSense is enabled but no AdSense public client or publisher id is configured.' });
   }
 
   const analyticsProvider = readEnv('NEXT_PUBLIC_ANALYTICS_PROVIDER') || 'none';

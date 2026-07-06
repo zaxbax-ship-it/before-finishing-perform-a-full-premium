@@ -60,6 +60,7 @@ Required before enabling ads:
 - Approved publisher account.
 - Valid CMP configuration for required regions.
 - Final `ads.txt` seller records supplied by the ad network.
+- `NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-4935350853753304` to load the optional AdSense site verification/bootstrap script.
 - `NEXT_PUBLIC_ADS_ENABLED=true`
 - `NEXT_PUBLIC_AD_PROVIDER=adsense` or another supported provider.
 - `NEXT_PUBLIC_ADSENSE_PUBLISHER_ID` only after AdSense approval.

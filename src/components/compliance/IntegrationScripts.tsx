@@ -42,6 +42,19 @@ export function IntegrationScripts() {
     );
   }
 
+  if (config.ads.adsenseClientId) {
+    scripts.push(
+      <Script
+        key="adsense-loader"
+        id="adsense-loader"
+        async
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(config.ads.adsenseClientId)}`}
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
+    );
+  }
+
   if (config.analytics.provider === 'ga4' && config.analytics.gaMeasurementId) {
     scripts.push(
       <Script

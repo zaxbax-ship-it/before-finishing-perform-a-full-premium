@@ -26,6 +26,7 @@ export type ProductionConfig = {
     enabled: boolean;
     provider: 'none' | 'adsense' | 'google-ad-manager' | 'media-net' | 'ezoic';
     placeholders: boolean;
+    adsenseClientId?: string;
     adsensePublisherId?: string;
     googleAdManagerNetworkCode?: string;
   };
@@ -118,6 +119,7 @@ export function getProductionConfig(): ProductionConfig {
       enabled: readBooleanEnv('NEXT_PUBLIC_ADS_ENABLED'),
       provider: adProvider || 'none',
       placeholders: readBooleanEnv('NEXT_PUBLIC_AD_PLACEHOLDERS', true),
+      adsenseClientId: readEnv('NEXT_PUBLIC_ADSENSE_CLIENT_ID'),
       adsensePublisherId: readEnv('NEXT_PUBLIC_ADSENSE_PUBLISHER_ID'),
       googleAdManagerNetworkCode: readEnv('GOOGLE_AD_MANAGER_NETWORK_CODE')
     },
