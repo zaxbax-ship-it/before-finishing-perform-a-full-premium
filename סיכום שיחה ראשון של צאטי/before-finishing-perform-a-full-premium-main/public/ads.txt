@@ -1,0 +1,3 @@
+# ads.txt for The Quiz Show
+# No advertising seller accounts are connected yet.
+# Add approved seller records only after the relevant ad network account is created and verified.

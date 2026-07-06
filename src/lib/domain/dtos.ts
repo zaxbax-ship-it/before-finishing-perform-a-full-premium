@@ -4,6 +4,7 @@ import type { AdminRoleSlug, EntityId, PermissionSlug } from './models';
 
 export type PageDataDto = {
   questions: Question[];
+  totalAvailableQuestions: number;
 };
 
 export type CreateUserDto = {

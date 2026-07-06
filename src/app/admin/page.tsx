@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import TriviaPlatform from '@/components/TriviaPlatform';
 import { createTriviaDataService } from '@/lib/services/triviaDataService';
+import { API_QUESTION_SAMPLE_SIZE } from '@/lib/services/questionSampling';
 import { enforcementActive, requirePermission } from '@/lib/auth/guards';
 import { AuthorizationError, type AdminContext } from '@/lib/auth/types';
 import AdminAuthBar from './AdminAuthBar';
@@ -23,11 +24,12 @@ export default async function Admin() {
     }
   }
 
-  const data = await createTriviaDataService().getPageData();
+  const data = await createTriviaDataService().getPageData({ sampleSize: API_QUESTION_SAMPLE_SIZE });
 
   return (
     <TriviaPlatform
       questions={data.questions}
+      totalAvailableQuestions={data.totalAvailableQuestions}
       initialScreen="admin"
       adminHeader={context ? <AdminAuthBar context={context} /> : null}
     />

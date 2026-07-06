@@ -16,6 +16,7 @@ import {
 import { localizeCategory, localizeCategoryDescription, localizeQuestion } from '@/lib/localization';
 import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
+import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import type { LeaderboardEntry } from '@/lib/domain/models';
 import { createAuthService } from '@/lib/auth/authService';
 import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
@@ -73,6 +74,7 @@ const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
 const SETTINGS_KEY = 'premium-trivia-settings-v3';
 const EXTRA_KEY = 'premium-trivia-extra-questions-v3';
+const SEEN_QUESTIONS_KEY = 'premium-trivia-seen-question-ids-v1';
 const COMMUNITY_KEY = 'premium-trivia-community-submissions-v1';
 const AUDIT_KEY = 'premium-trivia-audit-log-v1';
 const NICKNAME_KEY = 'premium-trivia-public-nickname-v1';
@@ -1190,6 +1192,20 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 
+function questionId(question: Pick<Question, 'id'>) {
+  return String(question.id);
+}
+
+function uniqueRecentQuestionIds(ids: string[], limit = CLIENT_SEEN_QUESTION_LIMIT) {
+  const unique = new Map<string, string>();
+  for (const id of ids) {
+    if (!id) continue;
+    unique.delete(id);
+    unique.set(id, id);
+  }
+  return Array.from(unique.values()).slice(-limit);
+}
+
 function legacyCurrencyAchievement() {
   return `מיליון ${String.fromCharCode(1513, 1511, 1500, 1497, 1501)}`;
 }
@@ -1201,12 +1217,24 @@ function normalizeStats(stats: Stats): Stats {
   };
 }
 
-export default function TriviaPlatform({ questions, initialScreen = 'home', adminHeader }: { questions: Question[]; initialScreen?: Screen; adminHeader?: ReactNode }) {
+export default function TriviaPlatform({
+  questions,
+  totalAvailableQuestions,
+  initialScreen = 'home',
+  adminHeader
+}: {
+  questions: Question[];
+  totalAvailableQuestions?: number;
+  initialScreen?: Screen;
+  adminHeader?: ReactNode;
+}) {
   const [loadedQuestions, setLoadedQuestions] = useState<Question[]>(questions);
+  const [questionTotal, setQuestionTotal] = useState(totalAvailableQuestions || questions.length);
   const baseQuestions = useMemo(() => loadedQuestions.map(normalize), [loadedQuestions]);
   const [locale, setLocale] = useState<Locale>('he');
   const [screen, setScreen] = useState<Screen>(initialScreen);
   const [extraQuestions, setExtraQuestions] = useState<GameQuestion[]>([]);
+  const [seenQuestionIds, setSeenQuestionIds] = useState<string[]>([]);
   const [settings, setSettings] = useState<Settings>({ sound: true, effects: true, timer: 'דרמטית' });
   const [stats, setStats] = useState<Stats>({ games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] });
   const [category, setCategory] = useState('הכול');
@@ -1278,6 +1306,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
 
   useEffect(() => {
     setExtraQuestions(readLocal(EXTRA_KEY, []));
+    setSeenQuestionIds(uniqueRecentQuestionIds(readLocal<string[]>(SEEN_QUESTIONS_KEY, [])));
     setCommunitySubmissions(readLocal(COMMUNITY_KEY, []));
     setAuditLogs(readLocal(AUDIT_KEY, []));
     // Invitation deep-links (/?join=...) land directly on the multiplayer screen.
@@ -1319,21 +1348,8 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   }, [questions]);
 
   useEffect(() => {
-    let active = true;
-    const id = window.setTimeout(() => {
-      fetch('/api/questions', { cache: 'no-store' })
-        .then(response => response.ok ? response.json() : undefined)
-        .then(data => {
-          if (!active || !Array.isArray(data?.questions)) return;
-          setLoadedQuestions(current => data.questions.length > current.length ? data.questions : current);
-        })
-        .catch(() => undefined);
-    }, 900);
-    return () => {
-      active = false;
-      window.clearTimeout(id);
-    };
-  }, []);
+    setQuestionTotal(totalAvailableQuestions || questions.length);
+  }, [questions.length, totalAvailableQuestions]);
 
   useEffect(() => {
     let active = true;
@@ -1354,6 +1370,10 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
   useEffect(() => {
     localStorage.setItem(EXTRA_KEY, JSON.stringify(extraQuestions));
   }, [extraQuestions]);
+
+  useEffect(() => {
+    localStorage.setItem(SEEN_QUESTIONS_KEY, JSON.stringify(seenQuestionIds));
+  }, [seenQuestionIds]);
 
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -1510,10 +1530,63 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     tone('click', settings.sound);
   }
 
-  function startGame(nextCategory = category) {
+  function rememberSeenQuestions(items: Pick<Question, 'id'>[]) {
+    if (!items.length) return;
+    setSeenQuestionIds(previous => uniqueRecentQuestionIds([...previous, ...items.map(questionId)]));
+  }
+
+  async function loadCategoryQuestions(nextCategory: string) {
+    if (locale !== 'he') return [];
+    try {
+      const isSpecificCategory = categories.includes(nextCategory);
+      const params = new URLSearchParams({ limit: isSpecificCategory ? '240' : '640' });
+      if (isSpecificCategory) params.set('category', nextCategory);
+      const excludedIds = uniqueRecentQuestionIds([...seenQuestionIds, ...gameSet.map(questionId)]).slice(-API_QUESTION_EXCLUDE_MAX);
+      if (excludedIds.length) params.set('exclude', excludedIds.join(','));
+      const response = await fetch(`/api/questions?${params.toString()}`, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data?.questions)) return [];
+      if (typeof data.totalAvailable === 'number') setQuestionTotal(data.totalAvailable);
+      setLoadedQuestions(current => {
+        const existing = new Set(current.map(question => String(question.id)));
+        const additions = (data.questions as Question[]).filter(question => !existing.has(String(question.id)));
+        return additions.length ? [...current, ...additions] : current;
+      });
+      return (data.questions as Question[]).map(normalize);
+    } catch {
+      return [];
+    }
+  }
+
+  async function startGame(nextCategory = category) {
     clearAdvanceTimer();
     advancingRef.current = false;
-    const available = shuffle(playableQuestions.filter(question => nextCategory === 'הכול' || question.category === nextCategory));
+    const seenSet = new Set(seenQuestionIds);
+    const isSpecificCategory = categories.includes(nextCategory);
+    let available = shuffle(playableQuestions.filter(question => !isSpecificCategory || question.category === nextCategory));
+    const additional = await loadCategoryQuestions(nextCategory);
+    if (additional.length > 0) {
+      const existing = new Set(available.map(question => String(question.id)));
+      const additions = additional.filter(question => !existing.has(String(question.id)));
+      const freshAdditions = additions.filter(question => !seenSet.has(questionId(question)));
+      const fallbackAdditions = additions.filter(question => seenSet.has(questionId(question)));
+      available = [...freshAdditions, ...available, ...fallbackAdditions];
+    }
+    const unseenAvailable = available.filter(question => !seenSet.has(questionId(question)));
+    if (unseenAvailable.length >= 4) {
+      const seenAvailable = available.filter(question => seenSet.has(questionId(question)));
+      available = [...unseenAvailable, ...seenAvailable];
+    }
+    if (additional.length === 0 && available.filter(question => !seenSet.has(questionId(question))).length < 15) {
+      const fallbackAdditional = await loadCategoryQuestions(nextCategory);
+      if (fallbackAdditional.length > 0) {
+        const existing = new Set(available.map(question => String(question.id)));
+        const additions = fallbackAdditional.filter(question => !existing.has(String(question.id)));
+        const freshAdditions = additions.filter(question => !seenSet.has(questionId(question)));
+        const fallbackAdditions = additions.filter(question => seenSet.has(questionId(question)));
+        available = [...freshAdditions, ...available, ...fallbackAdditions];
+      }
+    }
     if (available.length < 4) return;
     let pool = available.slice(0, 15);
     if (pool.length < 15) {
@@ -1523,6 +1596,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     }
     setCategory(nextCategory);
     setGameSet(pool);
+    rememberSeenQuestions(pool);
     setRound(0);
     setOrder(shuffle([0, 1, 2, 3]));
     setSelected(null);
@@ -1639,9 +1713,12 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     }
     if (type === 'swap') {
       const usedIds = new Set(gameSet.map(item => item.id));
-      const replacement = shuffle(playableQuestions.filter(question => question.category === gameSet[round].category && !usedIds.has(question.id)))[0];
+      const seenSet = new Set(seenQuestionIds);
+      const replacements = shuffle(playableQuestions.filter(question => question.category === gameSet[round].category && !usedIds.has(question.id)));
+      const replacement = replacements.find(question => !seenSet.has(questionId(question))) || replacements[0];
       if (replacement) {
         setGameSet(previous => previous.map((item, index) => index === round ? replacement : item));
+        rememberSeenQuestions([replacement]);
         setOrder(shuffle([0, 1, 2, 3]));
         setHiddenAnswers([]);
         setAdvice(t.swapAdvice);
@@ -1861,7 +1938,7 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
       {screen === 'admin' && adminHeader}
       {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div ref={screenSectionRef} tabIndex={-1} className="screen-section">
-      {screen === 'home' && <Home t={t} locale={locale} questionCount={playableQuestions.length} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
+      {screen === 'home' && <Home t={t} locale={locale} questionCount={Math.max(questionTotal, playableQuestions.length)} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={playableQuestions} startGame={startGame} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
