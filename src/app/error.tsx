@@ -1,8 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
 
-export default function AppError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function AppError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <main className="compliance-error-page" dir="ltr" lang="en">
       <section className="compliance-error-card" aria-labelledby="app-error-title">

@@ -1,4 +1,5 @@
 import { createLogger } from './logger';
+import { captureSentryException } from './sentry';
 
 export type ErrorReport = {
   error: unknown;
@@ -17,6 +18,7 @@ export function createErrorReporter(): ErrorReporter {
     capture({ error, context = {}, severity = 'medium' }) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(message, { severity, area: String(context.area || 'unknown') });
+      captureSentryException(error, { severity, ...context });
     }
   };
 }

@@ -47,6 +47,11 @@ export type ProductionConfig = {
   email: {
     resendConfigured: boolean;
   };
+  observability: {
+    sentryConfigured: boolean;
+    sentryEnvironment?: string;
+    sentryRelease?: string;
+  };
   captcha: {
     turnstileConfigured: boolean;
     siteKey?: string;
@@ -126,6 +131,11 @@ export function getProductionConfig(): ProductionConfig {
     },
     email: {
       resendConfigured: Boolean(readEnv('RESEND_API_KEY'))
+    },
+    observability: {
+      sentryConfigured: Boolean(readEnv('NEXT_PUBLIC_SENTRY_DSN')),
+      sentryEnvironment: readEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT'),
+      sentryRelease: readEnv('NEXT_PUBLIC_SENTRY_RELEASE')
     },
     captcha: {
       turnstileConfigured: Boolean(readEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY') && readEnv('TURNSTILE_SECRET_KEY')),
