@@ -1,0 +1,49 @@
+{
+  "sourceFile": "C:\\Users\\יוסי דוידוב\\Documents\\Codex\\2026-07-04\\10-000-4-10\\outputs\\quality_trivia_20000_he.csv",
+  "targetFile": "C:\\Users\\יוסי דוידוב\\Documents\\Codex\\2026-06-27\\before-finishing-perform-a-full-premium\\src\\data\\questions.json",
+  "generatedAt": "2026-07-06T05:21:42.731Z",
+  "sourceRows": 20000,
+  "existingBefore": 1161,
+  "imported": 20000,
+  "skipped": 0,
+  "duplicates": 0,
+  "invalid": 0,
+  "finalTotal": 21161,
+  "categoryMappings": {
+    "היסטוריה": "היסטוריה",
+    "רכילות כלל עולמית": "רכילות ותרבות אמריקאית ועולמית",
+    "אקטואליה כלל עולמית": "פוליטיקה",
+    "רפואה": "רפואה",
+    "קולנוע": "קולנוע",
+    "מוזיקה": "מוזיקה",
+    "ספורט": "ספורט",
+    "עולם הרכב": "עולם הרכב",
+    "נטפליקס": "נטפליקס",
+    "עולם בעלי החיים": "עולם בעלי החיים"
+  },
+  "invalidReasons": {},
+  "duplicateExamples": [],
+  "invalidExamples": [],
+  "translationStatus": {
+    "he": {
+      "imported": 20000,
+      "status": "source-ready"
+    },
+    "en": {
+      "imported": 0,
+      "status": "pending-paid-or-reviewed-translation"
+    },
+    "ar": {
+      "imported": 0,
+      "status": "pending-paid-or-reviewed-translation"
+    },
+    "ru": {
+      "imported": 0,
+      "status": "pending-paid-or-reviewed-translation"
+    },
+    "am": {
+      "imported": 0,
+      "status": "pending-paid-or-reviewed-translation"
+    }
+  }
+}
