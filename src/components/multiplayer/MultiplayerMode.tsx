@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
-import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
+import { getMultiplayerCopy, multiplayerOptionLetter } from '@/lib/multiplayer/localization';
+import { localizeCategory } from '@/lib/localization';
+import { Copy, Crown, PartyPopper, Share2, Trophy } from 'lucide-react';
 import type {
   MultiplayerActionResult,
   MultiplayerErrorCode,
@@ -39,6 +41,8 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   const [message, setMessage] = useState('');
   const [anonymousId, setAnonymousId] = useState('');
   const [nowMs, setNowMs] = useState(0);
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [pendingJoin, setPendingJoin] = useState<string | undefined>();
 
   const activeGameId = gameState?.game?.id || credentials?.gameId;
   const activeLobbyId = gameState?.lobby?.id || credentials?.lobbyId;
@@ -50,6 +54,26 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     if (!gameState?.me) return undefined;
     return gameState.results.find(result => result.playerId === gameState.me?.id);
   }, [gameState]);
+
+  async function copyInvite() {
+    if (!activeLobbyId) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink(activeLobbyId));
+      setInviteCopied(true);
+      window.setTimeout(() => setInviteCopied(false), 2200);
+    } catch {
+      // Clipboard can be unavailable in insecure contexts; the code is still visible.
+    }
+  }
+
+  async function shareInvite() {
+    if (!activeLobbyId) return;
+    const url = inviteLink(activeLobbyId);
+    if (navigator.share) {
+      try { await navigator.share({ title: copy.title, url }); return; } catch { /* user cancelled */ }
+    }
+    await copyInvite();
+  }
 
   function persistSession(session: StoredSession) {
     setCredentials(session);
@@ -104,6 +128,13 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     const storedSession = readLocal<StoredSession | undefined>(SESSION_KEY, undefined);
     if (storedSession?.playerId && storedSession.playerToken) setCredentials(storedSession);
     void refreshLobbies();
+    // Invitation links (/?join=<lobbyId>) queue an auto-join that fires once
+    // the anonymous identity is ready (see effect below joinLobby).
+    const joinTarget = new URLSearchParams(window.location.search).get('join');
+    if (joinTarget && !(storedSession?.lobbyId === joinTarget)) {
+      window.history.replaceState(null, '', window.location.pathname);
+      setPendingJoin(joinTarget);
+    }
   }, []);
 
   useEffect(() => {
@@ -330,21 +361,32 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     if (data.error) setMessage(multiplayerErrorMessage(data, copy));
   }
 
+  // Auto-join from an invitation link, once identity + handlers are all declared.
+  useEffect(() => {
+    if (!pendingJoin || !anonymousId) return;
+    setPendingJoin(undefined);
+    void joinLobby(pendingJoin);
+  }, [pendingJoin, anonymousId]);
+
   const statusLabel = gameState?.lobby.status ? copy[statusKey(gameState.lobby.status)] || gameState.lobby.status : copy.waiting;
 
   return (
     <section className="multiplayer-shell mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8" aria-live="polite">
-      <div className="multiplayer-hero glass">
-        <div>
-          <p className="multiplayer-kicker">{copy.nav}</p>
-          <h1>{copy.title}</h1>
-          <p>{copy.subtitle}</p>
+      {/* The hero only frames the entry and waiting phases; during a live round
+          and on the results screen the gameplay content owns the top of the page. */}
+      {!currentRound && gameState?.game?.status !== 'finished' && (
+        <div className="multiplayer-hero glass">
+          <div>
+            <p className="multiplayer-kicker">{copy.nav}</p>
+            <h1>{copy.title}</h1>
+            <p>{copy.subtitle}</p>
+          </div>
+          <div className="multiplayer-status-card">
+            <span>{copy.connectionReady}</span>
+            <strong>{statusLabel}</strong>
+          </div>
         </div>
-        <div className="multiplayer-status-card">
-          <span>{copy.connectionReady}</span>
-          <strong>{statusLabel}</strong>
-        </div>
-      </div>
+      )}
 
       {!gameState && (
         <div className="multiplayer-grid">
@@ -384,9 +426,16 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               {lobbies.length === 0 && <p className="multiplayer-empty">{copy.noGames}</p>}
               {lobbies.map(lobby => (
                 <article key={lobby.id} className="multiplayer-lobby-card">
-                  <div>
-                    <strong>{copy.players}: {lobby.playerCount} / {lobby.maxPlayers}</strong>
-                    <span>{copy[statusKey(lobby.status)] || lobby.status}</span>
+                  <div className="multiplayer-lobby-info">
+                    <strong>
+                      <Crown size={14} aria-hidden="true" className="lobby-host-icon" />
+                      {(lobby.players.find(player => player.id === lobby.hostPlayerId) || lobby.players[0])?.nickname || copy.host}
+                    </strong>
+                    <span>{copy.players}: {lobby.playerCount} / {lobby.maxPlayers} · {copy[statusKey(lobby.status)] || lobby.status}</span>
+                    <span className="multiplayer-lobby-tags">
+                      <em>{LANGUAGE_NAMES[lobby.locale] || lobby.locale}</em>
+                      <em>{lobby.category ? localizeCategory(locale, lobby.category) : copy.anyCategory}</em>
+                    </span>
                   </div>
                   <button className="ghost-button focus-ring" onClick={() => joinLobby(lobby.id)}>{copy.join}</button>
                 </article>
@@ -403,9 +452,26 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           <p>{gameState.lobby.playerCount} / {gameState.lobby.maxPlayers} {copy.players}</p>
           <div className="multiplayer-roster">
             {gameState.lobby.players.map(player => (
-              <span key={player.id}>{player.nickname}</span>
+              <span key={player.id} className={player.id === gameState.me?.id ? 'roster-me' : undefined}>
+                {player.id === gameState.lobby.hostPlayerId && <Crown size={13} aria-hidden="true" />}
+                {player.nickname}
+                {player.id === gameState.me?.id && <em> · {copy.you}</em>}
+              </span>
             ))}
           </div>
+          {activeLobbyId && (
+            <div className="multiplayer-invite" aria-label={copy.lobbyCode}>
+              <span className="multiplayer-invite-code">{copy.lobbyCode}: <strong>{lobbyShortCode(activeLobbyId)}</strong></span>
+              <div className="multiplayer-invite-actions">
+                <button type="button" className="ghost-button focus-ring" onClick={copyInvite}>
+                  <Copy size={15} aria-hidden="true" /> {inviteCopied ? copy.inviteCopied : copy.copyInvite}
+                </button>
+                <button type="button" className="ghost-button focus-ring" onClick={shareInvite}>
+                  <Share2 size={15} aria-hidden="true" /> {copy.shareInvite}
+                </button>
+              </div>
+            </div>
+          )}
           <div className="multiplayer-actions">
             {gameState.lobby.playerCount >= 2 && gameState.me?.id === gameState.lobby.hostPlayerId && (
               <button className="premium-button focus-ring" onClick={startGame}>{copy.startGame}</button>
@@ -416,7 +482,9 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       )}
 
       {gameState && currentRound && (
-        <section className="glass multiplayer-game">
+        <section key={currentRound.id} className="glass multiplayer-game multiplayer-round-enter">
+          {/* Question first, answers immediately below — same "single frame"
+              philosophy as solo gameplay. Lifelines follow as a compact toolbar. */}
           <div className="multiplayer-round-meta">
             <span>{copy.questionLive}</span>
             {timer && (
@@ -428,16 +496,6 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
             <strong>{money(currentRound.prize)}</strong>
           </div>
           <h2>{currentRound.question.question}</h2>
-          <MultiplayerLifelines
-            copy={copy}
-            effects={activeEffects}
-            lifelines={gameState.myLifelines}
-            options={currentRound.question.options}
-            availablePrize={gameState.myAvailablePrize || 0}
-            disabled={currentRound.hasAnswered || status === 'loading'}
-            onUse={useLifeline}
-            onBuy={buyLifeline}
-          />
           <div className="multiplayer-answer-grid">
             {currentRound.question.options.map((option, index) => (
               <button
@@ -450,19 +508,38 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
                 disabled={currentRound.hasAnswered || status === 'loading' || hiddenOptionIndexes.has(index)}
                 onClick={() => submitAnswer(index)}
               >
-                <span>{String.fromCharCode(65 + index)}</span>
+                <span>{multiplayerOptionLetter(locale, index)}</span>
                 <span>{option}</span>
               </button>
             ))}
           </div>
+          <MultiplayerLifelines
+            copy={copy}
+            locale={locale}
+            effects={activeEffects}
+            lifelines={gameState.myLifelines}
+            options={currentRound.question.options}
+            availablePrize={gameState.myAvailablePrize || 0}
+            disabled={currentRound.hasAnswered || status === 'loading'}
+            onUse={useLifeline}
+            onBuy={buyLifeline}
+          />
           {currentRound.hasAnswered && <div className="multiplayer-toast">{copy.answered}</div>}
-          {gameState.roundSummary && <RoundSummary copy={copy} state={gameState} />}
+          {gameState.roundSummary && <RoundSummary copy={copy} locale={locale} state={gameState} />}
           <MultiplayerScoreboard copy={copy} state={gameState} />
         </section>
       )}
 
       {gameState?.game?.status === 'finished' && (
-        <section className="glass multiplayer-results">
+        <section className="glass multiplayer-results multiplayer-celebrate">
+          <div className="multiplayer-champion" role="status">
+            <Trophy size={44} aria-hidden="true" className="champion-trophy" />
+            <div>
+              <span>{copy.champion}</span>
+              <strong>{[...gameState.results].sort((a, b) => (a.rank || 99) - (b.rank || 99))[0] ? gameState.players.find(player => player.id === [...gameState.results].sort((a, b) => (a.rank || 99) - (b.rank || 99))[0].playerId)?.nickname : ''}</strong>
+            </div>
+            <PartyPopper size={26} aria-hidden="true" className="champion-pop" />
+          </div>
           <h2>{copy.results}</h2>
           <MultiplayerScoreboard copy={copy} state={gameState} />
           {myResult && (
@@ -471,7 +548,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               <strong>{money(myResult.totalPrize)}</strong>
             </div>
           )}
-          <button className="premium-button focus-ring" onClick={leave}>{copy.quick}</button>
+          <button className="premium-button focus-ring" onClick={leave}>{copy.playAgain}</button>
         </section>
       )}
 
@@ -485,6 +562,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
 
 function MultiplayerLifelines({
   copy,
+  locale,
   effects,
   lifelines,
   options,
@@ -494,6 +572,7 @@ function MultiplayerLifelines({
   onBuy
 }: {
   copy: ReturnType<typeof getMultiplayerCopy>;
+  locale: Locale;
   effects: MultiplayerPublicGameState['myLifelineEffects'];
   lifelines: MultiplayerPublicGameState['myLifelines'];
   options: string[];
@@ -537,12 +616,12 @@ function MultiplayerLifelines({
       </div>
       {effects?.map(effect => (
         <div key={`${effect.type}-${effect.roundId}-${effect.createdAt}`} className="multiplayer-lifeline-effect">
-          {effect.type === 'fifty_fifty' && <span>{copy.hiddenOptions}: {effect.hiddenOptionIndexes.map(index => String.fromCharCode(65 + index)).join(', ')}</span>}
+          {effect.type === 'fifty_fifty' && <span>{copy.hiddenOptions}: {effect.hiddenOptionIndexes.map(index => multiplayerOptionLetter(locale, index)).join(', ')}</span>}
           {effect.type === 'audience' && (
-            <span>{copy.audienceThinks}: {effect.poll.map((share, index) => `${String.fromCharCode(65 + index)} ${share}%`).join(' · ')}</span>
+            <span>{copy.audienceThinks}: {effect.poll.map((share, index) => `${multiplayerOptionLetter(locale, index)} ${share}%`).join(' · ')}</span>
           )}
           {effect.type === 'friend' && (
-            <span>{copy.friendThinks}: {String.fromCharCode(65 + effect.suggestedIndex)} · {copy.confidence} {effect.confidence}% · {options[effect.suggestedIndex]}</span>
+            <span>{copy.friendThinks}: {multiplayerOptionLetter(locale, effect.suggestedIndex)} · {copy.confidence} {effect.confidence}% · {options[effect.suggestedIndex]}</span>
           )}
         </div>
       ))}
@@ -550,7 +629,7 @@ function MultiplayerLifelines({
   );
 }
 
-function RoundSummary({ copy, state }: { copy: ReturnType<typeof getMultiplayerCopy>; state: MultiplayerPublicGameState }) {
+function RoundSummary({ copy, locale, state }: { copy: ReturnType<typeof getMultiplayerCopy>; locale: Locale; state: MultiplayerPublicGameState }) {
   if (!state.roundSummary) return null;
   const summary = state.roundSummary;
   const winner = summary.players.find(player => player.playerId === summary.winnerPlayerId);
@@ -558,7 +637,7 @@ function RoundSummary({ copy, state }: { copy: ReturnType<typeof getMultiplayerC
     <section className="multiplayer-round-summary" aria-label={copy.roundSummary}>
       <div>
         <span>{copy.roundSummary}</span>
-        <h3>{copy.correctAnswer}: {String.fromCharCode(65 + summary.correctIndex)} · {summary.correctAnswer}</h3>
+        <h3>{copy.correctAnswer}: {multiplayerOptionLetter(locale, summary.correctIndex)} · {summary.correctAnswer}</h3>
         {summary.explanation && <p>{summary.explanation}</p>}
       </div>
       <div className="multiplayer-round-summary-grid">
@@ -623,7 +702,19 @@ function statusKey(status: string) {
 }
 
 function money(value: number) {
-  return `$${new Intl.NumberFormat('en-US').format(value)}`;
+  // Same formatting as solo gameplay for a consistent product voice.
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+}
+
+const LANGUAGE_NAMES: Record<string, string> = { he: 'עברית', en: 'English', ar: 'العربية', ru: 'Русский', am: 'አማርኛ' };
+
+function inviteLink(lobbyId: string) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${origin}/?join=${encodeURIComponent(lobbyId)}`;
+}
+
+function lobbyShortCode(lobbyId: string) {
+  return lobbyId.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase();
 }
 
 function lifelineLabel(lifeline: MultiplayerLifelineId, copy: ReturnType<typeof getMultiplayerCopy>) {

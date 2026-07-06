@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AlertTriangle, Check, Globe, Heart, Home as HomeIcon, Mail, PenLine, Percent, Phone, RefreshCw, ScrollText, Settings as SettingsIcon, Sparkles, Star, Timer as TimerIcon, Trophy, Users } from 'lucide-react';
 import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
 import { MultiplayerMode } from '@/components/multiplayer/MultiplayerMode';
 import {
@@ -1255,7 +1256,9 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     () => (locale === 'he' ? allQuestions : allQuestions.filter(question => question.translations?.[locale])),
     [allQuestions, locale]
   );
-  const categories = useMemo(() => Array.from(new Set(allQuestions.map(question => question.category))).sort(), [allQuestions]);
+  // Categories are derived from the locale-playable pool so non-Hebrew players
+  // never see categories that would have zero playable questions.
+  const categories = useMemo(() => Array.from(new Set(playableQuestions.map(question => question.category))).sort(), [playableQuestions]);
   const current = gameSet[round] ? localizeQuestion(gameSet[round], locale) : undefined;
   const currentPrize = MONEY[Math.max(0, round - 1)] || 0;
   const nextPrize = MONEY[round] || MONEY[MONEY.length - 1];
@@ -1275,6 +1278,8 @@ export default function TriviaPlatform({ questions, initialScreen = 'home', admi
     setExtraQuestions(readLocal(EXTRA_KEY, []));
     setCommunitySubmissions(readLocal(COMMUNITY_KEY, []));
     setAuditLogs(readLocal(AUDIT_KEY, []));
+    // Invitation deep-links (/?join=...) land directly on the multiplayer screen.
+    if (new URLSearchParams(window.location.search).get('join')) setScreen('multiplayer');
     setSettings(readLocal(SETTINGS_KEY, { sound: true, effects: true, timer: 'דרמטית' }));
     setStats(normalizeStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] })));
     setNicknameState(readLocal(NICKNAME_KEY, ''));
@@ -2026,7 +2031,7 @@ function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (local
         aria-label={`Language: ${active.native}`}
         title="Language"
       >
-        <span className="language-globe" aria-hidden="true">🌐</span>
+        <span className="language-globe" aria-hidden="true"><Globe size={22} /></span>
         <span className="sr-only">Language: {active.native}</span>
       </button>
       {open && (
@@ -2170,7 +2175,7 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
           <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
           <div className="relative grid h-full place-items-center text-center">
             <div>
-              <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]">🏆</div>
+              <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]"><Trophy size={56} aria-hidden="true" /></div>
               <div className="home-prize-amount text-6xl font-black md:text-7xl">{money(1000000)}</div>
               <p className="mt-8 text-white/65">{t.live}</p>
               <div className="mx-auto mt-8 h-2 w-80 rounded-full bg-gradient-to-l from-gold to-azure" />
@@ -2178,7 +2183,7 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
           </div>
         </div>
         <div className="text-right">
-          <p className="mb-8 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold">✦ {t.pill}</p>
+          <p className="mb-8 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold"><Sparkles size={14} aria-hidden="true" /> {t.pill}</p>
           <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
           <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
           <div className="mt-9 flex flex-wrap gap-4">
@@ -2192,7 +2197,6 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
       <nav className="home-actions" aria-label={t.homeActionsLabel}>
         <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
         <button className="ghost-button focus-ring" onClick={() => open('categories')}>{t.catNav}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('multiplayer')}>{multiplayerLabel}</button>
         <button className="ghost-button focus-ring" onClick={() => open('leaderboard')}>{t.lbNav}</button>
         <button className="ghost-button focus-ring" onClick={() => open('submit')}>{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
         <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>
@@ -2214,7 +2218,7 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
 function Categories({ t, locale, categories, questions, startGame }: { t: Record<string, string>; locale: Locale; categories: string[]; questions: GameQuestion[]; startGame: (category: string) => void }) {
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
-      <p className="mb-8 mr-auto w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold">✦ {t.catPill}</p>
+      <p className="mb-8 mr-auto w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold"><Sparkles size={14} aria-hidden="true" /> {t.catPill}</p>
       <h1 className="max-w-5xl text-6xl font-black md:text-[86px]">{t.choose}</h1>
       <p className="mt-5 max-w-4xl text-xl leading-8 text-white/72">{t.chooseText}</p>
       <AdSlot placement="categories-top" className="mt-7" />
@@ -2222,7 +2226,7 @@ function Categories({ t, locale, categories, questions, startGame }: { t: Record
       <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {categories.map(category => (
           <button key={category} className="category-card focus-ring glass rounded-[30px] p-6 text-right" onClick={() => startGame(category)}>
-            <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-gold/15 text-gold">✦</span>
+            <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-gold/15 text-gold"><Sparkles size={18} aria-hidden="true" /></span>
             <strong className="block text-3xl font-black">{localizeCategory(locale, category)}</strong>
             <em className="mt-3 block not-italic text-white/65">{localizeCategoryDescription(locale, category)}</em>
             <small className="mt-6 inline-block rounded-full border border-white/15 px-4 py-2 text-white/70">{questions.filter(question => question.category === category).length} {t.available}</small>
@@ -2237,7 +2241,7 @@ function Categories({ t, locale, categories, questions, startGame }: { t: Record
 function Rules({ t, start }: { t: Record<string, string>; start: () => void }) {
   const rules = [t.rule1, t.rule2, t.rule3, t.rule4, t.rule5];
   return (
-    <Panel title={t.rulesTitle} icon="§">
+    <Panel title={t.rulesTitle} icon={<ScrollText size={26} aria-hidden="true" />}>
       <div className="grid gap-4">{rules.map((rule, index) => <div key={rule} className="rule-row"><span>{index + 1}</span><p>{rule}</p></div>)}</div>
       <button className="premium-button focus-ring mt-9 text-lg" onClick={start}>{t.readyStart}</button>
     </Panel>
@@ -2280,9 +2284,10 @@ function Game(props: {
     <section className="compact-game-shell game-priority-layout mx-auto grid w-full max-w-[1720px] gap-6 px-4 pb-10 lg:grid-cols-[1fr_380px] lg:px-8">
       <section className="glass question-priority rounded-[32px] p-5 md:p-8">
         <div className="game-topline">
-          <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}>⌂</button>
+          <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
           <span className="game-topline-info">{t.question} {round + 1}/15 · {current.category}</span>
-          <span className={`game-topline-timer ${timerUrgency}`}>◷ {timer}</span>
+          <span className="game-topline-chances" aria-label={t.chancesLabel}>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}><Heart size={13} fill="currentColor" aria-hidden="true" /></span>)}</span>
+          <span className={`game-topline-timer ${timerUrgency}`}><TimerIcon size={16} aria-hidden="true" /> {timer}</span>
           <span className="game-topline-pot">{money(currentPrize)}</span>
         </div>
         {current.imageUrl && <img src={current.imageUrl} alt="תמונת שאלה" className="mb-6 max-h-72 w-full rounded-3xl object-cover" />}
@@ -2300,7 +2305,7 @@ function Game(props: {
         </div>
         {answerInfo && (
           <div role="status" aria-live="polite" className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
-            <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? '✓' : '!'}</div>
+            <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? <Check size={20} aria-hidden="true" /> : <AlertTriangle size={20} aria-hidden="true" />}</div>
             <div className="answer-info-content">
               <div className="answer-info-header">
                 <strong>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</strong>
@@ -2316,21 +2321,17 @@ function Game(props: {
         )}
         {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}
         {notice && <div className="mt-6 rounded-3xl border border-gold/40 bg-gold/10 p-5 text-lg leading-8 text-gold">{notice}</div>}
-        <div className="game-meta-below mt-6 grid gap-4 xl:grid-cols-[1fr_auto_auto]">
-          <div>
-            <div className="text-sm font-bold text-gold">{t.question} {round + 1} {t.of} 15 · {current.category} · {current.difficulty}</div>
-            <div className="mt-2 text-2xl font-extrabold">{t.currentPrize}: {money(nextPrize)}</div>
-          </div>
-          <div className="money-pot"><span>$</span><div><small>{t.currentPot}</small><strong>{money(currentPrize)}</strong></div></div>
-          <div className={`timer-badge ${timerUrgency}`}><span>◷</span><span>{timer}</span><small>{t.seconds}</small></div>
+        {/* Slim meta strip: only information not already shown in the topline. */}
+        <div className="game-meta-below mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <span className="font-bold text-gold">{t.currentPrize}: {money(nextPrize)}</span>
+          <span className="text-white/55">{t.guaranteed}: {money(guaranteedPrize)}</span>
         </div>
-        <div className="chance-row mt-4"><span>{t.chancesLabel}</span>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}>♥</span>)}</div>
         <div className="mt-4 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-l from-gold to-azure transition-all duration-500" style={{ width: `${progress}%` }} /></div>
       </section>
       <aside className="space-y-5">
         <div className="glass rounded-[28px] p-5">
-          <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold">✦</span></div>
-          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => triggerLifeline(type)}><span>{type === 'fifty' ? '½' : type === 'swap' ? '↻' : type === 'phone' ? '☎' : '◌'}</span><span>{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>)}</div>
+          <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold"><Sparkles size={16} aria-hidden="true" /></span></div>
+          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => triggerLifeline(type)}><span>{type === 'fifty' ? <Percent size={18} aria-hidden="true" /> : type === 'swap' ? <RefreshCw size={18} aria-hidden="true" /> : type === 'phone' ? <Phone size={18} aria-hidden="true" /> : <Users size={18} aria-hidden="true" />}</span><span>{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>)}</div>
           <p className="mt-4 text-sm leading-6 text-white/55">{t.reuseHint}</p>
         </div>
         <div className="glass rounded-[28px] p-5">
@@ -2445,7 +2446,7 @@ function Result({ t, authUi, isAuthenticated, state, correctCount, elapsed, priz
   return (
     <section className="mx-auto grid min-h-[calc(100vh-104px)] max-w-5xl place-items-center px-6 pb-14">
       <div className="glass w-full rounded-[34px] p-8 text-center md:p-12">
-        <div className="mx-auto mb-5 text-7xl text-gold">🏆</div>
+        <div className="mx-auto mb-5 text-7xl text-gold"><Trophy size={56} aria-hidden="true" /></div>
         <h2 className="text-5xl font-black">{title}</h2>
         <p className="mx-auto mt-4 max-w-2xl text-xl leading-8 text-white/70">{fmt(t.resultSummary, { correct: correctCount, time, prize: money(prize) })}</p>
         <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
@@ -2493,7 +2494,7 @@ function Leaderboard({ t, entries, status, nickname, authUi, setNickname, bestPr
           : '';
 
   return (
-    <Panel title={t.lbTitle} icon="★">
+    <Panel title={t.lbTitle} icon={<Star size={26} aria-hidden="true" />}>
       <div className="leaderboard-layout">
         <section className="leaderboard-profile-card">
           <p className="leaderboard-eyebrow">{t.lbSubtitle}</p>
@@ -2651,7 +2652,7 @@ function Admin(props: {
         </div>
       </div>
       <aside className="glass rounded-[30px] p-6">
-        <div className="mb-6 flex items-center justify-between"><h2 className="text-3xl font-black">{t.manageTitle}</h2><span className="text-gold">⚙</span></div>
+        <div className="mb-6 flex items-center justify-between"><h2 className="text-3xl font-black">{t.manageTitle}</h2><span className="text-gold"><SettingsIcon size={16} aria-hidden="true" /></span></div>
         <QuestionForm t={t} locale={locale} form={form} setForm={setForm} save={saveQuestion} reset={() => setForm(emptyQuestion())} />
         <div className="mt-7 border-t border-white/10 pt-6">
           <div className="mb-3 font-extrabold">{t.importExport}</div>
@@ -2703,10 +2704,15 @@ function QuestionForm({ t, locale, form, setForm, save, reset }: { t: Record<str
 }
 
 function GameExitModal({ t, stay, leave }: { t: Record<string, string>; stay: () => void; leave: () => void }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') stay(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [stay]);
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="exit-title">
       <div className="glass modal-card">
-        <div className="text-4xl text-gold" aria-hidden="true">⌂</div>
+        <div className="text-4xl text-gold" aria-hidden="true"><HomeIcon size={34} /></div>
         <h3 id="exit-title">{t.exitTitle}</h3>
         <p>{t.exitBody}</p>
         <div className="mt-5 flex gap-3">
@@ -2719,11 +2725,16 @@ function GameExitModal({ t, stay, leave }: { t: Record<string, string>; stay: ()
 }
 
 function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, string>; pending: { type: Lifeline; price: number }; pot: number; cancel: () => void; confirm: () => void }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') cancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [cancel]);
   return (
-    <div className="modal-backdrop">
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="paid-title">
       <div className="glass modal-card">
         <div className="text-4xl text-gold">$</div>
-        <h3>{t.paidTitle}</h3>
+        <h3 id="paid-title">{t.paidTitle}</h3>
         <p>{fmt(t.paidBody, { label: t[pending.type], price: money(pending.price) })}</p>
         <div className="rounded-2xl bg-white/[0.07] p-4 text-sm text-white/65">{fmt(t.paidPotInfo, { pot: money(pot) })}</div>
         <div className="mt-5 flex gap-3"><button className="premium-button focus-ring flex-1" onClick={confirm}>{t.confirmPay}</button><button className="ghost-button focus-ring flex-1" onClick={cancel}>{t.cancelBtn}</button></div>
@@ -2733,7 +2744,7 @@ function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, str
 }
 
 function Contact({ t, sent, setSent }: { t: Record<string, string>; sent: boolean; setSent: (value: boolean) => void }) {
-  return <Panel title={t.contact} icon="✉"><div className="grid gap-4"><Field label={t.fullName}><input className="form-input" /></Field><Field label={t.email}><input className="form-input" type="email" /></Field><Field label={t.message}><textarea className="form-input min-h-36" /></Field><button className="premium-button focus-ring" onClick={() => setSent(true)}>{t.sendMsg}</button>{sent && <Success text={t.contactSuccess} />}</div></Panel>;
+  return <Panel title={t.contact} icon={<Mail size={26} aria-hidden="true" />}><div className="grid gap-4"><Field label={t.fullName}><input className="form-input" /></Field><Field label={t.email}><input className="form-input" type="email" /></Field><Field label={t.message}><textarea className="form-input min-h-36" /></Field><button className="premium-button focus-ring" onClick={() => setSent(true)}>{t.sendMsg}</button>{sent && <Success text={t.contactSuccess} />}</div></Panel>;
 }
 
 const ACHIEVEMENT_KEYS: Record<string, string> = {
@@ -2744,7 +2755,7 @@ const ACHIEVEMENT_KEYS: Record<string, string> = {
 };
 
 function Profile({ t, stats }: { t: Record<string, string>; stats: Stats }) {
-  return <Panel title={t.profile} icon="★"><div className="grid gap-4 md:grid-cols-3"><Metric value={String(stats.games)} label={t.gamesPlayed} /><Metric value={money(stats.bestPrize)} label={t.bestWin} gold /><Metric value={String(stats.correct)} label={t.correctTotal} /><Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold /><Metric value={String(stats.lifelines)} label={t.lifelinesUsed} /><Metric value={String(stats.achievements.length)} label={t.achievementsLbl} /></div><div className="mt-6 rounded-3xl border border-white/12 bg-white/[0.07] p-5"><h3 className="mb-3 text-xl font-black">{t.achievementsLbl}</h3><div className="flex flex-wrap gap-3">{stats.achievements.map(item => <span key={item} className="rounded-full bg-gold/15 px-4 py-2 text-sm font-bold text-gold">{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div></div></Panel>;
+  return <Panel title={t.profile} icon={<Star size={26} aria-hidden="true" />}><div className="grid gap-4 md:grid-cols-3"><Metric value={String(stats.games)} label={t.gamesPlayed} /><Metric value={money(stats.bestPrize)} label={t.bestWin} gold /><Metric value={String(stats.correct)} label={t.correctTotal} /><Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold /><Metric value={String(stats.lifelines)} label={t.lifelinesUsed} /><Metric value={String(stats.achievements.length)} label={t.achievementsLbl} /></div><div className="mt-6 rounded-3xl border border-white/12 bg-white/[0.07] p-5"><h3 className="mb-3 text-xl font-black">{t.achievementsLbl}</h3><div className="flex flex-wrap gap-3">{stats.achievements.map(item => <span key={item} className="rounded-full bg-gold/15 px-4 py-2 text-sm font-bold text-gold">{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div></div></Panel>;
 }
 
 function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record<string, string>; authUi: Record<string, string>; user: PublicAuthUser | null; nickname: string; stats: Stats }) {
@@ -2792,7 +2803,7 @@ function SettingsPanel({ t, settings, setSettings, reset }: { t: Record<string, 
     { value: 'דרמטית', label: t.timerDramatic },
     { value: 'אינטנסיבית', label: t.timerIntense }
   ];
-  return <Panel title={t.settings} icon="⚙"><div className="grid gap-4"><label className="setting-row"><span>{t.soundLbl}</span><input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} /></label><label className="setting-row"><span>{t.effectsLbl}</span><input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} /></label><Field label={t.timerLbl}><select className="form-input" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>{timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field><button className="ghost-button focus-ring" onClick={reset}>{t.resetData}</button></div></Panel>;
+  return <Panel title={t.settings} icon={<SettingsIcon size={26} aria-hidden="true" />}><div className="grid gap-4"><label className="setting-row"><span>{t.soundLbl}</span><input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} /></label><label className="setting-row"><span>{t.effectsLbl}</span><input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} /></label><Field label={t.timerLbl}><select className="form-input" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>{timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field><button className="ghost-button focus-ring" onClick={reset}>{t.resetData}</button></div></Panel>;
 }
 
 function mapAuthUser(user: User): PublicAuthUser {
@@ -2835,7 +2846,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <label className="block"><span className="mb-2 block text-sm text-white/65">{label}</span>{children}</label>;
 }
 
-function Panel({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+function Panel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return <section className="mx-auto max-w-5xl px-5 pb-16 pt-8"><div className="glass rounded-[34px] p-6 md:p-10"><div className="mb-7 flex items-center gap-4 text-gold"><span className="text-4xl">{icon}</span><h2 className="text-4xl font-black text-white md:text-5xl">{title}</h2></div>{children}</div></section>;
 }
 

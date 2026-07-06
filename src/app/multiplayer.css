@@ -578,3 +578,99 @@
     grid-column: 2 / -1;
   }
 }
+
+/* ===== UX polish sprint additions ===== */
+
+/* Round entrance: subtle, consistent with the app's easing language. */
+.multiplayer-round-enter {
+  animation: mp-round-in 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes mp-round-in {
+  0% { opacity: 0; transform: translateY(10px) scale(0.995); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Lifelines as a compact toolbar under the answers. */
+.multiplayer-lifelines { margin-top: 14px; }
+.multiplayer-lifeline-grid { gap: 10px; }
+.multiplayer-lifeline-card .ghost-button {
+  min-height: 44px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+.multiplayer-buy-link { font-size: 0.74rem; }
+
+/* Lobby cards: identity + tags. */
+.multiplayer-lobby-info { display: grid; gap: 4px; min-width: 0; }
+.multiplayer-lobby-info strong { display: inline-flex; align-items: center; gap: 6px; }
+.lobby-host-icon { color: var(--gold); flex: 0 0 auto; }
+.multiplayer-lobby-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.multiplayer-lobby-tags em {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: hsla(0, 0%, 100%, 0.72);
+  border: 1px solid hsla(0, 0%, 100%, 0.14);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: hsla(0, 0%, 100%, 0.06);
+}
+
+/* Waiting room roster + invite. */
+.multiplayer-roster span { display: inline-flex; align-items: center; gap: 6px; }
+.multiplayer-roster .roster-me { border-color: hsla(41, 90%, 69%, 0.55); color: var(--gold); }
+.multiplayer-roster em { font-style: normal; font-weight: 800; }
+.multiplayer-invite {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px dashed hsla(41, 90%, 69%, 0.4);
+  border-radius: 18px;
+  padding: 12px 16px;
+  background: hsla(41, 90%, 69%, 0.07);
+}
+.multiplayer-invite-code { font-size: 0.9rem; color: hsla(0, 0%, 100%, 0.75); }
+.multiplayer-invite-code strong { color: var(--gold); letter-spacing: 0.12em; margin-inline-start: 4px; }
+.multiplayer-invite-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.multiplayer-invite-actions .ghost-button { min-height: 40px; padding: 0 14px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 7px; }
+
+/* Champion banner + gentle celebration. */
+.multiplayer-champion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  border: 1px solid hsla(41, 90%, 69%, 0.5);
+  border-radius: 22px;
+  padding: 16px 22px;
+  background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.16), hsla(0, 0%, 100%, 0.04));
+  box-shadow: 0 0 40px hsla(41, 90%, 69%, 0.18);
+}
+.multiplayer-champion span { display: block; font-size: 0.82rem; color: hsla(0, 0%, 100%, 0.65); }
+.multiplayer-champion strong { font-size: 1.4rem; color: var(--gold); }
+.champion-trophy { color: var(--gold); animation: champion-glow 1.6s ease-in-out infinite alternate; }
+.champion-pop { color: var(--azure); }
+@keyframes champion-glow {
+  from { filter: drop-shadow(0 0 6px hsla(41, 90%, 69%, 0.4)); transform: scale(1); }
+  to { filter: drop-shadow(0 0 18px hsla(41, 90%, 69%, 0.75)); transform: scale(1.06); }
+}
+.multiplayer-celebrate { animation: mp-round-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+@media (max-width: 640px) {
+  /* Keep the lifeline toolbar compact (3-up) instead of stacking full-width. */
+  .multiplayer-lifeline-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .multiplayer-lifeline-card .ghost-button { min-height: 42px; padding: 0 10px; font-size: 0.8rem; }
+  .multiplayer-champion { flex-direction: column; text-align: center; gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiplayer-round-enter, .multiplayer-celebrate, .champion-trophy { animation: none !important; }
+}
