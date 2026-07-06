@@ -7,6 +7,14 @@ This project is prepared for external publisher, analytics, consent, and search 
 - `NEXT_PUBLIC_SITE_URL` must be the final HTTPS origin.
 - `NEXT_PUBLIC_CONTACT_EMAIL` should be a monitored public support address before launch.
 
+This origin is reused by:
+
+- canonical metadata
+- Open Graph and Twitter URLs
+- `robots.txt`
+- `sitemap.xml`
+- auth redirect URLs
+
 ## Consent Management
 
 Choose one certified CMP provider and configure only that provider:
