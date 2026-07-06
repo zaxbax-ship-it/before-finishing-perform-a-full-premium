@@ -25,6 +25,11 @@ Optional public identifiers:
 - Google Tag Manager: `NEXT_PUBLIC_GTM_ID`
 - Microsoft Clarity: `NEXT_PUBLIC_CLARITY_PROJECT_ID`
 
+Current implementation note:
+
+- GA4 is prepared for basic page-view tracking only.
+- If GA4 is not configured, the app continues working normally.
+
 Analytics scripts should be enabled only after the active CMP rules cover analytics consent in required regions.
 
 ## Search Verification
@@ -33,6 +38,8 @@ Optional public verification tokens:
 
 - Google Search Console: `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`
 - Bing Webmaster Tools: `NEXT_PUBLIC_BING_SITE_VERIFICATION`
+
+The root layout already exposes these verification tokens through Next.js metadata when the variables are set.
 
 Submit `https://your-domain.example/sitemap.xml` after the production domain is live.
 

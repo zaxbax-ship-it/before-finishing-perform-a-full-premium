@@ -61,7 +61,7 @@ export function IntegrationScripts() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){window.dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${escapeScriptValue(config.analytics.gaMeasurementId)}', { anonymize_ip: true });
+            gtag('config', '${escapeScriptValue(config.analytics.gaMeasurementId)}', { anonymize_ip: true, send_page_view: false });
           `
         }}
       />

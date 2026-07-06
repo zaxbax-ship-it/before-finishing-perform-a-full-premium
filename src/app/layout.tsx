@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { GoogleAnalyticsPageViews } from '@/components/compliance/GoogleAnalyticsPageViews';
 import { IntegrationScripts } from '@/components/compliance/IntegrationScripts';
 import { SiteFooter } from '@/components/compliance/SiteFooter';
 import { StructuredData } from '@/components/compliance/StructuredData';
@@ -13,6 +14,8 @@ import './multiplayer.css';
 
 const googleSiteVerification = readEnv('NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION');
 const bingSiteVerification = readEnv('NEXT_PUBLIC_BING_SITE_VERIFICATION');
+const analyticsProvider = readEnv('NEXT_PUBLIC_ANALYTICS_PROVIDER');
+const gaMeasurementId = readEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID');
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
@@ -91,6 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body>
         <IntegrationScripts />
+        {analyticsProvider === 'ga4' && gaMeasurementId ? <GoogleAnalyticsPageViews measurementId={gaMeasurementId} /> : null}
         {children}
         <SiteFooter />
         <StructuredData />
