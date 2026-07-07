@@ -169,3 +169,24 @@ export const COMMUNITY_UI: Record<Locale, Record<string, string>> = {
     answer: 'መልስ'
   }
 };
+
+
+/**
+ * In-game answer-feedback copy (correct/wrong reveal). Moved verbatim from
+ * `TriviaPlatform.tsx`; consumed by the gameplay screen.
+ */
+export const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string; action: string }> = {
+  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'קראו את ההסבר והמשיכו כשתהיו מוכנים', action: 'לשאלה הבאה' },
+  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'Read the explanation and continue when you are ready', action: 'Next question' },
+  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'اقرأ التوضيح وتابع عندما تكون جاهزًا', action: 'السؤال التالي' },
+  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Прочитайте пояснение и продолжите, когда будете готовы', action: 'Следующий вопрос' },
+  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ማብራሪያውን አንብበው ዝግጁ ሲሆኑ ይቀጥሉ', action: 'ቀጣዩ ጥያቄ' }
+};
+
+/** Maps stored Hebrew achievement ids to their localized UI keys. */
+export const ACHIEVEMENT_KEYS: Record<string, string> = {
+  'כניסה לאולפן': 'achStudio',
+  'מיליון דולר': 'achMillion',
+  'שחקן בכיר': 'achSenior',
+  'משחק הושלם': 'achDone'
+};

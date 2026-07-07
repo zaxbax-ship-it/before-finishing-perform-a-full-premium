@@ -1,54 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
+import { AdSlot } from '@/components/ads/AdSlot';
 import { MultiplayerMode } from '@/components/multiplayer/MultiplayerMode';
 import {
-  AchievementsIcon,
-  CelebrationIcon,
-  AdminIcon,
-  AudienceIcon,
-  BackIcon,
-  CategoriesIcon,
   CloseIcon,
-  CoinsIcon,
   CopyIcon,
   DeleteIcon,
   EditIcon,
   ExportIcon,
-  FavoritesIcon,
-  FiftyFiftyIcon,
-  ForwardIcon,
-  GlobeIcon,
-  HintsIcon,
-  HomeIcon,
   ImportIcon,
-  LeaderboardIcon,
-  LoginIcon,
-  LogoutIcon,
-  MailIcon,
-  MultiplayerIcon,
-  PaymentsIcon,
-  PhoneFriendIcon,
-  PlayIcon,
-  PremiumBadgeIcon,
-  PremiumIcon,
-  ProfileIcon,
-  QuestionIcon,
-  QuizIcon,
-  RewardsIcon,
-  SearchIcon,
   SettingsIcon,
-  SoloIcon,
-  StatisticsIcon,
-  SubscriptionIcon,
-  SupportIcon,
-  SwapQuestionIcon,
-  TimerIcon,
-  WarningIcon,
-  WalletIcon,
-  ConfirmIcon,
-  MenuIcon
+  ConfirmIcon
 } from '@/lib/design/icons';
 import {
   type AuditLogEntry,
@@ -59,7 +22,7 @@ import {
   runLocalModeration,
   submissionToQuestion
 } from '@/lib/community';
-import { localizeCategory, localizeCategoryDescription, localizeQuestion } from '@/lib/localization';
+import { localizeCategory, localizeQuestion } from '@/lib/localization';
 import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
@@ -76,30 +39,19 @@ import { Leaderboard } from '@/components/trivia/screens/Leaderboard';
 import { Result } from '@/components/trivia/screens/Result';
 import { Rules } from '@/components/trivia/screens/Rules';
 import { SettingsPanel } from '@/components/trivia/screens/SettingsPanel';
-import { fmt, initialsFor, money, validateNickname } from '@/components/trivia/format';
+import { fmt, money, validateNickname } from '@/components/trivia/format';
 import { COMMUNITY_UI } from '@/components/trivia/i18n';
-import { Field, Metric, Panel, Success } from '@/components/trivia/primitives';
+import { Field, Metric, Success } from '@/components/trivia/primitives';
 import type { EndState, GameQuestion, LeaderboardStatus, Lifeline, PublicAuthUser, Screen, Settings, Stats } from '@/components/trivia/types';
+import { LanguageMenu } from '@/components/trivia/chrome/LanguageMenu';
+import { Particles } from '@/components/trivia/chrome/Particles';
+import { PublicAuthArea } from '@/components/trivia/chrome/PublicAuthArea';
+import { GameExitModal } from '@/components/trivia/modals/GameExitModal';
+import { PaidModal } from '@/components/trivia/modals/PaidModal';
+import { Game } from '@/components/trivia/screens/Game';
+import { PremiumProfile } from '@/components/trivia/screens/PremiumProfile';
+import { LANGUAGE_OPTIONS, LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS } from '@/components/trivia/constants';
 
-const LETTERS = ['א', 'ב', 'ג', 'ד'];
-const OPTION_LETTERS: Record<Locale, string[]> = {
-  he: LETTERS,
-  en: ['A', 'B', 'C', 'D'],
-  ar: ['أ', 'ب', 'ج', 'د'],
-  ru: ['А', 'Б', 'В', 'Г'],
-  am: ['ሀ', 'ለ', 'ሐ', 'መ']
-};
-
-const LANGUAGE_OPTIONS: Array<{ value: Locale; label: string; native: string }> = [
-  { value: 'he', label: 'עברית', native: 'עברית' },
-  { value: 'en', label: 'English', native: 'English' },
-  { value: 'ar', label: 'Arabic', native: 'العربية' },
-  { value: 'ru', label: 'Russian', native: 'Русский' },
-  { value: 'am', label: 'Amharic', native: 'አማርኛ' }
-];
-
-const MONEY = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 250000, 400000, 550000, 700000, 850000, 1000000, 1000000];
-const SAFE_STEPS = [4, 9, 14];
 const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
 const SETTINGS_KEY = 'premium-trivia-settings-v3';
@@ -957,11 +909,6 @@ function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-function priceFor(type: Lifeline, pot: number) {
-  const fixed = type === 'fifty' ? 5000 : type === 'swap' ? 8000 : type === 'audience' ? 10000 : 12000;
-  return Math.min(fixed, Math.max(0, Math.floor(pot * 0.25)));
-}
-
 function emptyQuestion(): GameQuestion {
   return {
     id: `local-${Date.now()}`,
@@ -987,14 +934,6 @@ const TONES: Record<string, { notes: number[]; type: OscillatorType; step: numbe
   safe: { notes: [659, 784, 988, 1318], type: 'triangle', step: 0.1, length: 0.3, volume: 0.12 },
   cashout: { notes: [784, 659, 784, 1046], type: 'sine', step: 0.1, length: 0.26, volume: 0.12 },
   suspense: { notes: [196, 208], type: 'sine', step: 0.16, length: 0.4, volume: 0.06 }
-};
-
-const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string; action: string }> = {
-  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'קראו את ההסבר והמשיכו כשתהיו מוכנים', action: 'לשאלה הבאה' },
-  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'Read the explanation and continue when you are ready', action: 'Next question' },
-  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'اقرأ التوضيح وتابع عندما تكون جاهزًا', action: 'السؤال التالي' },
-  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Прочитайте пояснение и продолжите, когда будете готовы', action: 'Следующий вопрос' },
-  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ማብራሪያውን አንብበው ዝግጁ ሲሆኑ ይቀጥሉ', action: 'ቀጣዩ ጥያቄ' }
 };
 
 function tone(kind: string, enabled: boolean) {
@@ -1876,300 +1815,6 @@ export default function TriviaPlatform({
   );
 }
 
-function Particles() {
-  return (
-    <div className="particles" aria-hidden="true">
-      {Array.from({ length: 34 }, (_, index) => (
-        <span
-          key={index}
-          className="particle"
-          style={{
-            right: `${(index * 29) % 100}%`,
-            animationDelay: `${-(index * 1.7)}s`,
-            ['--duration' as string]: `${24 + (index % 8)}s`,
-            ['--opacity' as string]: `${0.24 + (index % 6) * 0.08}`,
-            ['--x' as string]: `${(index % 2 ? 80 : -70) + index}px`
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (locale: Locale) => void }) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const active = LANGUAGE_OPTIONS.find(item => item.value === locale) || LANGUAGE_OPTIONS[0];
-
-  useEffect(() => {
-    if (!open) return;
-    const closeFromOutside = (event: PointerEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false);
-    };
-    const closeFromKeyboard = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', closeFromOutside);
-    document.addEventListener('keydown', closeFromKeyboard);
-    return () => {
-      document.removeEventListener('pointerdown', closeFromOutside);
-      document.removeEventListener('keydown', closeFromKeyboard);
-    };
-  }, [open]);
-
-  return (
-    <div className="language-menu" ref={menuRef}>
-      <button
-        className="language-trigger language-icon-trigger focus-ring"
-        type="button"
-        onClick={() => setOpen(value => !value)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label={`Language: ${active.native}`}
-        title="Language"
-      >
-        <span className="language-globe" aria-hidden="true"><GlobeIcon size={22} /></span>
-        <span className="sr-only">Language: {active.native}</span>
-      </button>
-      {open && (
-        <div className="language-panel glass" role="menu" aria-label="Choose language">
-          {LANGUAGE_OPTIONS.map(item => (
-            <button
-              key={item.value}
-              type="button"
-              className={item.value === locale ? 'language-option active' : 'language-option'}
-              role="menuitemradio"
-              aria-checked={item.value === locale}
-              onClick={() => {
-                setLocale(item.value);
-                setOpen(false);
-              }}
-            >
-              <span>{item.native}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PublicAuthArea({
-  ui,
-  user,
-  ready,
-  configured,
-  nickname,
-  leaderboardStatus,
-  saveNickname,
-  open,
-  signOut
-}: {
-  ui: Record<string, string>;
-  user: PublicAuthUser | null;
-  ready: boolean;
-  configured: boolean;
-  nickname: string;
-  leaderboardStatus: LeaderboardStatus;
-  saveNickname: (value: string) => void | Promise<void>;
-  open: (screen: Screen) => void;
-  signOut: () => void | Promise<void>;
-}) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [draft, setDraft] = useState(nickname);
-
-  useEffect(() => {
-    setDraft(nickname);
-  }, [nickname]);
-
-  const displayName = nickname || user?.displayName || user?.email?.split('@')[0] || ui.guest;
-  const validation = validateNickname(draft, ui);
-  const shouldPromptNickname = Boolean(user && !nickname);
-  const initials = initialsFor(displayName);
-
-  if (!ready) {
-    return (
-      <div className="public-auth-corner" aria-label={ui.account}>
-        <div className="public-auth-skeleton" />
-      </div>
-    );
-  }
-
-  if (!configured || !user) {
-    return (
-      <nav className="public-auth-corner public-auth-actions" aria-label={ui.account}>
-        <a className="auth-link-button secondary focus-ring inline-flex items-center gap-2" href="/login"><LoginIcon size={16} />{ui.signIn}</a>
-        <a className="auth-link-button primary focus-ring inline-flex items-center gap-2" href="/signup"><ProfileIcon size={16} />{ui.createAccount}</a>
-      </nav>
-    );
-  }
-
-  return (
-    <div className="public-auth-corner public-user-menu">
-      <button
-        type="button"
-        className="public-user-trigger focus-ring"
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen(value => !value)}
-      >
-        <Avatar user={user} initials={initials} />
-        <span>
-          <strong>{displayName}</strong>
-          <small>{user.email || ui.account}</small>
-        </span>
-      </button>
-
-      {menuOpen && (
-        <div className="public-user-dropdown glass" role="menu">
-          {shouldPromptNickname && (
-            <section className="nickname-prompt" aria-label={ui.chooseNickname}>
-              <strong>{ui.chooseNickname}</strong>
-              <p>{ui.nicknamePrompt}</p>
-              <input
-                className="form-input"
-                value={draft}
-                maxLength={20}
-                onChange={event => setDraft(event.target.value)}
-                placeholder={ui.nicknamePlaceholder}
-              />
-              <small className={validation.ok ? 'nickname-valid' : 'nickname-invalid'}>{validation.message}</small>
-              <button
-                type="button"
-                className="premium-button focus-ring w-full"
-                disabled={!validation.ok || leaderboardStatus === 'saving'}
-                onClick={() => void saveNickname(draft)}
-              >
-                {ui.saveNickname}
-              </button>
-            </section>
-          )}
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}><ProfileIcon size={16} />{ui.profile}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}><StatisticsIcon size={16} />{ui.stats}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}><AchievementsIcon size={16} />{ui.achievements}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('leaderboard'); }}><LeaderboardIcon size={16} />{ui.leaderboard}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('settings'); }}><SettingsIcon size={16} />{ui.settings}</button>
-          <button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); void signOut(); }}><LogoutIcon size={16} />{ui.logout}</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Avatar({ user, initials }: { user: PublicAuthUser; initials: string }) {
-  return user.avatarUrl
-    ? <img className="public-avatar" src={user.avatarUrl} alt="" />
-    : <span className="public-avatar" aria-hidden="true">{initials}</span>;
-}
-
-function Game(props: {
-  t: Record<string, string>;
-  locale: Locale;
-  current: GameQuestion;
-  round: number;
-  order: number[];
-  selected: number | null;
-  hiddenAnswers: number[];
-  timer: number;
-  timerUrgency: string;
-  progress: number;
-  currentPrize: number;
-  nextPrize: number;
-  guaranteedPrize: number;
-  chances: number;
-  lifelineUses: Record<Lifeline, number>;
-  advice: string;
-  notice: string;
-  chooseAnswer: (index: number) => void;
-  advanceAfterAnswer: () => void;
-  triggerLifeline: (type: Lifeline) => void;
-  quit: () => void;
-  requestExit: () => void;
-}) {
-  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
-  const optionLetters = OPTION_LETTERS[locale] || LETTERS;
-  const infoUi = INFO_UI[locale];
-  const answerInfo = selected !== null ? {
-    correct: selected === current.correctIndex,
-    answer: current.correctAnswer || current.answers[current.correctIndex],
-    explanation: current.explanation || ''
-  } : null;
-  return (
-    <section className="compact-game-shell game-priority-layout mx-auto grid w-full max-w-[1720px] gap-6 px-4 pb-10 lg:grid-cols-[1fr_380px] lg:px-8">
-      <section className="glass question-priority rounded-[32px] p-5 md:p-8">
-        <div className="game-topline">
-          <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
-          <span className="game-topline-info">{t.question} {round + 1}/15 · {current.category}</span>
-          <span className="game-topline-chances" aria-label={t.chancesLabel}>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}><FavoritesIcon size={13} fill="currentColor" aria-hidden="true" /></span>)}</span>
-          <span className={`game-topline-timer ${timerUrgency}`}><TimerIcon size={16} aria-hidden="true" /> {timer}</span>
-          <span className="game-topline-pot">{money(currentPrize)}</span>
-        </div>
-        {current.imageUrl && (
-          <div className="relative mb-6 overflow-hidden rounded-3xl bg-white/[0.04] w-full" style={{ aspectRatio: '16/9', maxHeight: '18rem' }}>
-            <img src={current.imageUrl} alt="תמונת שאלה" className="h-full w-full object-cover" />
-          </div>
-        )}
-        <h2 className="question-text mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl">{current.question}</h2>
-        <div className="answers-grid grid gap-4 md:grid-cols-2">
-          {order.map((answerIndex, displayIndex) => {
-            const state = selected === null ? '' : answerIndex === current.correctIndex ? 'correct' : selected === answerIndex ? 'wrong' : '';
-            return (
-              <button key={answerIndex} disabled={selected !== null || hiddenAnswers.includes(answerIndex)} onClick={() => chooseAnswer(answerIndex)} className={['answer-button focus-ring', state, hiddenAnswers.includes(answerIndex) ? 'eliminated' : ''].join(' ')}>
-                <span className="ml-3 inline-grid h-9 w-9 place-items-center rounded-full bg-white/12 text-gold font-black">{optionLetters[displayIndex]}</span>
-                <span className="text-xl font-bold">{current.answers[answerIndex]}</span>
-              </button>
-            );
-          })}
-        </div>
-        {answerInfo && (
-          <div role="status" aria-live="polite" className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
-            <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? <ConfirmIcon size={20} aria-hidden="true" /> : <WarningIcon size={20} aria-hidden="true" />}</div>
-            <div className="answer-info-content">
-              <div className="answer-info-header">
-                <strong>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</strong>
-                <span>{infoUi.answer}: {answerInfo.answer}</span>
-              </div>
-              <p>{answerInfo.explanation}</p>
-              <div className="answer-info-actions">
-                <em>{infoUi.next}</em>
-                <button className="answer-info-next focus-ring inline-flex items-center gap-2" type="button" autoFocus onClick={advanceAfterAnswer}>{infoUi.action}<ForwardIcon size={16} /></button>
-              </div>
-            </div>
-          </div>
-        )}
-        {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}
-        {notice && <div className="mt-6 rounded-3xl border border-gold/40 bg-gold/10 p-5 text-lg leading-8 text-gold">{notice}</div>}
-        {/* Slim meta strip: only information not already shown in the topline. */}
-        <div className="game-meta-below mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
-          <span className="font-bold text-gold">{t.currentPrize}: {money(nextPrize)}</span>
-          <span className="text-white/55">{t.guaranteed}: {money(guaranteedPrize)}</span>
-        </div>
-        <div className="mt-4 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-l from-gold to-azure transition-all duration-500" style={{ width: `${progress}%` }} /></div>
-      </section>
-      <aside className="space-y-5">
-        <div className="glass rounded-[28px] p-5">
-          <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold"><HintsIcon size={16} aria-hidden="true" /></span></div>
-          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
-            const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
-            return <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => triggerLifeline(type)} aria-label={t[type]} title={t[type]}><span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span><span className="sr-only">{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>;
-          })}</div>
-          <p className="mt-4 text-sm leading-6 text-white/55">{t.reuseHint}</p>
-        </div>
-        <div className="glass rounded-[28px] p-5">
-          <h3 className="mb-4 text-xl font-extrabold">{t.ladder}</h3>
-          <div className="space-y-2">{MONEY.map((amount, index) => <div key={`${amount}-${index}`} className={['ladder-item', index === round ? 'current' : '', SAFE_STEPS.includes(index) ? 'safe' : ''].join(' ')}><span>{index + 1}</span><strong>{money(amount)}</strong></div>).reverse()}</div>
-        </div>
-        <div className="glass rounded-[28px] p-5">
-          <div className="text-sm text-white/55">{t.guaranteed}</div>
-          <div className="text-2xl font-black text-gold">{money(guaranteedPrize)}</div>
-          <button className="ghost-button focus-ring mt-4 w-full" onClick={quit}>{t.quit}</button>
-        </div>
-        <GameplayAdSlot placement="gameplay-sidebar" className="hidden xl:grid" />
-      </aside>
-    </section>
-  );
-}
-
 function CommunitySubmit(props: {
   ui: Record<string, string>;
   locale: Locale;
@@ -2439,111 +2084,6 @@ function QuestionForm({ t, locale, form, setForm, save, reset }: { t: Record<str
         {t.clearForm}
       </button>
     </div>
-  );
-}
-
-function GameExitModal({ t, stay, leave }: { t: Record<string, string>; stay: () => void; leave: () => void }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') stay(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [stay]);
-  return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="exit-title">
-      <div className="glass modal-card">
-        <div className="text-4xl text-gold" aria-hidden="true"><HomeIcon size={34} /></div>
-        <h3 id="exit-title">{t.exitTitle}</h3>
-        <p>{t.exitBody}</p>
-        <div className="mt-5 flex gap-3">
-          <button className="premium-button focus-ring inline-flex flex-1 items-center justify-center gap-2" type="button" autoFocus onClick={stay}>
-            <BackIcon size={16} />
-            {t.exitStay}
-          </button>
-          <button className="ghost-button focus-ring inline-flex flex-1 items-center justify-center gap-2" type="button" onClick={leave}>
-            <HomeIcon size={16} />
-            {t.exitLeave}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, string>; pending: { type: Lifeline; price: number }; pot: number; cancel: () => void; confirm: () => void }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') cancel(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [cancel]);
-  return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="paid-title">
-      <div className="glass modal-card">
-        <div className="text-4xl text-gold" aria-hidden="true"><WalletIcon size={34} /></div>
-        <h3 id="paid-title">{t.paidTitle}</h3>
-        <p>{fmt(t.paidBody, { label: t[pending.type], price: money(pending.price) })}</p>
-        <div className="rounded-2xl bg-white/[0.07] p-4 text-sm text-white/65">{fmt(t.paidPotInfo, { pot: money(pot) })}</div>
-        <div className="mt-5 flex gap-3">
-          <button className="premium-button focus-ring inline-flex flex-1 items-center justify-center gap-2" onClick={confirm}>
-            <PaymentsIcon size={16} />
-            {t.confirmPay}
-          </button>
-          <button className="ghost-button focus-ring inline-flex flex-1 items-center justify-center gap-2" onClick={cancel}>
-            <CloseIcon size={16} />
-            {t.cancelBtn}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const ACHIEVEMENT_KEYS: Record<string, string> = {
-  'כניסה לאולפן': 'achStudio',
-  'מיליון דולר': 'achMillion',
-  'שחקן בכיר': 'achSenior',
-  'משחק הושלם': 'achDone'
-};
-
-function Profile({ t, stats }: { t: Record<string, string>; stats: Stats }) {
-  return <Panel title={t.profile} icon={<ProfileIcon size={26} aria-hidden="true" />}><div className="grid gap-4 md:grid-cols-3"><Metric value={String(stats.games)} label={t.gamesPlayed} /><Metric value={money(stats.bestPrize)} label={t.bestWin} gold /><Metric value={String(stats.correct)} label={t.correctTotal} /><Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold /><Metric value={String(stats.lifelines)} label={t.lifelinesUsed} /><Metric value={String(stats.achievements.length)} label={t.achievementsLbl} /></div><div className="mt-6 rounded-3xl border border-white/12 bg-white/[0.07] p-5"><h3 className="mb-3 text-xl font-black">{t.achievementsLbl}</h3><div className="flex flex-wrap gap-3">{stats.achievements.map(item => <span key={item} className="rounded-full bg-gold/15 px-4 py-2 text-sm font-bold text-gold">{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div></div></Panel>;
-}
-
-function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record<string, string>; authUi: Record<string, string>; user: PublicAuthUser | null; nickname: string; stats: Stats }) {
-  const displayName = nickname || user?.displayName || user?.email?.split('@')[0] || authUi.notSignedIn;
-  const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—';
-  const highestCorrect = Math.min(15, stats.correct);
-  const winRate = stats.games > 0 && stats.bestPrize >= 1000000 ? `${Math.round((1 / stats.games) * 100)}%` : '0%';
-
-  return (
-    <Panel title={t.profile} icon={<ProfileIcon size={26} aria-hidden="true" />}>
-      <section className="profile-hero-card">
-        {user?.avatarUrl ? <img className="profile-avatar" src={user.avatarUrl} alt="" /> : <span className="profile-avatar" aria-hidden="true">{initialsFor(displayName)}</span>}
-        <div>
-          <p>{authUi.account}</p>
-          <h3>{displayName}</h3>
-          <span>{nickname || authUi.chooseNickname}</span>
-        </div>
-      </section>
-      <div className="profile-metrics-grid">
-        <Metric value={nickname || '—'} label={authUi.nicknamePlaceholder} />
-        <Metric value={displayName} label="Display Name" />
-        <Metric value={user?.email || '—'} label={authUi.privateEmail} />
-        <Metric value={String(stats.games)} label={t.gamesPlayed} />
-        <Metric value={money(stats.bestPrize)} label={t.bestWin} gold />
-        <Metric value={String(highestCorrect)} label={authUi.stats} />
-        <Metric value="0" label={authUi.multiplayerWins} />
-        <Metric value={winRate} label={authUi.winRate} />
-        <Metric value="—" label={authUi.favoriteCategory} />
-        <Metric value={memberSince} label={authUi.memberSince} />
-        <Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold />
-        <Metric value={String(stats.lifelines)} label={t.lifelinesUsed} />
-      </div>
-      <div className="profile-achievements-card">
-        <h3>{t.achievementsLbl}</h3>
-        <div>{stats.achievements.map(item => <span key={item}>{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div>
-        <p>{authUi.achievements}</p>
-      </div>
-    </Panel>
   );
 }
 
