@@ -169,8 +169,6 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .language-corner .language-trigger{min-height:48px;min-width:124px;padding:6px 15px;background:linear-gradient(145deg,hsla(0,0%,100%,.18),hsla(0,0%,100%,.06));box-shadow:0 18px 46px rgba(0,0,0,.28),inset 0 1px 0 hsla(0,0%,100%,.2)}
 .language-corner .language-panel{left:0;right:auto;inset-inline-start:0;inset-inline-end:auto;width:224px}
 .public-header{padding-top:78px}
-.home-actions{margin-top:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.85rem;border:1px solid hsla(0,0%,100%,.13);border-radius:28px;background:linear-gradient(145deg,hsla(0,0%,100%,.105),hsla(0,0%,100%,.035));box-shadow:0 24px 74px rgba(0,0,0,.24),inset 0 1px 0 hsla(0,0%,100%,.12);padding:1rem}
-.home-actions .ghost-button{width:100%;min-height:54px}
 .leaderboard-layout{display:grid;grid-template-columns:minmax(280px,.78fr) 1.22fr;gap:1.1rem;align-items:start}
 .leaderboard-profile-card,.leaderboard-table-card{border:1px solid hsla(0,0%,100%,.13);border-radius:28px;background:radial-gradient(circle at 10% 0,rgba(69,194,255,.17),transparent 22rem),linear-gradient(145deg,hsla(0,0%,100%,.105),hsla(0,0%,100%,.04));box-shadow:0 24px 72px rgba(0,0,0,.28),inset 0 1px 0 hsla(0,0%,100%,.13);padding:1.15rem}
 .leaderboard-eyebrow{margin-bottom:1rem;color:hsla(0,0%,100%,.62);font-size:.95rem;line-height:1.65}
@@ -220,24 +218,6 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
               inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
-/* Premium mobile-friendly horizontal swipe navigation for header menu */
-@media (max-width: 1024px) {
-  .public-header nav {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    width: 100% !important;
-    padding-bottom: 8px !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none !important; /* Firefox */
-  }
-  .public-header nav::-webkit-scrollbar {
-    display: none !important; /* Safari/Chrome */
-  }
-  .public-header nav button {
-    flex: 0 0 auto !important;
-  }
-}
-
 /* Skeleton Loading Animations */
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.6; }
@@ -252,3 +232,113 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
   min-height: 1.25rem;
   display: inline-block;
 }
+
+/* ============================================================
+   UI precision pass — reusable app-shell primitives.
+   Token-driven so they map cleanly to native SwiftUI/Compose.
+   ============================================================ */
+
+/* Reusable icon-only button (menu, close, compact actions). 48px = safe touch target. */
+.icon-button {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  min-width: 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  border: 1px solid hsla(0, 0%, 100%, 0.18);
+  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.14), hsla(0, 0%, 100%, 0.05));
+  color: #fff;
+  box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.16), var(--shadow-sm);
+  transition: transform var(--duration-normal) var(--ease-spring), border-color var(--duration-normal) ease, background var(--duration-normal) ease;
+}
+.icon-button:hover {
+  transform: translateY(-2px);
+  border-color: hsla(41, 90%, 69%, 0.5);
+  background: linear-gradient(145deg, rgba(69, 194, 255, 0.16), hsla(0, 0%, 100%, 0.06));
+}
+.icon-button:active { transform: translateY(0); }
+
+/* App-style header: brand (leading) + menu (trailing). No wrapped button rows. */
+.app-header { align-items: center; gap: var(--space-md); }
+.app-brand { display: inline-flex; align-items: center; gap: var(--space-sm); color: #fff; }
+.app-brand-mark {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  width: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--gold);
+  color: #08101f;
+  box-shadow: var(--shadow-gold-glow);
+}
+.app-brand-text { display: flex; flex-direction: column; line-height: 1.12; text-align: start; }
+.app-brand-text strong { font-size: 1.2rem; font-weight: 900; }
+.app-brand-text small { color: hsla(0, 0%, 100%, 0.62); font-size: 0.82rem; }
+@media (max-width: 520px) { .app-brand-text small { display: none; } }
+
+/* Side drawer refinements (vertical nav, replaces the old wrapped row). */
+.drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); }
+.drawer-head strong { font-size: 1.25rem; font-weight: 900; color: var(--gold); }
+.drawer-nav { display: flex; flex-direction: column; gap: var(--space-sm); }
+
+/* Homepage primary actions — the visual focal point. Icon-first premium cards. */
+.home-primary-actions {
+  margin-top: var(--space-xl);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+.primary-action-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  min-height: 200px;
+  padding: var(--space-xl);
+  border-radius: var(--radius-4xl);
+  border: 1px solid hsla(0, 0%, 100%, 0.16);
+  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.12), hsla(0, 0%, 100%, 0.045));
+  box-shadow: var(--shadow-lg), inset 0 1px 0 hsla(0, 0%, 100%, 0.16);
+  color: #fff;
+  transition: transform var(--duration-slow) var(--ease-spring), border-color var(--duration-slow) ease, box-shadow var(--duration-slow) ease, background var(--duration-slow) ease;
+}
+.primary-action-card:hover { transform: translateY(-6px) scale(1.015); box-shadow: var(--shadow-xl); }
+.primary-action-card:active { transform: translateY(-1px) scale(0.995); }
+.primary-action-icon {
+  display: grid;
+  place-items: center;
+  height: 96px;
+  width: 96px;
+  border-radius: var(--radius-full);
+}
+.primary-action-label { font-size: 1.5rem; font-weight: 900; letter-spacing: 0; }
+.primary-action-card.is-solo {
+  border-color: hsla(41, 90%, 69%, 0.46);
+  background: radial-gradient(circle at 50% 0, hsla(41, 90%, 69%, 0.24), transparent 60%),
+              linear-gradient(145deg, hsla(41, 90%, 69%, 0.16), rgba(9, 22, 52, 0.6));
+}
+.primary-action-card.is-solo .primary-action-icon { background: var(--gold); color: #08101f; box-shadow: var(--shadow-gold-glow); }
+.primary-action-card.is-multi {
+  border-color: rgba(69, 194, 255, 0.46);
+  background: radial-gradient(circle at 50% 0, rgba(69, 194, 255, 0.22), transparent 60%),
+              linear-gradient(145deg, rgba(69, 194, 255, 0.14), rgba(9, 22, 52, 0.6));
+}
+.primary-action-card.is-multi .primary-action-icon {
+  background: linear-gradient(135deg, var(--azure), var(--violet));
+  color: #04122b;
+  box-shadow: 0 0 40px rgba(69, 194, 255, 0.32);
+}
+@media (max-width: 640px) {
+  .home-primary-actions { grid-template-columns: 1fr; gap: var(--space-md); }
+  .primary-action-card { min-height: 152px; }
+  .primary-action-icon { height: 78px; width: 78px; }
+}
+
+/* Category cards: simplified (no numeric count) + direction-aware alignment. */
+.category-card { min-height: 150px; justify-content: flex-start; text-align: start; gap: 0.3rem; }
+.category-card h3 { margin: 14px 0 4px; }

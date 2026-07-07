@@ -995,7 +995,6 @@ function normalizeStats(stats: Stats): Stats {
 
 export default function TriviaPlatform({
   questions,
-  totalAvailableQuestions,
   initialScreen = 'home',
   adminHeader
 }: {
@@ -1005,7 +1004,6 @@ export default function TriviaPlatform({
   adminHeader?: ReactNode;
 }) {
   const [loadedQuestions, setLoadedQuestions] = useState<Question[]>(questions);
-  const [questionTotal, setQuestionTotal] = useState(totalAvailableQuestions || questions.length);
   const baseQuestions = useMemo(() => loadedQuestions.map(normalize), [loadedQuestions]);
   const [locale, setLocale] = useState<Locale>('he');
   const [screen, setScreen] = useState<Screen>(initialScreen);
@@ -1122,10 +1120,6 @@ export default function TriviaPlatform({
   useEffect(() => {
     setLoadedQuestions(questions);
   }, [questions]);
-
-  useEffect(() => {
-    setQuestionTotal(totalAvailableQuestions || questions.length);
-  }, [questions.length, totalAvailableQuestions]);
 
   useEffect(() => {
     let active = true;
@@ -1322,7 +1316,6 @@ export default function TriviaPlatform({
       const response = await fetch(`/api/questions?${params.toString()}`, { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok || !Array.isArray(data?.questions)) return [];
-      if (typeof data.totalAvailable === 'number') setQuestionTotal(data.totalAvailable);
       setLoadedQuestions(current => {
         const existing = new Set(current.map(question => String(question.id)));
         const additions = (data.questions as Question[]).filter(question => !existing.has(String(question.id)));
@@ -1712,10 +1705,10 @@ export default function TriviaPlatform({
         )}
       </div>
       {screen === 'admin' && adminHeader}
-      {screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
+      {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div ref={screenSectionRef} tabIndex={-1} className="screen-section">
-      {screen === 'home' && <Home t={t} locale={locale} questionCount={Math.max(questionTotal, playableQuestions.length)} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
-      {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} questions={playableQuestions} startGame={startGame} />}
+      {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
+      {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
       {screen === 'submit' && (

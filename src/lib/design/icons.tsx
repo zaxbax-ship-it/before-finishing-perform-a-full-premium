@@ -64,6 +64,7 @@ export const RewardsIcon = createSemanticIcon(Coins);
 export const AchievementsIcon = createSemanticIcon(Trophy);
 export const LeaderboardIcon = createSemanticIcon(Medal);
 export const ProfileIcon = createSemanticIcon(User);
+export const SinglePlayerIcon = createSemanticIcon(User);
 export const FriendsIcon = createSemanticIcon(Users);
 export const MultiplayerIcon = createSemanticIcon(Users);
 export const SoloIcon = createSemanticIcon(Gamepad2);

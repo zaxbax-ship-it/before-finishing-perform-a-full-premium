@@ -154,10 +154,10 @@
   flex: 0 0 auto;
 }
 
-/* Every public landing view starts below the fixed utility bar — real CSS,
-   not relying on (possibly missing) precompiled utility classes. */
+/* The app header now sits above the landing view and already clears the fixed
+   utility bar, so the landing only needs normal top spacing after it. */
 .home-landing {
-  padding-top: calc(max(10px, env(safe-area-inset-top)) + 74px);
+  padding-top: 1.5rem;
 }
 
 /* In-game home button: always visible in the question top strip, no scrolling. */
