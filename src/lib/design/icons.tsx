@@ -46,7 +46,8 @@ import {
   User,
   Users,
   Wallet,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 
 export type AppIconProps = LucideProps;
@@ -106,6 +107,7 @@ export const CloseIcon = createSemanticIcon(X);
 export const WarningIcon = createSemanticIcon(AlertTriangle);
 export const GlobeIcon = createSemanticIcon(Globe);
 export const TimerIcon = createSemanticIcon(History);
+export const MenuIcon = createSemanticIcon(Menu);
 
 export const FiftyFiftyIcon = createSemanticIcon(Percent);
 export const SwapQuestionIcon = createSemanticIcon(RefreshCw);

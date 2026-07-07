@@ -452,7 +452,21 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={refreshLobbies}><RefreshIcon size={16} />{copy.refresh}</button>
             </div>
             <div className="multiplayer-lobby-list">
-              {lobbies.length === 0 && <p className="multiplayer-empty">{copy.noGames}</p>}
+              {lobbies.length === 0 && status !== 'loading' && <p className="multiplayer-empty">{copy.noGames}</p>}
+              {status === 'loading' && lobbies.length === 0 && (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <article key={index} className="multiplayer-lobby-card skeleton-row" style={{ opacity: 0.8 }}>
+                    <div className="multiplayer-lobby-info" style={{ width: '100%' }}>
+                      <span className="skeleton-block" style={{ width: '40%', height: '1.2rem', marginBottom: '8px' }} />
+                      <span className="skeleton-block" style={{ width: '60%', height: '1rem', marginBottom: '8px' }} />
+                      <span className="multiplayer-lobby-tags">
+                        <em className="skeleton-block" style={{ width: '60px', height: '14px', borderRadius: '4px' }} />
+                        <em className="skeleton-block" style={{ width: '80px', height: '14px', borderRadius: '4px' }} />
+                      </span>
+                    </div>
+                  </article>
+                ))
+              )}
               {lobbies.map(lobby => (
                 <article key={lobby.id} className="multiplayer-lobby-card">
                   <div className="multiplayer-lobby-info">
