@@ -60,6 +60,8 @@ const SEEN_QUESTIONS_KEY = 'premium-trivia-seen-question-ids-v1';
 const COMMUNITY_KEY = 'premium-trivia-community-submissions-v1';
 const AUDIT_KEY = 'premium-trivia-audit-log-v1';
 const NICKNAME_KEY = 'premium-trivia-public-nickname-v1';
+const LOCALE_KEY = 'premium-trivia-locale-v1';
+const SUPPORTED_LOCALES: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
 const AUTH_UI: Record<Locale, Record<string, string>> = {
   he: {
     signIn: 'כניסה',
@@ -1120,6 +1122,24 @@ export default function TriviaPlatform({
   useEffect(() => {
     setLoadedQuestions(questions);
   }, [questions]);
+
+  // Restore the previously chosen language (locale is client-only state; the
+  // server always renders Hebrew first — see documented limitation).
+  useEffect(() => {
+    const stored = readLocal<string>(LOCALE_KEY, '');
+    if (stored && SUPPORTED_LOCALES.includes(stored as Locale)) setLocale(stored as Locale);
+  }, []);
+
+  // Reflect the active locale on the document root so screen readers and search
+  // engines get the correct language + direction (LTR for en/ru/am, RTL for
+  // he/ar) instead of the SSR Hebrew/RTL default, and persist the choice.
+  useEffect(() => {
+    try { localStorage.setItem(LOCALE_KEY, JSON.stringify(locale)); } catch { /* storage may be unavailable */ }
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+      document.documentElement.dir = dir;
+    }
+  }, [locale, dir]);
 
   useEffect(() => {
     let active = true;

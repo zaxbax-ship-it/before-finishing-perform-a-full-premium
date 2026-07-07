@@ -1,18 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useRef } from 'react';
 import { CloseIcon, PaymentsIcon, WalletIcon } from '@/lib/design/icons';
 import { fmt, money } from '../format';
 import type { Lifeline } from '../types';
+import { useDialogFocus } from '../useDialogFocus';
 
 export function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, string>; pending: { type: Lifeline; price: number }; pot: number; cancel: () => void; confirm: () => void }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') cancel(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [cancel]);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(true, dialogRef, cancel);
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="paid-title">
+    <div className="modal-backdrop" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="paid-title">
       <div className="glass modal-card">
         <div className="text-4xl text-gold" aria-hidden="true"><WalletIcon size={34} /></div>
         <h3 id="paid-title">{t.paidTitle}</h3>
@@ -23,7 +21,7 @@ export function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<stri
             <PaymentsIcon size={16} />
             {t.confirmPay}
           </button>
-          <button className="ghost-button focus-ring inline-flex flex-1 items-center justify-center gap-2" onClick={cancel}>
+          <button className="ghost-button focus-ring inline-flex flex-1 items-center justify-center gap-2" data-autofocus onClick={cancel}>
             <CloseIcon size={16} />
             {t.cancelBtn}
           </button>

@@ -342,3 +342,34 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 /* Category cards: simplified (no numeric count) + direction-aware alignment. */
 .category-card { min-height: 150px; justify-content: flex-start; text-align: start; gap: 0.3rem; }
 .category-card h3 { margin: 14px 0 4px; }
+
+/* Immersive gameplay: the app header is already hidden in-game; hide the fixed
+   utility bar (language + account) too so nothing floats over the game's own
+   top strip (home button, timer, prize). Language/account are set before play. */
+.game-active .top-utility-bar { display: none; }
+
+/* Micro-interactions: consistent pressed feedback on interactive surfaces that
+   previously only had hover states (buttons/cards already covered elsewhere). */
+.drawer-item:active { transform: translateX(-2px) scale(0.99); }
+.category-card:active { transform: translateY(-2px) scale(0.994); }
+.lifeline-tile:active { transform: translateY(-1px) scale(0.97); }
+.answer-info-next:active { transform: translateY(0) scale(0.98); }
+.game-topline-home:active { transform: scale(0.94); }
+
+/* Gameplay in mobile landscape (short viewports): keep the question + answers
+   on screen without scrolling by tightening vertical rhythm. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .compact-game-shell { padding-top: 0.4rem; padding-bottom: 0.6rem; }
+  .question-priority { padding: 0.7rem 0.9rem; }
+  .question-priority h2.question-text { font-size: 1.12rem; line-height: 1.25; margin-bottom: 0.55rem; }
+  .answers-grid { gap: 8px; }
+  .answer-button { min-height: 54px; padding: 10px 14px; border-radius: 16px; }
+  .game-topline { margin-bottom: 8px; padding: 6px 12px; }
+}
+
+/* Accessibility — raise muted body-text contrast toward WCAG AA on the dark
+   theme. Still visibly muted, just more legible; overrides the generated
+   low-opacity text utilities (these rules come after the Tailwind layer). */
+.text-white\/45 { color: hsla(0, 0%, 100%, 0.62); }
+.text-white\/50 { color: hsla(0, 0%, 100%, 0.66); }
+.text-white\/55 { color: hsla(0, 0%, 100%, 0.70); }

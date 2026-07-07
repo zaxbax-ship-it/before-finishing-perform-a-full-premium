@@ -824,6 +824,8 @@ function localizeNotification(value: string, copy: ReturnType<typeof getMultipla
   const playerCount = value.match(/(\d+)\s*\/\s*(\d+)\s*players/i);
   if (playerCount) return `${playerCount[1]} / ${playerCount[2]} ${copy.players}`;
   if (/waiting for players/i.test(value)) return copy.waiting;
+  const roundWinner = value.match(/^(.+?)\s+won the round$/i);
+  if (roundWinner) return (copy.roundWinner || '{name} won the round').replace('{name}', roundWinner[1]);
   if (/player joined/i.test(value)) return copy.ready;
   if (/game is live/i.test(value)) return copy.inProgress;
   if (/winner/i.test(value)) return copy.results;

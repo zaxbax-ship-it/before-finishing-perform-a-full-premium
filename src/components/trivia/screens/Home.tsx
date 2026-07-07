@@ -2,12 +2,13 @@ import { AdSlot } from '@/components/ads/AdSlot';
 import { MultiplayerIcon, PremiumBadgeIcon, PremiumIcon, SinglePlayerIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { money } from '../format';
+import { MARKETING_QUESTIONS } from '../i18n';
 import { Metric } from '../primitives';
 import type { Screen } from '../types';
 
 export function Home({ t, locale, soloLabel, multiplayerLabel, start, open }: { t: Record<string, string>; locale: Locale; soloLabel: string; multiplayerLabel: string; start: () => void; open: (screen: Screen) => void }) {
-  // Static marketing figure — intentionally not derived from the live question bank.
-  const marketingQuestionCount = `${new Intl.NumberFormat(locale === 'he' ? 'he-IL' : locale).format(1000000)}+`;
+  // Non-numeric marketing phrase — accurate across every locale, no hard count to contradict.
+  const marketingQuestions = MARKETING_QUESTIONS[locale] || MARKETING_QUESTIONS.he;
   return (
     <section className="home-landing mx-auto w-full max-w-[1680px] px-5 pb-16 lg:px-8">
       {/* Hero: brand statement through the two primary action cards below. */}
@@ -43,7 +44,7 @@ export function Home({ t, locale, soloLabel, multiplayerLabel, start, open }: { 
       </div>
 
       <div className="mt-9 grid gap-4 md:grid-cols-3">
-        <Metric value={marketingQuestionCount} label={t.homeQuestions} />
+        <Metric value={marketingQuestions.value} label={marketingQuestions.label} />
         <Metric value="3" label={t.chancesLabel} />
         <Metric value={money(1000000)} label={t.homePrize} gold />
       </div>

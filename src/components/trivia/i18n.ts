@@ -175,12 +175,25 @@ export const COMMUNITY_UI: Record<Locale, Record<string, string>> = {
  * In-game answer-feedback copy (correct/wrong reveal). Moved verbatim from
  * `TriviaPlatform.tsx`; consumed by the gameplay screen.
  */
-export const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string; action: string }> = {
-  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'קראו את ההסבר והמשיכו כשתהיו מוכנים', action: 'לשאלה הבאה' },
-  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'Read the explanation and continue when you are ready', action: 'Next question' },
-  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'اقرأ التوضيح وتابع عندما تكون جاهزًا', action: 'السؤال التالي' },
-  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Прочитайте пояснение и продолжите, когда будете готовы', action: 'Следующий вопрос' },
-  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ማብራሪያውን አንብበው ዝግጁ ሲሆኑ ይቀጥሉ', action: 'ቀጣዩ ጥያቄ' }
+export const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; next: string; action: string; imageAlt: string }> = {
+  he: { correct: 'תשובה נכונה', wrong: 'כמעט. הנה ההסבר', answer: 'התשובה הנכונה', next: 'קראו את ההסבר והמשיכו כשתהיו מוכנים', action: 'לשאלה הבאה', imageAlt: 'תמונת שאלה' },
+  en: { correct: 'Correct answer', wrong: 'Almost. Here is the insight', answer: 'Correct answer', next: 'Read the explanation and continue when you are ready', action: 'Next question', imageAlt: 'Question image' },
+  ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'اقرأ التوضيح وتابع عندما تكون جاهزًا', action: 'السؤال التالي', imageAlt: 'صورة السؤال' },
+  ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Прочитайте пояснение и продолжите, когда будете готовы', action: 'Следующий вопрос', imageAlt: 'Изображение вопроса' },
+  am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ማብራሪያውን አንብበው ዝግጁ ሲሆኑ ይቀጥሉ', action: 'ቀጣዩ ጥያቄ', imageAlt: 'የጥያቄ ምስል' }
+};
+
+/**
+ * Homepage marketing tile for the question bank. Intentionally non-numeric so it
+ * stays accurate across every locale (no hard count to contradict). Shown as a
+ * stat tile: `value` on top, `label` beneath.
+ */
+export const MARKETING_QUESTIONS: Record<Locale, { value: string; label: string }> = {
+  he: { value: 'אינסוף', label: 'שאלות טריוויה' },
+  en: { value: 'Endless', label: 'trivia questions' },
+  ar: { value: 'لا نهائية', label: 'أسئلة المسابقات' },
+  ru: { value: 'Бесконечно', label: 'вопросов викторины' },
+  am: { value: 'ማለቂያ የሌለው', label: 'የእንቆቅልሽ ጥያቄዎች' }
 };
 
 /** Maps stored Hebrew achievement ids to their localized UI keys. */

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   CloseIcon,
   EditIcon,
@@ -15,9 +15,12 @@ import {
   SupportIcon
 } from '@/lib/design/icons';
 import type { Screen } from '../types';
+import { useDialogFocus } from '../useDialogFocus';
 
 export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: Record<string, string>; submitLabel: string; multiplayerLabel: string; open: (screen: Screen) => void; start: () => void }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(drawerOpen, drawerRef, () => setDrawerOpen(false));
   const handleNav = (screen: Screen) => {
     open(screen);
     setDrawerOpen(false);
@@ -37,7 +40,7 @@ export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: R
 
       {drawerOpen && (
         <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)}>
-          <div className="drawer-panel glass" role="dialog" aria-modal="true" aria-label={t.headline} onClick={e => e.stopPropagation()}>
+          <div className="drawer-panel glass" ref={drawerRef} role="dialog" aria-modal="true" aria-label={t.headline} onClick={e => e.stopPropagation()}>
             <div className="drawer-head">
               <strong>{t.headline}</strong>
               <button className="icon-button focus-ring" onClick={() => setDrawerOpen(false)} aria-label={t.close || 'Close'} title={t.close || 'Close'}><CloseIcon size={18} /></button>

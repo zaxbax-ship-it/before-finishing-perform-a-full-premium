@@ -50,7 +50,7 @@ export function Game(props: {
         </div>
         {current.imageUrl && (
           <div className="relative mb-6 overflow-hidden rounded-3xl bg-white/[0.04] w-full" style={{ aspectRatio: '16/9', maxHeight: '18rem' }}>
-            <img src={current.imageUrl} alt="תמונת שאלה" className="h-full w-full object-cover" />
+            <img src={current.imageUrl} alt={infoUi.imageAlt} className="h-full w-full object-cover" />
           </div>
         )}
         <h2 className="question-text mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl">{current.question}</h2>
