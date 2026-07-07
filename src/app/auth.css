@@ -10,7 +10,7 @@
 
 .auth-card {
   width: min(520px, 100%);
-  border-radius: 32px;
+  border-radius: var(--radius-3xl);
   padding: 34px;
 }
 
@@ -21,7 +21,7 @@
 .auth-brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-sm);
   margin-bottom: 22px;
   text-align: right;
 }
@@ -31,10 +31,10 @@
   place-items: center;
   height: 44px;
   width: 44px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   background: var(--gold);
   color: var(--bg);
-  box-shadow: 0 0 40px hsla(41, 90%, 69%, 0.3);
+  box-shadow: var(--shadow-gold-glow);
   font-weight: 900;
 }
 
@@ -97,7 +97,7 @@
   /* Lives inside .top-utility-bar (flex row) — no independent fixed layer, so
      it can never collide with the language selector. */
   position: relative;
-  z-index: 135;
+  z-index: var(--z-auth-corner);
   max-width: 100%;
   min-width: 0;
 }
@@ -110,9 +110,9 @@
   gap: 10px;
   padding: 6px;
   border: 1px solid hsla(0, 0%, 100%, 0.14);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.13), hsla(0, 0%, 100%, 0.045));
-  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28), inset 0 1px 0 hsla(0, 0%, 100%, 0.16);
+  box-shadow: var(--shadow-md), inset 0 1px 0 hsla(0, 0%, 100%, 0.16);
   backdrop-filter: blur(22px) saturate(1.16);
 }
 
