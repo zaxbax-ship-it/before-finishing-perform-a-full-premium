@@ -68,34 +68,18 @@ import { createAuthService } from '@/lib/auth/authService';
 import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
 import type { Locale, Question } from '@/lib/types';
 import type { User } from '@supabase/supabase-js';
-
-type GameQuestion = Question & { answers: string[]; imageUrl?: string };
-type Screen = 'home' | 'categories' | 'rules' | 'game' | 'result' | 'admin' | 'contact' | 'add' | 'profile' | 'settings' | 'submit' | 'leaderboard' | 'multiplayer';
-type EndState = 'win' | 'quit' | 'timeout' | 'lost';
-type Lifeline = 'fifty' | 'swap' | 'phone' | 'audience';
-type LeaderboardStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'taken' | 'error';
-type PublicAuthUser = {
-  id: string;
-  email?: string;
-  displayName?: string;
-  avatarUrl?: string;
-  createdAt?: string;
-};
-
-type Settings = {
-  sound: boolean;
-  effects: boolean;
-  timer: string;
-};
-
-type Stats = {
-  games: number;
-  bestPrize: number;
-  totalMoney: number;
-  correct: number;
-  lifelines: number;
-  achievements: string[];
-};
+import { Categories } from '@/components/trivia/screens/Categories';
+import { Contact } from '@/components/trivia/screens/Contact';
+import { Header } from '@/components/trivia/screens/Header';
+import { Home } from '@/components/trivia/screens/Home';
+import { Leaderboard } from '@/components/trivia/screens/Leaderboard';
+import { Result } from '@/components/trivia/screens/Result';
+import { Rules } from '@/components/trivia/screens/Rules';
+import { SettingsPanel } from '@/components/trivia/screens/SettingsPanel';
+import { fmt, initialsFor, money, validateNickname } from '@/components/trivia/format';
+import { COMMUNITY_UI } from '@/components/trivia/i18n';
+import { Field, Metric, Panel, Success } from '@/components/trivia/primitives';
+import type { EndState, GameQuestion, LeaderboardStatus, Lifeline, PublicAuthUser, Screen, Settings, Stats } from '@/components/trivia/types';
 
 const LETTERS = ['א', 'ב', 'ג', 'ד'];
 const OPTION_LETTERS: Record<Locale, string[]> = {
@@ -124,23 +108,6 @@ const SEEN_QUESTIONS_KEY = 'premium-trivia-seen-question-ids-v1';
 const COMMUNITY_KEY = 'premium-trivia-community-submissions-v1';
 const AUDIT_KEY = 'premium-trivia-audit-log-v1';
 const NICKNAME_KEY = 'premium-trivia-public-nickname-v1';
-const RESERVED_NICKNAMES = new Set([
-  'admin',
-  'administrator',
-  'moderator',
-  'owner',
-  'support',
-  'official',
-  'system',
-  'staff',
-  'team',
-  'google',
-  'supabase',
-  'root',
-  'null',
-  'undefined'
-]);
-
 const AUTH_UI: Record<Locale, Record<string, string>> = {
   he: {
     signIn: 'כניסה',
@@ -971,10 +938,6 @@ const UI_EXT: Record<Locale, Record<string, string>> = {
   }
 };
 
-function fmt(template: string, vars: Record<string, string | number>) {
-  return template.replace(/\{(\w+)\}/g, (_, key) => String(vars[key] ?? ''));
-}
-
 function normalize(question: Question): GameQuestion {
   const answers = question.options || (question as unknown as { answers?: string[] }).answers || [];
   return {
@@ -988,15 +951,6 @@ function normalize(question: Question): GameQuestion {
     answers,
     options: answers
   };
-}
-
-function money(value: number) {
-  // Global audience: all prizes are shown in US dollars.
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(value);
 }
 
 function shuffle<T>(items: T[]) {
@@ -1041,169 +995,6 @@ const INFO_UI: Record<Locale, { correct: string; wrong: string; answer: string; 
   ar: { correct: 'إجابة صحيحة', wrong: 'قريب. إليك التوضيح', answer: 'الإجابة الصحيحة', next: 'اقرأ التوضيح وتابع عندما تكون جاهزًا', action: 'السؤال التالي' },
   ru: { correct: 'Правильный ответ', wrong: 'Почти. Вот пояснение', answer: 'Правильный ответ', next: 'Прочитайте пояснение и продолжите, когда будете готовы', action: 'Следующий вопрос' },
   am: { correct: 'ትክክለኛ መልስ', wrong: 'ቅርብ ነበር። ማብራሪያው ይህ ነው', answer: 'ትክክለኛው መልስ', next: 'ማብራሪያውን አንብበው ዝግጁ ሲሆኑ ይቀጥሉ', action: 'ቀጣዩ ጥያቄ' }
-};
-
-const COMMUNITY_UI: Record<Locale, Record<string, string>> = {
-  he: {
-    submitNav: 'שליחת שאלה',
-    submitTitle: 'שליחת שאלה לקהילה',
-    submitIntro: 'הוסיפו שאלה חדשה למאגר. המערכת בודקת איכות, כפילויות וניסוח לפני פרסום.',
-    contributorName: 'שם',
-    contributorEmail: 'אימייל',
-    language: 'שפה',
-    category: 'קטגוריה',
-    difficulty: 'רמת קושי',
-    question: 'שאלה',
-    explanation: 'הסבר קצר',
-    correctAnswer: 'תשובה נכונה',
-    send: 'שליחה לבדיקה',
-    autoApproved: 'השאלה אושרה אוטומטית ונוספה למשחק.',
-    needsReview: 'השאלה נשלחה לבדיקת מנהל לפני פרסום.',
-    rejected: 'השאלה נדחתה כרגע. אפשר לשפר ניסוח ולשלוח שוב.',
-    dashboard: 'מרכז בקרת תוכן קהילתי',
-    reviewQueue: 'תור בדיקה',
-    auditLog: 'יומן פעולות',
-    submissions: 'הגשות',
-    pending: 'ממתינות',
-    approved: 'אושרו',
-    rejectedLabel: 'נדחו',
-    confidence: 'ציון',
-    recommendation: 'המלצת מערכת',
-    reasons: 'סיבות',
-    approve: 'אישור פרסום',
-    reject: 'דחייה',
-    emptyQueue: 'אין שאלות שממתינות לבדיקה.',
-    localMode: 'מצב מקומי פעיל. חיבור למסד נתונים, הרשאות ו-AI אמיתי יתווסף בשלב הבא.',
-    answer: 'תשובה'
-  },
-  en: {
-    submitNav: 'Submit Question',
-    submitTitle: 'Submit a Community Question',
-    submitIntro: 'Add a new question to the pool. The system checks quality, duplicates and wording before publishing.',
-    contributorName: 'Name',
-    contributorEmail: 'Email',
-    language: 'Language',
-    category: 'Category',
-    difficulty: 'Difficulty',
-    question: 'Question',
-    explanation: 'Short explanation',
-    correctAnswer: 'Correct answer',
-    send: 'Send for review',
-    autoApproved: 'The question was approved automatically and added to the game.',
-    needsReview: 'The question was sent to admin review before publishing.',
-    rejected: 'The question was rejected for now. Improve it and submit again.',
-    dashboard: 'Community Content Control',
-    reviewQueue: 'Review queue',
-    auditLog: 'Audit log',
-    submissions: 'Submissions',
-    pending: 'Pending',
-    approved: 'Approved',
-    rejectedLabel: 'Rejected',
-    confidence: 'Score',
-    recommendation: 'System recommendation',
-    reasons: 'Reasons',
-    approve: 'Approve',
-    reject: 'Reject',
-    emptyQueue: 'No questions are waiting for review.',
-    localMode: 'Local mode is active. Database, permissions and real AI will connect in the next phase.',
-    answer: 'Answer'
-  },
-  ar: {
-    submitNav: 'إرسال سؤال',
-    submitTitle: 'إرسال سؤال للمجتمع',
-    submitIntro: 'أضف سؤالا جديدا إلى البنك. يفحص النظام الجودة والتكرار والصياغة قبل النشر.',
-    contributorName: 'الاسم',
-    contributorEmail: 'البريد الإلكتروني',
-    language: 'اللغة',
-    category: 'الفئة',
-    difficulty: 'مستوى الصعوبة',
-    question: 'السؤال',
-    explanation: 'شرح قصير',
-    correctAnswer: 'الإجابة الصحيحة',
-    send: 'إرسال للمراجعة',
-    autoApproved: 'تمت الموافقة على السؤال تلقائيا وإضافته إلى اللعبة.',
-    needsReview: 'تم إرسال السؤال إلى مراجعة المدير قبل النشر.',
-    rejected: 'تم رفض السؤال حاليا. يمكن تحسينه وإرساله مرة أخرى.',
-    dashboard: 'مركز إدارة محتوى المجتمع',
-    reviewQueue: 'قائمة المراجعة',
-    auditLog: 'سجل العمليات',
-    submissions: 'الإرسالات',
-    pending: 'قيد المراجعة',
-    approved: 'تمت الموافقة',
-    rejectedLabel: 'مرفوضة',
-    confidence: 'الدرجة',
-    recommendation: 'توصية النظام',
-    reasons: 'الأسباب',
-    approve: 'موافقة للنشر',
-    reject: 'رفض',
-    emptyQueue: 'لا توجد أسئلة تنتظر المراجعة.',
-    localMode: 'الوضع المحلي نشط. سيتم ربط قاعدة البيانات والصلاحيات والذكاء الاصطناعي الحقيقي في المرحلة التالية.',
-    answer: 'إجابة'
-  },
-  ru: {
-    submitNav: 'Отправить вопрос',
-    submitTitle: 'Отправить вопрос сообщества',
-    submitIntro: 'Добавьте новый вопрос в банк. Система проверяет качество, повторы и формулировку перед публикацией.',
-    contributorName: 'Имя',
-    contributorEmail: 'Электронная почта',
-    language: 'Язык',
-    category: 'Категория',
-    difficulty: 'Сложность',
-    question: 'Вопрос',
-    explanation: 'Короткое объяснение',
-    correctAnswer: 'Правильный ответ',
-    send: 'Отправить на проверку',
-    autoApproved: 'Вопрос автоматически одобрен и добавлен в игру.',
-    needsReview: 'Вопрос отправлен администратору на проверку перед публикацией.',
-    rejected: 'Вопрос пока отклонен. Его можно улучшить и отправить снова.',
-    dashboard: 'Центр управления контентом сообщества',
-    reviewQueue: 'Очередь проверки',
-    auditLog: 'Журнал действий',
-    submissions: 'Отправки',
-    pending: 'Ожидают',
-    approved: 'Одобрены',
-    rejectedLabel: 'Отклонены',
-    confidence: 'Оценка',
-    recommendation: 'Рекомендация системы',
-    reasons: 'Причины',
-    approve: 'Одобрить публикацию',
-    reject: 'Отклонить',
-    emptyQueue: 'Нет вопросов, ожидающих проверки.',
-    localMode: 'Включен локальный режим. База данных, права доступа и настоящий AI будут подключены на следующем этапе.',
-    answer: 'Ответ'
-  },
-  am: {
-    submitNav: 'ጥያቄ ላክ',
-    submitTitle: 'የማህበረሰብ ጥያቄ ላክ',
-    submitIntro: 'አዲስ ጥያቄ ወደ ማዕከሉ ያክሉ። ስርዓቱ ከህትመት በፊት ጥራትን፣ ተደጋጋሚነትን እና አጻጻፍን ይፈትሻል።',
-    contributorName: 'ስም',
-    contributorEmail: 'ኢሜይል',
-    language: 'ቋንቋ',
-    category: 'ምድብ',
-    difficulty: 'የክብደት ደረጃ',
-    question: 'ጥያቄ',
-    explanation: 'አጭር ማብራሪያ',
-    correctAnswer: 'ትክክለኛ መልስ',
-    send: 'ለግምገማ ላክ',
-    autoApproved: 'ጥያቄው በራስ ሰር ጸድቆ ወደ ጨዋታው ተጨምሯል።',
-    needsReview: 'ጥያቄው ከህትመት በፊት ወደ አስተዳዳሪ ግምገማ ተልኳል።',
-    rejected: 'ጥያቄው ለጊዜው ተቀባይነት አላገኘም። ማሻሻል እና እንደገና መላክ ይቻላል።',
-    dashboard: 'የማህበረሰብ ይዘት መቆጣጠሪያ',
-    reviewQueue: 'የግምገማ ዝርዝር',
-    auditLog: 'የእርምጃዎች መዝገብ',
-    submissions: 'የተላኩ',
-    pending: 'በግምገማ',
-    approved: 'ጸድቀዋል',
-    rejectedLabel: 'ውድቅ ተደርገዋል',
-    confidence: 'ውጤት',
-    recommendation: 'የስርዓት ምክር',
-    reasons: 'ምክንያቶች',
-    approve: 'ለህትመት አጽድቅ',
-    reject: 'ውድቅ አድርግ',
-    emptyQueue: 'ለግምገማ የሚጠብቁ ጥያቄዎች የሉም።',
-    localMode: 'አካባቢያዊ ሁነታ ነቅቷል። ዳታቤዝ፣ ፈቃዶች እና እውነተኛ AI በሚቀጥለው ደረጃ ይገናኛሉ።',
-    answer: 'መልስ'
-  }
 };
 
 function tone(kind: string, enabled: boolean) {
@@ -2105,62 +1896,6 @@ function Particles() {
   );
 }
 
-function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: Record<string, string>; submitLabel: string; multiplayerLabel: string; open: (screen: Screen) => void; start: () => void }) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const handleNav = (screen: Screen) => {
-    open(screen);
-    setDrawerOpen(false);
-  };
-  return (
-    <header className="public-header relative z-20 mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4 px-5 pt-5 lg:px-8">
-      <button className="focus-ring flex items-center gap-3 text-right" onClick={() => handleNav('home')} aria-label={t.headline} title={t.headline}>
-        <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-gold text-royal shadow-gold"><PremiumIcon size={24} /></span>
-        <span><strong className="block text-xl font-black">{t.headline}</strong><small className="text-white/65">{t.subtitle}</small></span>
-      </button>
-
-      {/* Desktop Navigation */}
-      <nav className="hidden md:flex flex-wrap items-center gap-3">
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => handleNav('rules')}><QuestionIcon size={16} />{t.rules}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => handleNav('multiplayer')}><MultiplayerIcon size={16} />{multiplayerLabel}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => handleNav('leaderboard')}><LeaderboardIcon size={16} />{t.lbNav}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => handleNav('submit')}><EditIcon size={16} />{submitLabel}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => handleNav('contact')}><SupportIcon size={16} />{t.contact}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => handleNav('profile')}><ProfileIcon size={16} />{t.profile}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => handleNav('settings')}><SettingsIcon size={16} />{t.settings}</button>
-        <button className="premium-button focus-ring inline-flex items-center gap-2" onClick={start}><PlayIcon size={16} />{t.start}</button>
-      </nav>
-
-      {/* Mobile Actions */}
-      <div className="flex items-center gap-3 md:hidden">
-        <button className="premium-button focus-ring inline-flex items-center gap-2 !min-h-[42px] !px-4" onClick={start} aria-label={t.start}><PlayIcon size={14} /></button>
-        <button className="ghost-button focus-ring p-3 rounded-full !min-h-[42px]" onClick={() => setDrawerOpen(true)} aria-label="Open menu"><MenuIcon size={20} /></button>
-      </div>
-
-      {/* Mobile Drawer Overlay */}
-      {drawerOpen && (
-        <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)}>
-          <div className="drawer-panel glass" onClick={e => e.stopPropagation()}>
-            <div className="mb-6 flex items-center justify-between">
-              <strong className="text-xl font-black text-gold">{t.headline}</strong>
-              <button className="ghost-button focus-ring rounded-full !min-h-[38px] p-2" onClick={() => setDrawerOpen(false)} aria-label="Close menu"><CloseIcon size={16} /></button>
-            </div>
-            <nav className="flex flex-col gap-3">
-              <button className="drawer-item focus-ring" onClick={() => handleNav('rules')}><QuestionIcon size={18} />{t.rules}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('multiplayer')}><MultiplayerIcon size={18} />{multiplayerLabel}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('leaderboard')}><LeaderboardIcon size={18} />{t.lbNav}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('submit')}><EditIcon size={18} />{submitLabel}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('contact')}><SupportIcon size={18} />{t.contact}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('profile')}><ProfileIcon size={18} />{t.profile}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('settings')}><SettingsIcon size={18} />{t.settings}</button>
-              <button className="premium-button focus-ring w-full mt-4" onClick={() => { setDrawerOpen(false); start(); }}><PlayIcon size={16} />{t.start}</button>
-            </nav>
-          </div>
-        </div>
-      )}
-    </header>
-  );
-}
-
 function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (locale: Locale) => void }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -2325,89 +2060,6 @@ function Avatar({ user, initials }: { user: PublicAuthUser; initials: string }) 
   return user.avatarUrl
     ? <img className="public-avatar" src={user.avatarUrl} alt="" />
     : <span className="public-avatar" aria-hidden="true">{initials}</span>;
-}
-
-function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, open }: { t: Record<string, string>; locale: Locale; questionCount: number; soloLabel: string; multiplayerLabel: string; start: () => void; open: (screen: Screen) => void }) {
-  const formattedQuestionCount = new Intl.NumberFormat(locale === 'he' ? 'he-IL' : locale).format(questionCount);
-  return (
-    <section className="home-landing mx-auto w-full max-w-[1680px] px-5 pb-16 lg:px-8">
-      {/* Hero first: intro through the single primary Start Game button. */}
-      <div className="grid items-center gap-12 lg:grid-cols-[.86fr_1fr]">
-        <div className="home-hero-prize-card relative min-h-[420px] overflow-hidden rounded-[36px] p-8 lg:min-h-[560px]">
-          <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
-          <div className="relative grid h-full place-items-center text-center">
-            <div>
-              <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]"><PremiumIcon size={56} aria-hidden="true" /></div>
-              <div className="home-prize-amount text-6xl font-black md:text-7xl">{money(1000000)}</div>
-              <p className="mt-8 text-white/65">{t.live}</p>
-              <div className="mx-auto mt-8 h-2 w-80 rounded-full bg-gradient-to-l from-gold to-azure" />
-            </div>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold"><PremiumBadgeIcon size={14} aria-hidden="true" /> {t.pill}</p>
-          <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
-          <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
-          <div className="mt-9 flex flex-wrap gap-4">
-            <button className="premium-button focus-ring inline-flex items-center gap-2 text-lg" onClick={start}><PlayIcon size={18} />{soloLabel}</button>
-            <button className="ghost-button focus-ring inline-flex items-center gap-2 text-lg" onClick={() => open('multiplayer')}><MultiplayerIcon size={18} />{multiplayerLabel}</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Public navigation/actions below the hero. No admin/editor tools here. */}
-      <nav className="home-actions" aria-label={t.homeActionsLabel}>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('rules')}><QuestionIcon size={16} />{t.rules}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('categories')}><CategoriesIcon size={16} />{t.catNav}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('leaderboard')}><LeaderboardIcon size={16} />{t.lbNav}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('submit')}><EditIcon size={16} />{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('profile')}><ProfileIcon size={16} />{t.profile}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('contact')}><SupportIcon size={16} />{t.contact}</button>
-        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('settings')}><SettingsIcon size={16} />{t.settings}</button>
-      </nav>
-
-      <div className="mt-9 grid gap-4 md:grid-cols-3">
-        <Metric value={`${formattedQuestionCount}+`} label={t.homeQuestions} />
-        <Metric value="3" label={t.chancesLabel} />
-        <Metric value={money(1000000)} label={t.homePrize} gold />
-      </div>
-      <AdSlot placement="homepage-hero-below" className="mt-4" />
-      <AdSlot placement="homepage-content" className="mt-8" />
-    </section>
-  );
-}
-
-function Categories({ t, locale, categories, questions, startGame }: { t: Record<string, string>; locale: Locale; categories: string[]; questions: GameQuestion[]; startGame: (category: string) => void }) {
-  return (
-    <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
-      <p className="mb-8 mr-auto inline-flex w-fit items-center gap-2 rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold"><CategoriesIcon size={14} aria-hidden="true" /> {t.catPill}</p>
-      <h1 className="max-w-5xl text-6xl font-black md:text-[86px]">{t.choose}</h1>
-      <p className="mt-5 max-w-4xl text-xl leading-8 text-white/72">{t.chooseText}</p>
-      <AdSlot placement="categories-top" className="mt-7" />
-      <button className="ghost-button focus-ring mt-8 inline-flex items-center gap-2 lg:min-w-56" onClick={() => startGame('הכול')}><QuizIcon size={16} />{t.all}</button>
-      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {categories.map(category => (
-          <button key={category} className="category-card focus-ring glass rounded-[30px] p-6 text-right" onClick={() => startGame(category)}>
-            <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-gold/15 text-gold"><CategoriesIcon size={18} aria-hidden="true" /></span>
-            <strong className="block text-3xl font-black">{localizeCategory(locale, category)}</strong>
-            <em className="mt-3 block not-italic text-white/65">{localizeCategoryDescription(locale, category)}</em>
-            <small className="mt-6 inline-block rounded-full border border-white/15 px-4 py-2 text-white/70">{questions.filter(question => question.category === category).length} {t.available}</small>
-          </button>
-        ))}
-      </div>
-      <AdSlot placement="categories-grid-after" className="mt-8" />
-    </section>
-  );
-}
-
-function Rules({ t, start }: { t: Record<string, string>; start: () => void }) {
-  const rules = [t.rule1, t.rule2, t.rule3, t.rule4, t.rule5];
-  return (
-    <Panel title={t.rulesTitle} icon={<QuestionIcon size={26} aria-hidden="true" />}>
-      <div className="grid gap-4">{rules.map((rule, index) => <div key={rule} className="rule-row"><span>{index + 1}</span><p>{rule}</p></div>)}</div>
-      <button className="premium-button focus-ring mt-9 inline-flex items-center gap-2 text-lg" onClick={start}><PlayIcon size={18} />{t.readyStart}</button>
-    </Panel>
-  );
 }
 
 function Game(props: {
@@ -2606,138 +2258,6 @@ function CommunitySubmit(props: {
         </div>
       </div>
     </section>
-  );
-}
-
-function Result({ t, authUi, isAuthenticated, state, correctCount, elapsed, prize, start, home }: { t: Record<string, string>; authUi: Record<string, string>; isAuthenticated: boolean; state: EndState; correctCount: number; elapsed: number; prize: number; start: () => void; home: () => void }) {
-  const title = state === 'win' ? t.winTitle : state === 'quit' ? t.quitTitle : state === 'timeout' ? t.timeoutTitle : t.lostTitle;
-  const time = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
-  return (
-    <section className="mx-auto grid min-h-[calc(100vh-104px)] max-w-5xl place-items-center px-6 pb-14">
-      <div className="glass w-full rounded-[34px] p-8 text-center md:p-12">
-        <div className="mx-auto mb-5 text-7xl text-gold"><AchievementsIcon size={56} aria-hidden="true" /></div>
-        <h2 className="text-5xl font-black">{title}</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-xl leading-8 text-white/70">{fmt(t.resultSummary, { correct: correctCount, time, prize: money(prize) })}</p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
-        {!isAuthenticated && (
-          <div className="guest-progress-cta" role="note">
-            <strong>{authUi.guestCtaTitle}</strong>
-            <p>{authUi.guestCtaBody}</p>
-            <div>
-              <a className="ghost-button focus-ring" href="/login">{authUi.signIn}</a>
-              <a className="premium-button focus-ring" href="/signup">{authUi.createAccount}</a>
-            </div>
-          </div>
-        )}
-        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row"><button className="premium-button focus-ring" onClick={start}>{t.playAgain}</button><button className="ghost-button focus-ring" onClick={() => navigator.share?.({ title: t.headline, text: fmt(t.shareText, { prize: money(prize) }) })}>{t.shareBtn}</button><button className="ghost-button focus-ring" onClick={home}>{t.home}</button></div>
-      </div>
-    </section>
-  );
-}
-
-function Leaderboard({ t, entries, status, nickname, authUi, setNickname, bestPrize }: {
-  t: Record<string, string>;
-  entries: LeaderboardEntry[];
-  status: LeaderboardStatus;
-  nickname: string;
-  locale: Locale;
-  authUi: Record<string, string>;
-  setNickname: (value: string) => void | Promise<void>;
-  bestPrize: number;
-}) {
-  const [draft, setDraft] = useState(nickname);
-
-  useEffect(() => {
-    setDraft(nickname);
-  }, [nickname]);
-
-  const validation = validateNickname(draft, authUi);
-  const message = status === 'loading' || status === 'saving'
-    ? t.lbLoading
-    : status === 'saved'
-      ? t.lbSaved
-      : status === 'taken'
-        ? t.lbTaken
-        : status === 'error'
-          ? t.lbError
-          : '';
-
-  return (
-    <Panel title={t.lbTitle} icon={<LeaderboardIcon size={26} aria-hidden="true" />}>
-      <div className="leaderboard-layout">
-        <section className="leaderboard-profile-card">
-          <p className="leaderboard-eyebrow">{t.lbSubtitle}</p>
-          <div className="leaderboard-personal-best">
-            <span>{t.lbYourBest}</span>
-            <strong>{money(bestPrize)}</strong>
-          </div>
-          <Field label={t.lbNickname}>
-            <input
-              className="form-input"
-              value={draft}
-              maxLength={20}
-              onChange={event => setDraft(event.target.value)}
-              placeholder={t.lbNickname}
-              aria-invalid={draft.length > 0 && !validation.ok}
-            />
-          </Field>
-          <p className={validation.ok ? 'nickname-live-message valid' : 'nickname-live-message invalid'} aria-live="polite">
-            {draft.trim() ? validation.message : authUi.nicknamePrompt}
-          </p>
-          <p className="leaderboard-hint">{t.lbNicknameHint}</p>
-          <button
-            className="premium-button focus-ring inline-flex w-full items-center justify-center gap-2"
-            disabled={status === 'saving' || !validation.ok}
-            onClick={() => void setNickname(draft)}
-          >
-            <ConfirmIcon size={16} />
-            {t.lbSave}
-          </button>
-          {message && <div className={`leaderboard-message ${status}`} aria-live="polite">{message}</div>}
-        </section>
-
-        <section className="leaderboard-table-card">
-          {entries.length === 0 && status !== 'loading' && <p className="leaderboard-empty">{t.lbEmpty}</p>}
-          {status === 'loading' && entries.length === 0 && (
-            <div className="leaderboard-list" aria-busy="true" aria-label="Loading leaderboard">
-              <div className="leaderboard-row leaderboard-head">
-                <span>{t.lbRank}</span>
-                <span>{t.lbPlayer}</span>
-                <span>{t.lbBest}</span>
-              </div>
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="leaderboard-row skeleton-row" style={{ opacity: 0.8 }} role="row">
-                  <span className="leaderboard-rank skeleton-block" role="cell" />
-                  <span className="skeleton-block" style={{ width: '50%', height: '1.2rem' }} role="cell" />
-                  <span className="skeleton-block" style={{ width: '30%', height: '1.2rem', justifySelf: 'end' }} role="cell" />
-                </div>
-              ))}
-            </div>
-          )}
-          {entries.length > 0 && (
-            <div className="leaderboard-list" role="table" aria-label={t.lbTitle}>
-              <div className="leaderboard-row leaderboard-head" role="row">
-                <span role="columnheader">{t.lbRank}</span>
-                <span role="columnheader">{t.lbPlayer}</span>
-                <span role="columnheader">{t.lbBest}</span>
-              </div>
-              {entries.map((entry, index) => {
-                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
-                return (
-                  <div key={entry.id} className={`leaderboard-row ${rankClass}`} role="row">
-                    <span className="leaderboard-rank font-black" role="cell">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
-                    </span>
-                    <strong role="cell" className={index < 3 ? 'text-white font-black' : 'text-white/80'}>{entry.nickname || entry.displayName}</strong>
-                    <span className="leaderboard-prize" role="cell">{money(entry.bestPrize)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
-    </Panel>
   );
 }
 
@@ -2977,34 +2497,6 @@ function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, str
   );
 }
 
-function Contact({ t, sent, setSent }: { t: Record<string, string>; sent: boolean; setSent: (value: boolean) => void }) {
-  return (
-    <Panel title={t.contact} icon={<MailIcon size={26} aria-hidden="true" />}>
-      <div className="grid gap-5 max-w-xl mx-auto">
-        <Field label={t.fullName}>
-          <input className="form-input" />
-        </Field>
-        <Field label={t.email}>
-          <input className="form-input" type="email" />
-        </Field>
-        <Field label={t.message}>
-          <textarea className="form-input min-h-36" />
-        </Field>
-        <button className="premium-button focus-ring inline-flex items-center justify-center gap-2 w-full" onClick={() => setSent(true)}>
-          <MailIcon size={16} />
-          {t.sendMsg}
-        </button>
-        {sent && (
-          <div className="mt-4 p-5 rounded-2xl border border-emerald-300/30 bg-emerald-300/10 text-emerald-100 flex items-center gap-3">
-            <span className="text-emerald-400"><ConfirmIcon size={20} /></span>
-            <span className="font-bold">{t.contactSuccess}</span>
-          </div>
-        )}
-      </div>
-    </Panel>
-  );
-}
-
 const ACHIEVEMENT_KEYS: Record<string, string> = {
   'כניסה לאולפן': 'achStudio',
   'מיליון דולר': 'achMillion',
@@ -3055,49 +2547,6 @@ function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record<string
   );
 }
 
-function SettingsPanel({ t, settings, setSettings, reset }: { t: Record<string, string>; settings: Settings; setSettings: (settings: Settings | ((settings: Settings) => Settings)) => void; reset: () => void }) {
-  const timerOptions = [
-    { value: 'רגועה', label: t.timerCalm },
-    { value: 'דרמטית', label: t.timerDramatic },
-    { value: 'אינטנסיבית', label: t.timerIntense }
-  ];
-  return (
-    <Panel title={t.settings} icon={<SettingsIcon size={26} aria-hidden="true" />}>
-      <div className="grid gap-6 max-w-2xl mx-auto">
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="setting-row flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all cursor-pointer">
-            <span className="flex items-center gap-3">
-              <span className="text-gold"><AudienceIcon size={20} /></span>
-              <span className="font-bold">{t.soundLbl}</span>
-            </span>
-            <input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} className="h-5 w-5 rounded accent-gold" />
-          </label>
-          <label className="setting-row flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all cursor-pointer">
-            <span className="flex items-center gap-3">
-              <span className="text-gold"><CelebrationIcon size={20} /></span>
-              <span className="font-bold">{t.effectsLbl}</span>
-            </span>
-            <input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} className="h-5 w-5 rounded accent-gold" />
-          </label>
-        </div>
-
-        <Field label={t.timerLbl}>
-          <div className="relative">
-            <select className="form-input !py-3 !px-4" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>
-              {timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
-            </select>
-          </div>
-        </Field>
-
-        <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2 mt-4" onClick={reset}>
-          <DeleteIcon size={16} />
-          {t.resetData}
-        </button>
-      </div>
-    </Panel>
-  );
-}
-
 function mapAuthUser(user: User): PublicAuthUser {
   const metadata = user.user_metadata || {};
   const displayName = typeof metadata.full_name === 'string' && metadata.full_name.trim()
@@ -3115,37 +2564,3 @@ function mapAuthUser(user: User): PublicAuthUser {
   };
 }
 
-function initialsFor(value: string) {
-  return value
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(item => item[0])
-    .join('')
-    .toUpperCase() || 'U';
-}
-
-function validateNickname(value: string, ui: Record<string, string>) {
-  const cleaned = value.trim().replace(/\s+/g, ' ');
-  if (cleaned.length < 3) return { ok: false, message: ui.nicknameShort };
-  if (cleaned.length > 20) return { ok: false, message: ui.nicknameLong };
-  if (!/^[\p{L}\p{N} _.-]+$/u.test(cleaned)) return { ok: false, message: ui.nicknameChars };
-  if (RESERVED_NICKNAMES.has(cleaned.toLowerCase())) return { ok: false, message: ui.nicknameReserved };
-  return { ok: true, message: ui.nicknameValid };
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block"><span className="mb-2 block text-sm text-white/65">{label}</span>{children}</label>;
-}
-
-function Panel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return <section className="mx-auto max-w-5xl px-5 pb-16 pt-8"><div className="glass rounded-[34px] p-6 md:p-10"><div className="mb-7 flex items-center gap-4 text-gold"><span className="text-4xl">{icon}</span><h2 className="text-4xl font-black text-white md:text-5xl">{title}</h2></div>{children}</div></section>;
-}
-
-function Metric({ value, label, gold }: { value: string; label: string; gold?: boolean }) {
-  return <div className="rounded-3xl bg-white/[0.08] p-5"><div className={`mt-2 text-3xl font-black ${gold ? 'text-gold' : 'text-azure'}`}>{value}</div><div className="text-white/55">{label}</div></div>;
-}
-
-function Success({ text }: { text: string }) {
-  return <div className="rounded-2xl border border-emerald-300/35 bg-emerald-300/10 p-4 font-bold text-emerald-100">{text}</div>;
-}
