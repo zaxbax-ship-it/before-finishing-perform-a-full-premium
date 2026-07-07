@@ -1,3 +1,4 @@
+import 'server-only';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import type { RepositoryProvider } from '@/lib/repositories/interfaces';
 import type { AdminRoleSlug, PermissionSlug } from '@/lib/domain/models';

@@ -1,3 +1,4 @@
+import 'server-only';
 import type { CommunitySubmission, ModerationResult } from '@/lib/community';
 import { createAudit, submissionToQuestion } from '@/lib/community';
 import { readEnv } from '@/lib/infrastructure/environment';

@@ -1,3 +1,4 @@
+import 'server-only';
 import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import type { CommunitySubmission } from '@/lib/community';

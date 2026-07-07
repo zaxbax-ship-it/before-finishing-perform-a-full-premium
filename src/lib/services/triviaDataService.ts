@@ -1,3 +1,4 @@
+import 'server-only';
 import type { PageDataDto } from '@/lib/domain/dtos';
 import type { RepositoryProvider } from '@/lib/repositories/interfaces';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';

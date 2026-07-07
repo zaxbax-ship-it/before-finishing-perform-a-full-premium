@@ -1,3 +1,4 @@
+import 'server-only';
 import data from '@/data/questions.json';
 import type { CommunitySubmission } from '@/lib/community';
 import { createAudit, submissionToQuestion } from '@/lib/community';

@@ -1,3 +1,4 @@
+import 'server-only';
 import { NextResponse } from 'next/server';
 import { checkRateLimit, type RateLimitRule } from '@/lib/infrastructure/rateLimit';
 import { getDatabaseConfig, isSupabaseConfigured } from '@/lib/database/config';

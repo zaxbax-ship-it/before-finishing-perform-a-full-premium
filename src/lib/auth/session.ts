@@ -1,3 +1,4 @@
+import 'server-only';
 import { createServerSupabaseClient } from './supabaseServerClient';
 import type { AuthUser } from './types';
 

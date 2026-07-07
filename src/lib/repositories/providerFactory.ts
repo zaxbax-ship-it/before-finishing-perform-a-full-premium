@@ -1,3 +1,4 @@
+import 'server-only';
 import { getDatabaseConfig, isSupabaseConfigured } from '@/lib/database/config';
 import type { RepositoryProvider } from './interfaces';
 import { createDatabaseRepositoryProvider } from './providers/databaseProvider';

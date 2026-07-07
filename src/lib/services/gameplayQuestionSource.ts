@@ -1,3 +1,4 @@
+import 'server-only';
 import { createLogger } from '@/lib/infrastructure/logger';
 import type { QuestionFilters, RepositoryProvider } from '@/lib/repositories/interfaces';
 import { createLocalJsonRepositoryProvider } from '@/lib/repositories/providers/localJsonProvider';

@@ -1,3 +1,4 @@
+import 'server-only';
 import { getProductionConfig } from './config';
 import { validateEnvironment } from './environment';
 

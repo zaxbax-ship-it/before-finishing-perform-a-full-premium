@@ -1,3 +1,4 @@
+import 'server-only';
 import { createErrorReporter, type ErrorReporter } from './errorReporter';
 import { getProductionConfig, type ProductionConfig } from './config';
 import { createExternalAdapters, type ExternalAdapters } from './adapters';

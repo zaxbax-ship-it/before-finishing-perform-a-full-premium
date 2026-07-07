@@ -1,4 +1,5 @@
 import type { DatabaseMode } from './schema';
+import 'server-only';
 import { getProductionConfig } from '@/lib/infrastructure/config';
 
 export type DatabaseConfig = {
