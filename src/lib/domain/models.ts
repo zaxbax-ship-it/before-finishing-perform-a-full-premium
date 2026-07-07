@@ -156,3 +156,38 @@ export type LeaderboardEntry = {
 
 export type QuestionSubmission = CommunitySubmission;
 export type AuditLog = AuditLogEntry;
+
+export type UserSubscription = {
+  id: EntityId;
+  userId: EntityId;
+  provider: 'stripe' | 'lemon_squeezy' | 'apple_pay' | 'google_pay';
+  providerSubscriptionId: string;
+  status: 'active' | 'cancelled' | 'expired' | 'past_due' | 'unpaid';
+  endsAt?: ISODateTime;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+};
+
+export type UserEntitlement = {
+  id: EntityId;
+  userId: EntityId;
+  type: string;
+  source: 'subscription' | 'one_time' | 'admin';
+  status: 'active' | 'revoked';
+  endsAt?: ISODateTime;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+};
+
+export type PaymentTransaction = {
+  id: EntityId;
+  userId?: EntityId;
+  provider: 'stripe' | 'lemon_squeezy' | 'apple_pay' | 'google_pay';
+  providerOrderId?: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  details: Record<string, unknown>;
+  createdAt: ISODateTime;
+};
+

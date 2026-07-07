@@ -25,7 +25,10 @@ export function getFeatureFlags(): FeatureFlags {
     supabaseAuthEnabled: Boolean(readEnv('NEXT_PUBLIC_SUPABASE_URL') && readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')),
     authEnforced: Boolean(readEnv('NEXT_PUBLIC_SUPABASE_URL') && readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')) && readEnv('AUTH_ENFORCED') !== 'false',
     googleOAuthEnabled: Boolean(readEnv('GOOGLE_OAUTH_CLIENT_ID') && readEnv('GOOGLE_OAUTH_CLIENT_SECRET')),
-    paymentsEnabled: Boolean(readEnv('STRIPE_SECRET_KEY') && readEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')),
+    paymentsEnabled: Boolean(
+      (readEnv('STRIPE_SECRET_KEY') && readEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')) ||
+      (readEnv('LEMON_SQUEEZY_API_KEY') && readEnv('LEMON_SQUEEZY_STORE_ID'))
+    ),
     emailEnabled: Boolean(readEnv('RESEND_API_KEY')),
     turnstileEnabled: Boolean(readEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY') && readEnv('TURNSTILE_SECRET_KEY')),
     analyticsEnabled: (readEnv('NEXT_PUBLIC_ANALYTICS_PROVIDER') || 'none') !== 'none'

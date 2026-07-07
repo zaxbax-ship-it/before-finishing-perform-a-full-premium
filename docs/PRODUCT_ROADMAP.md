@@ -59,8 +59,8 @@ The Trivia Platform is designed to be the premier multilingual trivia engine. By
 ## 3. Monetization Roadmap
 
 *   **Ad Network Setup**: Connect Google AdSense first using clean, viewport-safe container bounds. Add optional support for Google Ad Manager, Media.net, and Ezoic.
-*   **Stripe Subscriptions**: Establish subscription tiers to unlock offline solo modes, ad-free screens, and premium multiplayer lobby creation features.
-*   **Microtransactions**: Allow users to purchase gameplay lifeline packages (e.g. additional Fifty-Fifties or Audience Polls) using Stripe checkouts.
+*   **Stripe & Lemon Squeezy Subscriptions**: Fully scaffolded backend structures exist. Next phases will deploy pricing plans in production dashboards, activate signature verification, and connect client views.
+*   **Microtransactions**: Allow users to purchase gameplay lifeline packages (e.g. additional Fifty-Fifties or Audience Polls) using Stripe or Lemon Squeezy checkout endpoints.
 
 ---
 

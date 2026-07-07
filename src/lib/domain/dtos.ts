@@ -71,3 +71,14 @@ export type CreateNotificationDto = {
   body: string;
   metadata?: Record<string, unknown>;
 };
+
+export type CreateCheckoutSessionDto = {
+  provider: 'stripe' | 'lemon_squeezy';
+  priceId: string;
+  successUrl: string;
+  cancelUrl: string;
+  userId?: EntityId;
+  userEmail?: string;
+  metadata?: Record<string, unknown>;
+};
+

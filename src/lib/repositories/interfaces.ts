@@ -16,7 +16,11 @@ import type {
   ReputationEvent,
   ReviewQueueItem,
   Role,
-  User
+  User,
+  UserSubscription,
+  UserEntitlement,
+  PaymentTransaction,
+  ISODateTime
 } from '@/lib/domain/models';
 import type {
   ApproveSubmissionDto,
@@ -191,6 +195,20 @@ export interface MultiplayerRepository {
   listResults(gameId: EntityId): Promise<MultiplayerResult[]>;
 }
 
+export interface PaymentsRepository {
+  findSubscription(id: EntityId): Promise<UserSubscription | undefined>;
+  findSubscriptionByProviderId(provider: string, providerSubscriptionId: string): Promise<UserSubscription | undefined>;
+  findSubscriptionByUserId(userId: EntityId): Promise<UserSubscription | undefined>;
+  saveSubscription(subscription: Omit<UserSubscription, 'createdAt' | 'updatedAt'> & { createdAt?: ISODateTime; updatedAt?: ISODateTime }): Promise<UserSubscription>;
+  
+  listEntitlementsByUserId(userId: EntityId): Promise<UserEntitlement[]>;
+  findEntitlement(id: EntityId): Promise<UserEntitlement | undefined>;
+  saveEntitlement(entitlement: Omit<UserEntitlement, 'createdAt' | 'updatedAt'> & { createdAt?: ISODateTime; updatedAt?: ISODateTime }): Promise<UserEntitlement>;
+  
+  createTransaction(transaction: Omit<PaymentTransaction, 'id' | 'createdAt'>): Promise<PaymentTransaction>;
+  listTransactionsByUserId(userId: EntityId): Promise<PaymentTransaction[]>;
+}
+
 export type RepositoryProviderKind = 'local-json' | 'database';
 
 export type RepositoryProvider = {
@@ -209,4 +227,5 @@ export type RepositoryProvider = {
   notifications: NotificationsRepository;
   leaderboard: LeaderboardRepository;
   multiplayer: MultiplayerRepository;
+  payments: PaymentsRepository;
 };

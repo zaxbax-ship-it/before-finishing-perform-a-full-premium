@@ -30,3 +30,7 @@ export type {
 
 export { isListLobbiesResponse, isMultiplayerLobbySummaryDto } from './multiplayer';
 export type { ListLobbiesResponse, MultiplayerLobbySummaryDto } from './multiplayer';
+
+export { isCheckoutSessionResponse, isEntitlementsResponse } from './payments';
+export type { CheckoutSessionResponse, EntitlementsResponse } from './payments';
+

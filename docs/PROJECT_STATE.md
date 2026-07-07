@@ -39,7 +39,7 @@ These systems are implemented but run in a mockup/local mode until production ke
 *   **Supabase Database & Auth**: Runs in "open local mode" using JSON files and local session mockups. Supabase RLS and client authorization activate when URL and secret keys are populated.
 *   **OpenAI AI Moderation**: Submissions run through `mock-local` rules (abusive terms, length, quality checks) until the OpenAI API key is supplied.
 *   **Upstash Redis Rate Limiting**: Falls back to in-memory rate limiting when Redis keys are not provided.
-*   **Payment & Subscriptions**: Stripe variables are prepared but no active billing integration is initialized.
+*   **Payment & Subscriptions**: Stripe & Lemon Squeezy payment infrastructure is fully scaffolded (including SQL schemas, repository interfaces, checkout controllers, and webhook parsers) but live billing is inactive (mock local mode is active).
 *   **Email Notifications**: Resend integration is staged but inactive.
 *   **Cloudflare Turnstile**: CAPTCHA validation parameters are defined but not enforced on forms.
 

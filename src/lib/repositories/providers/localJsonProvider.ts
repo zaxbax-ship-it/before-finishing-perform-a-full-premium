@@ -18,7 +18,10 @@ import type {
   ReputationEvent,
   ReviewQueueItem,
   Role,
-  User
+  User,
+  UserSubscription,
+  UserEntitlement,
+  PaymentTransaction
 } from '@/lib/domain/models';
 import type {
   MultiplayerAnswer,
@@ -87,6 +90,9 @@ type LocalState = {
   multiplayerRounds: MultiplayerRound[];
   multiplayerAnswers: MultiplayerAnswer[];
   multiplayerResults: MultiplayerResult[];
+  subscriptions: UserSubscription[];
+  entitlements: UserEntitlement[];
+  transactions: PaymentTransaction[];
 };
 
 function toApprovedQuestion(question: Question): ApprovedQuestion {
@@ -127,7 +133,10 @@ function createInitialState(): LocalState {
     multiplayerGames: [],
     multiplayerRounds: [],
     multiplayerAnswers: [],
-    multiplayerResults: []
+    multiplayerResults: [],
+    subscriptions: [],
+    entitlements: [],
+    transactions: []
   };
 }
 
@@ -684,6 +693,79 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
         return state.multiplayerResults
           .filter(result => result.gameId === gameId)
           .sort((first, second) => first.rank - second.rank);
+      }
+    },
+    payments: {
+      async findSubscription(id) {
+        return state.subscriptions.find(sub => sub.id === id);
+      },
+      async findSubscriptionByProviderId(provider, providerSubscriptionId) {
+        return state.subscriptions.find(sub => sub.provider === provider && sub.providerSubscriptionId === providerSubscriptionId);
+      },
+      async findSubscriptionByUserId(userId) {
+        return state.subscriptions.find(sub => sub.userId === userId);
+      },
+      async saveSubscription(subscription) {
+        const existing = state.subscriptions.find(sub => sub.id === subscription.id);
+        const date = now();
+        if (existing) {
+          const updated: UserSubscription = {
+            ...existing,
+            ...subscription,
+            updatedAt: date
+          };
+          state.subscriptions = state.subscriptions.map(sub => sub.id === subscription.id ? updated : sub);
+          return updated;
+        } else {
+          const created: UserSubscription = {
+            ...subscription,
+            id: subscription.id || `sub-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            createdAt: subscription.createdAt || date,
+            updatedAt: subscription.updatedAt || date
+          };
+          state.subscriptions = [created, ...state.subscriptions];
+          return created;
+        }
+      },
+      async listEntitlementsByUserId(userId) {
+        return state.entitlements.filter(ent => ent.userId === userId);
+      },
+      async findEntitlement(id) {
+        return state.entitlements.find(ent => ent.id === id);
+      },
+      async saveEntitlement(entitlement) {
+        const existing = state.entitlements.find(ent => ent.id === entitlement.id);
+        const date = now();
+        if (existing) {
+          const updated: UserEntitlement = {
+            ...existing,
+            ...entitlement,
+            updatedAt: date
+          };
+          state.entitlements = state.entitlements.map(ent => ent.id === entitlement.id ? updated : ent);
+          return updated;
+        } else {
+          const created: UserEntitlement = {
+            ...entitlement,
+            id: entitlement.id || `ent-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            createdAt: entitlement.createdAt || date,
+            updatedAt: entitlement.updatedAt || date
+          };
+          state.entitlements = [created, ...state.entitlements];
+          return created;
+        }
+      },
+      async createTransaction(transaction) {
+        const created: PaymentTransaction = {
+          ...transaction,
+          id: `tx-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          createdAt: now()
+        };
+        state.transactions = [created, ...state.transactions];
+        return created;
+      },
+      async listTransactionsByUserId(userId) {
+        return state.transactions.filter(tx => tx.userId === userId);
       }
     }
   };

@@ -40,9 +40,25 @@ export type AdvertisingAdapter = ExternalServiceAdapter & {
   loadScript(): never;
 };
 
-export type StripeAdapter = ExternalServiceAdapter & {
-  createCheckoutSession(): never;
+export type PaymentCheckoutSessionResult = {
+  checkoutUrl: string;
+  providerOrderId?: string;
 };
+
+export type PaymentAdapter = ExternalServiceAdapter & {
+  createCheckoutSession(options: {
+    userId?: string;
+    userEmail?: string;
+    priceId: string;
+    successUrl: string;
+    cancelUrl: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<PaymentCheckoutSessionResult>;
+  verifyWebhookSignature(rawBody: string, signature: string, secret: string): Promise<boolean>;
+};
+
+export type StripeAdapter = PaymentAdapter;
+export type LemonSqueezyAdapter = PaymentAdapter;
 
 export type ResendAdapter = ExternalServiceAdapter & {
   sendEmail(): never;
@@ -64,6 +80,7 @@ export type ExternalAdapters = {
   googleAdSense: AdvertisingAdapter;
   googleAdManager: AdvertisingAdapter;
   stripe: StripeAdapter;
+  lemonSqueezy: LemonSqueezyAdapter;
   resend: ResendAdapter;
   turnstile: TurnstileAdapter;
   analytics: AnalyticsAdapter;
@@ -92,6 +109,11 @@ export function createExternalAdapters(config = getProductionConfig()): External
 
   const stripe = createAdapter('stripe', config.payments.stripeConfigured) as StripeAdapter;
   stripe.createCheckoutSession = () => unavailable('stripe');
+  stripe.verifyWebhookSignature = () => unavailable('stripe');
+
+  const lemonSqueezy = createAdapter('lemon-squeezy', config.payments.lemonSqueezyConfigured) as LemonSqueezyAdapter;
+  lemonSqueezy.createCheckoutSession = () => unavailable('lemon-squeezy');
+  lemonSqueezy.verifyWebhookSignature = () => unavailable('lemon-squeezy');
 
   const resend = createAdapter('resend', config.email.resendConfigured) as ResendAdapter;
   resend.sendEmail = () => unavailable('resend');
@@ -110,6 +132,7 @@ export function createExternalAdapters(config = getProductionConfig()): External
     googleAdSense,
     googleAdManager,
     stripe,
+    lemonSqueezy,
     resend,
     turnstile,
     analytics

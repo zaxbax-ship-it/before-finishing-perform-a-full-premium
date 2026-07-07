@@ -28,6 +28,8 @@ Welcome, AI Coding Assistant! This document is designed to onboard you to the Tr
 2.  **Vitest Health & Smoke Suite**: The API smoke test suite (`test/**`) must remain passing on every commit. Never disable health check assertions.
 3.  **Local Mode Fallback**: If `NEXT_PUBLIC_DATABASE_MODE` is unset or set to `local`, the entire application must continue to run using local JSON and browser storage.
 4.  **Semantic Icon Layer**: Never import raw icon elements directly into screen layouts. Only reference symbols from `src/lib/design/icons.tsx` to maintain compatibility with future mobile asset maps.
+5.  **Agnostic Entitlements**: Endpoints checking active features must resolve queries via the `PaymentsRepository` wrapper, keeping presentation screens agnostic of specific payment providers (Stripe/Lemon Squeezy/native mobile stores). Real billing gateways must run in mock-local fallback when secrets are missing.
+
 
 ---
 

@@ -18,7 +18,11 @@ import type {
   ReputationEvent,
   ReviewQueueItem,
   Role,
-  User
+  User,
+  UserSubscription,
+  UserEntitlement,
+  PaymentTransaction,
+  ISODateTime
 } from '@/lib/domain/models';
 import type {
   ApproveSubmissionDto,
@@ -203,6 +207,84 @@ function userPayload(input: CreateUserDto | Partial<CreateUserDto & { isActive: 
     locale: input.locale,
     is_active: 'isActive' in input ? input.isActive : undefined,
     updated_at: now()
+  };
+}
+
+function mapSubscription(row: SupabaseRow): UserSubscription {
+  return {
+    id: stringValue(row.id),
+    userId: stringValue(row.user_id),
+    provider: stringValue(row.provider) as any,
+    providerSubscriptionId: stringValue(row.provider_subscription_id),
+    status: stringValue(row.status) as any,
+    endsAt: stringValue(row.ends_at) || undefined,
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at)
+  };
+}
+
+function subscriptionPayload(input: Omit<UserSubscription, 'createdAt' | 'updatedAt'> & { createdAt?: ISODateTime; updatedAt?: ISODateTime }) {
+  return {
+    id: input.id,
+    user_id: input.userId,
+    provider: input.provider,
+    provider_subscription_id: input.providerSubscriptionId,
+    status: input.status,
+    ends_at: input.endsAt,
+    created_at: input.createdAt,
+    updated_at: input.updatedAt
+  };
+}
+
+function mapEntitlement(row: SupabaseRow): UserEntitlement {
+  return {
+    id: stringValue(row.id),
+    userId: stringValue(row.user_id),
+    type: stringValue(row.type),
+    source: stringValue(row.source) as any,
+    status: stringValue(row.status) as any,
+    endsAt: stringValue(row.ends_at) || undefined,
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at)
+  };
+}
+
+function entitlementPayload(input: Omit<UserEntitlement, 'createdAt' | 'updatedAt'> & { createdAt?: ISODateTime; updatedAt?: ISODateTime }) {
+  return {
+    id: input.id,
+    user_id: input.userId,
+    type: input.type,
+    source: input.source,
+    status: input.status,
+    ends_at: input.endsAt,
+    created_at: input.createdAt,
+    updated_at: input.updatedAt
+  };
+}
+
+function mapTransaction(row: SupabaseRow): PaymentTransaction {
+  return {
+    id: stringValue(row.id),
+    userId: stringValue(row.user_id) || undefined,
+    provider: stringValue(row.provider) as any,
+    providerOrderId: stringValue(row.provider_order_id) || undefined,
+    amount: typeof row.amount === 'number' ? row.amount : Number(row.amount || 0),
+    currency: stringValue(row.currency, 'USD'),
+    status: stringValue(row.status) as any,
+    details: (row.details as Record<string, unknown>) || {},
+    createdAt: stringValue(row.created_at)
+  };
+}
+
+function transactionPayload(input: Omit<PaymentTransaction, 'id' | 'createdAt'>) {
+  return {
+    user_id: input.userId,
+    provider: input.provider,
+    provider_order_id: input.providerOrderId,
+    amount: input.amount,
+    currency: input.currency,
+    status: input.status,
+    details: input.details
   };
 }
 
@@ -1299,6 +1381,87 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       async listResults(gameId) {
         const rows = await client.list<SupabaseRow>('multiplayer_results', `select=*&${eq('game_id', gameId)}&order=rank.asc`);
         return rows.map(mapMultiplayerResult);
+      }
+    },
+    payments: {
+      async findSubscription(id) {
+        const rows = await client.list<SupabaseRow>('user_subscriptions', `select=*&${eq('id', id)}&limit=1`);
+        return rows[0] ? mapSubscription(rows[0]) : undefined;
+      },
+      async findSubscriptionByProviderId(provider, providerSubscriptionId) {
+        const rows = await client.list<SupabaseRow>('user_subscriptions', `select=*&${eq('provider', provider)}&${eq('provider_subscription_id', providerSubscriptionId)}&limit=1`);
+        return rows[0] ? mapSubscription(rows[0]) : undefined;
+      },
+      async findSubscriptionByUserId(userId) {
+        const rows = await client.list<SupabaseRow>('user_subscriptions', `select=*&${eq('user_id', userId)}&limit=1`);
+        return rows[0] ? mapSubscription(rows[0]) : undefined;
+      },
+      async saveSubscription(subscription) {
+        const existing = await this.findSubscription(subscription.id);
+        const date = now();
+        if (existing) {
+          const payload = subscriptionPayload({
+            ...existing,
+            ...subscription,
+            updatedAt: date
+          });
+          const row = await client.update<SupabaseRow>('user_subscriptions', eq('id', subscription.id), payload);
+          return mapSubscription(row);
+        } else {
+          const idVal = subscription.id || id('sub');
+          const payload = subscriptionPayload({
+            ...subscription,
+            id: idVal,
+            createdAt: subscription.createdAt || date,
+            updatedAt: subscription.updatedAt || date
+          });
+          const row = await client.insert<SupabaseRow>('user_subscriptions', payload);
+          return mapSubscription(row);
+        }
+      },
+      async listEntitlementsByUserId(userId) {
+        const rows = await client.list<SupabaseRow>('user_entitlements', `select=*&${eq('user_id', userId)}`);
+        return rows.map(mapEntitlement);
+      },
+      async findEntitlement(id) {
+        const rows = await client.list<SupabaseRow>('user_entitlements', `select=*&${eq('id', id)}&limit=1`);
+        return rows[0] ? mapEntitlement(rows[0]) : undefined;
+      },
+      async saveEntitlement(entitlement) {
+        const existing = await this.findEntitlement(entitlement.id);
+        const date = now();
+        if (existing) {
+          const payload = entitlementPayload({
+            ...existing,
+            ...entitlement,
+            updatedAt: date
+          });
+          const row = await client.update<SupabaseRow>('user_entitlements', eq('id', entitlement.id), payload);
+          return mapEntitlement(row);
+        } else {
+          const idVal = entitlement.id || id('ent');
+          const payload = entitlementPayload({
+            ...entitlement,
+            id: idVal,
+            createdAt: entitlement.createdAt || date,
+            updatedAt: entitlement.updatedAt || date
+          });
+          const row = await client.insert<SupabaseRow>('user_entitlements', payload);
+          return mapEntitlement(row);
+        }
+      },
+      async createTransaction(transaction) {
+        const payload = transactionPayload(transaction);
+        const row = await client.insert<SupabaseRow>('payment_transactions', {
+          ...payload,
+          id: id('tx'),
+          created_at: now()
+        });
+        return mapTransaction(row);
+      },
+      async listTransactionsByUserId(userId) {
+        const rows = await client.list<SupabaseRow>('payment_transactions', `select=*&${eq('user_id', userId)}&order=created_at.desc`);
+        return rows.map(mapTransaction);
       }
     }
   };

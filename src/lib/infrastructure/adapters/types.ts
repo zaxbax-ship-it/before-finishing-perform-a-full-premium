@@ -6,6 +6,7 @@ export type ExternalServiceName =
   | 'google-adsense'
   | 'google-ad-manager'
   | 'stripe'
+  | 'lemon-squeezy'
   | 'resend'
   | 'cloudflare-turnstile'
   | 'analytics';

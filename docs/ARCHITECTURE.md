@@ -96,8 +96,8 @@ The application follows a clean, decoupled architecture pattern. The system is l
 *   **Provider Neutral**: Supports switching between providers (`adsense`, `google-ad-manager`, `media-net`, `ezoic`) using standard configuration flags.
 
 ### 2.8 Payments Foundation
-*   **Design**: A Stripe backend structure is scaffolded inside environment configs.
-*   **Flow**: Intended to handle transactional pricing for premium single-player features, custom lobby hosting, or monthly subscription packages. All payment logic occurs server-side to satisfy security requirements.
+*   **Design**: A unified payments architecture supports Stripe and Lemon Squeezy on web, and maps entitlements dynamically for Apple Pay/Google Pay on mobile.
+*   **Flow**: Intended to handle transactional pricing for premium single-player features, custom lobby hosting, or monthly subscription packages. Webhooks verify signature headers using API secrets. If secrets are missing, endpoints operate in a mock-local fallback mode. Relational schema definitions reside in `database/006_payments_schema.sql` and must be applied in Supabase before using real payments in production.
 
 ### 2.9 Analytics, Compliance & Consent
 *   **Consent Gatekeeping**: External scripts for analytics (GA4, GTM, Clarity) are loaded via `IntegrationScripts.tsx` and run only after a compatible CMP (Cookiebot, Usercentrics, Consentmanager) passes a consent confirmation flag.

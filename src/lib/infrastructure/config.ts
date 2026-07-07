@@ -45,6 +45,8 @@ export type ProductionConfig = {
   payments: {
     stripeConfigured: boolean;
     publishableKey?: string;
+    lemonSqueezyConfigured: boolean;
+    lemonSqueezyStoreId?: string;
   };
   email: {
     resendConfigured: boolean;
@@ -137,7 +139,9 @@ export function getProductionConfig(): ProductionConfig {
     },
     payments: {
       stripeConfigured: Boolean(readEnv('STRIPE_SECRET_KEY') && readEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')),
-      publishableKey: readEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
+      publishableKey: readEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'),
+      lemonSqueezyConfigured: Boolean(readEnv('LEMON_SQUEEZY_API_KEY') && readEnv('LEMON_SQUEEZY_STORE_ID')),
+      lemonSqueezyStoreId: readEnv('LEMON_SQUEEZY_STORE_ID')
     },
     email: {
       resendConfigured: Boolean(readEnv('RESEND_API_KEY'))

@@ -2,15 +2,18 @@
 
 The app still defaults to local JSON mode. Supabase/PostgreSQL is now implemented as an optional repository provider and should be enabled only after the schema is created and data is seeded.
 
-## Migration
-
-Run this file in the Supabase SQL Editor:
+Run these files in the Supabase SQL Editor in sequence:
 
 ```text
 database/001_supabase_core_schema.sql
+database/002_leaderboard_schema.sql
+database/003_leaderboard_rls_policies.sql
+database/004_multiplayer_schema.sql
+database/005_multiplayer_lifelines.sql
+database/006_payments_schema.sql
 ```
 
-It creates the production tables, indexes, role/permission seed data and Row Level Security.
+They create the production tables, indexes, role/permission seed data, multiplayer game state logs, and payments tracking structures with Row Level Security.
 
 ## Required Tables
 

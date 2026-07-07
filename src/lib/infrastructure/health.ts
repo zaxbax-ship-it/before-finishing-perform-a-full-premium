@@ -51,7 +51,7 @@ export function createHealthChecks(): HealthCheck[] {
         const enabled = [
           config.ai.openAiConfigured,
           config.auth.googleOAuthConfigured,
-          config.payments.stripeConfigured,
+          (config.payments.stripeConfigured || config.payments.lemonSqueezyConfigured),
           config.email.resendConfigured,
           config.captcha.turnstileConfigured,
           config.analytics.provider !== 'none',
