@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth/session';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
+import type { LeaderboardResponse } from '@/lib/api/contracts';
 
 type LeaderboardPostBody = {
   nickname?: unknown;
@@ -45,7 +46,7 @@ export async function GET() {
   try {
     const repositories = getRepositoryProvider();
     const entries = await repositories.leaderboard.listTop({ limit: 25 });
-    return NextResponse.json({ ok: true, provider: repositories.kind, entries }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ ok: true, provider: repositories.kind, entries } satisfies LeaderboardResponse, { headers: { 'Cache-Control': 'no-store' } });
   } catch {
     return NextResponse.json({ ok: false, entries: [] }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }

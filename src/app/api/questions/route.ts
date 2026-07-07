@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import { listGameplayQuestionsWithBundledFallback } from '@/lib/services/gameplayQuestionSource';
 import { API_QUESTION_SAMPLE_SIZE, balancedQuestionSample, clampQuestionLimit, parseQuestionExcludeParam } from '@/lib/services/questionSampling';
+import type { QuestionsResponse } from '@/lib/api/contracts';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
       totalAvailable: questions.length,
       sampled,
       excludedApplied: excludeIds.length
-    },
+    } satisfies QuestionsResponse,
     { headers: { 'Cache-Control': 'no-store' } }
   );
 }
