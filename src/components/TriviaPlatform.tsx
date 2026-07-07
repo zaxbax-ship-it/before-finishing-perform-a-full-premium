@@ -1,9 +1,53 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AlertTriangle, Check, Globe, Heart, Home as HomeIcon, Mail, PenLine, Percent, Phone, RefreshCw, ScrollText, Settings as SettingsIcon, Sparkles, Star, Timer as TimerIcon, Trophy, Users } from 'lucide-react';
 import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
 import { MultiplayerMode } from '@/components/multiplayer/MultiplayerMode';
+import {
+  AchievementsIcon,
+  AdminIcon,
+  AudienceIcon,
+  BackIcon,
+  CategoriesIcon,
+  CloseIcon,
+  CoinsIcon,
+  CopyIcon,
+  DeleteIcon,
+  EditIcon,
+  ExportIcon,
+  FavoritesIcon,
+  FiftyFiftyIcon,
+  ForwardIcon,
+  GlobeIcon,
+  HintsIcon,
+  HomeIcon,
+  ImportIcon,
+  LeaderboardIcon,
+  LoginIcon,
+  LogoutIcon,
+  MailIcon,
+  MultiplayerIcon,
+  PaymentsIcon,
+  PhoneFriendIcon,
+  PlayIcon,
+  PremiumBadgeIcon,
+  PremiumIcon,
+  ProfileIcon,
+  QuestionIcon,
+  QuizIcon,
+  RewardsIcon,
+  SearchIcon,
+  SettingsIcon,
+  SoloIcon,
+  StatisticsIcon,
+  SubscriptionIcon,
+  SupportIcon,
+  SwapQuestionIcon,
+  TimerIcon,
+  WarningIcon,
+  WalletIcon,
+  ConfirmIcon
+} from '@/lib/design/icons';
 import {
   type AuditLogEntry,
   type CommunityDraft,
@@ -2064,19 +2108,19 @@ function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: Record<s
   // dashboard is reachable only through the protected /admin route.
   return (
     <header className="public-header relative z-20 mx-auto flex w-full max-w-[1680px] flex-col gap-4 px-5 pt-5 md:flex-row md:items-center md:justify-between lg:px-8">
-      <button className="focus-ring flex items-center gap-3 text-right" onClick={() => open('home')}>
-        <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-gold text-royal shadow-gold">♕</span>
+      <button className="focus-ring flex items-center gap-3 text-right" onClick={() => open('home')} aria-label={t.headline} title={t.headline}>
+        <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-gold text-royal shadow-gold"><PremiumIcon size={24} /></span>
         <span><strong className="block text-xl font-black">{t.headline}</strong><small className="text-white/65">{t.subtitle}</small></span>
       </button>
       <nav className="flex flex-wrap items-center gap-3">
-        <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('multiplayer')}>{multiplayerLabel}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('leaderboard')}>{t.lbNav}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('submit')}>{submitLabel}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('contact')}>{t.contact}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('settings')}>{t.settings}</button>
-        <button className="premium-button focus-ring" onClick={start}>{t.start}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('rules')}><QuestionIcon size={16} />{t.rules}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('multiplayer')}><MultiplayerIcon size={16} />{multiplayerLabel}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('leaderboard')}><LeaderboardIcon size={16} />{t.lbNav}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('submit')}><EditIcon size={16} />{submitLabel}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('contact')}><SupportIcon size={16} />{t.contact}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('profile')}><ProfileIcon size={16} />{t.profile}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('settings')}><SettingsIcon size={16} />{t.settings}</button>
+        <button className="premium-button focus-ring inline-flex items-center gap-2" onClick={start}><PlayIcon size={16} />{t.start}</button>
       </nav>
     </header>
   );
@@ -2114,7 +2158,7 @@ function LanguageMenu({ locale, setLocale }: { locale: Locale; setLocale: (local
         aria-label={`Language: ${active.native}`}
         title="Language"
       >
-        <span className="language-globe" aria-hidden="true"><Globe size={22} /></span>
+        <span className="language-globe" aria-hidden="true"><GlobeIcon size={22} /></span>
         <span className="sr-only">Language: {active.native}</span>
       </button>
       {open && (
@@ -2184,8 +2228,8 @@ function PublicAuthArea({
   if (!configured || !user) {
     return (
       <nav className="public-auth-corner public-auth-actions" aria-label={ui.account}>
-        <a className="auth-link-button secondary focus-ring" href="/login">{ui.signIn}</a>
-        <a className="auth-link-button primary focus-ring" href="/signup">{ui.createAccount}</a>
+        <a className="auth-link-button secondary focus-ring inline-flex items-center gap-2" href="/login"><LoginIcon size={16} />{ui.signIn}</a>
+        <a className="auth-link-button primary focus-ring inline-flex items-center gap-2" href="/signup"><ProfileIcon size={16} />{ui.createAccount}</a>
       </nav>
     );
   }
@@ -2230,12 +2274,12 @@ function PublicAuthArea({
               </button>
             </section>
           )}
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}>{ui.profile}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}>{ui.stats}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}>{ui.achievements}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('leaderboard'); }}>{ui.leaderboard}</button>
-          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('settings'); }}>{ui.settings}</button>
-          <button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); void signOut(); }}>{ui.logout}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}><ProfileIcon size={16} />{ui.profile}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}><StatisticsIcon size={16} />{ui.stats}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('profile'); }}><AchievementsIcon size={16} />{ui.achievements}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('leaderboard'); }}><LeaderboardIcon size={16} />{ui.leaderboard}</button>
+          <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); open('settings'); }}><SettingsIcon size={16} />{ui.settings}</button>
+          <button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); void signOut(); }}><LogoutIcon size={16} />{ui.logout}</button>
         </div>
       )}
     </div>
@@ -2258,7 +2302,7 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
           <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
           <div className="relative grid h-full place-items-center text-center">
             <div>
-              <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]"><Trophy size={56} aria-hidden="true" /></div>
+              <div className="mb-7 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]"><PremiumIcon size={56} aria-hidden="true" /></div>
               <div className="home-prize-amount text-6xl font-black md:text-7xl">{money(1000000)}</div>
               <p className="mt-8 text-white/65">{t.live}</p>
               <div className="mx-auto mt-8 h-2 w-80 rounded-full bg-gradient-to-l from-gold to-azure" />
@@ -2266,25 +2310,25 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
           </div>
         </div>
         <div className="text-right">
-          <p className="mb-8 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold"><Sparkles size={14} aria-hidden="true" /> {t.pill}</p>
+          <p className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold"><PremiumBadgeIcon size={14} aria-hidden="true" /> {t.pill}</p>
           <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
           <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
           <div className="mt-9 flex flex-wrap gap-4">
-            <button className="premium-button focus-ring text-lg" onClick={start}>{soloLabel}</button>
-            <button className="ghost-button focus-ring text-lg" onClick={() => open('multiplayer')}>{multiplayerLabel}</button>
+            <button className="premium-button focus-ring inline-flex items-center gap-2 text-lg" onClick={start}><PlayIcon size={18} />{soloLabel}</button>
+            <button className="ghost-button focus-ring inline-flex items-center gap-2 text-lg" onClick={() => open('multiplayer')}><MultiplayerIcon size={18} />{multiplayerLabel}</button>
           </div>
         </div>
       </div>
 
       {/* Public navigation/actions below the hero. No admin/editor tools here. */}
       <nav className="home-actions" aria-label={t.homeActionsLabel}>
-        <button className="ghost-button focus-ring" onClick={() => open('rules')}>{t.rules}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('categories')}>{t.catNav}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('leaderboard')}>{t.lbNav}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('submit')}>{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('profile')}>{t.profile}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('contact')}>{t.contact}</button>
-        <button className="ghost-button focus-ring" onClick={() => open('settings')}>{t.settings}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('rules')}><QuestionIcon size={16} />{t.rules}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('categories')}><CategoriesIcon size={16} />{t.catNav}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('leaderboard')}><LeaderboardIcon size={16} />{t.lbNav}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('submit')}><EditIcon size={16} />{(COMMUNITY_UI[locale] || COMMUNITY_UI.he).submitNav}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('profile')}><ProfileIcon size={16} />{t.profile}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('contact')}><SupportIcon size={16} />{t.contact}</button>
+        <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => open('settings')}><SettingsIcon size={16} />{t.settings}</button>
       </nav>
 
       <div className="mt-9 grid gap-4 md:grid-cols-3">
@@ -2301,15 +2345,15 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
 function Categories({ t, locale, categories, questions, startGame }: { t: Record<string, string>; locale: Locale; categories: string[]; questions: GameQuestion[]; startGame: (category: string) => void }) {
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
-      <p className="mb-8 mr-auto w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold"><Sparkles size={14} aria-hidden="true" /> {t.catPill}</p>
+      <p className="mb-8 mr-auto inline-flex w-fit items-center gap-2 rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold"><CategoriesIcon size={14} aria-hidden="true" /> {t.catPill}</p>
       <h1 className="max-w-5xl text-6xl font-black md:text-[86px]">{t.choose}</h1>
       <p className="mt-5 max-w-4xl text-xl leading-8 text-white/72">{t.chooseText}</p>
       <AdSlot placement="categories-top" className="mt-7" />
-      <button className="ghost-button focus-ring mt-8 lg:min-w-56" onClick={() => startGame('הכול')}>{t.all}</button>
+      <button className="ghost-button focus-ring mt-8 inline-flex items-center gap-2 lg:min-w-56" onClick={() => startGame('הכול')}><QuizIcon size={16} />{t.all}</button>
       <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {categories.map(category => (
           <button key={category} className="category-card focus-ring glass rounded-[30px] p-6 text-right" onClick={() => startGame(category)}>
-            <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-gold/15 text-gold"><Sparkles size={18} aria-hidden="true" /></span>
+            <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-gold/15 text-gold"><CategoriesIcon size={18} aria-hidden="true" /></span>
             <strong className="block text-3xl font-black">{localizeCategory(locale, category)}</strong>
             <em className="mt-3 block not-italic text-white/65">{localizeCategoryDescription(locale, category)}</em>
             <small className="mt-6 inline-block rounded-full border border-white/15 px-4 py-2 text-white/70">{questions.filter(question => question.category === category).length} {t.available}</small>
@@ -2324,9 +2368,9 @@ function Categories({ t, locale, categories, questions, startGame }: { t: Record
 function Rules({ t, start }: { t: Record<string, string>; start: () => void }) {
   const rules = [t.rule1, t.rule2, t.rule3, t.rule4, t.rule5];
   return (
-    <Panel title={t.rulesTitle} icon={<ScrollText size={26} aria-hidden="true" />}>
+    <Panel title={t.rulesTitle} icon={<QuestionIcon size={26} aria-hidden="true" />}>
       <div className="grid gap-4">{rules.map((rule, index) => <div key={rule} className="rule-row"><span>{index + 1}</span><p>{rule}</p></div>)}</div>
-      <button className="premium-button focus-ring mt-9 text-lg" onClick={start}>{t.readyStart}</button>
+      <button className="premium-button focus-ring mt-9 inline-flex items-center gap-2 text-lg" onClick={start}><PlayIcon size={18} />{t.readyStart}</button>
     </Panel>
   );
 }
@@ -2369,7 +2413,7 @@ function Game(props: {
         <div className="game-topline">
           <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
           <span className="game-topline-info">{t.question} {round + 1}/15 · {current.category}</span>
-          <span className="game-topline-chances" aria-label={t.chancesLabel}>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}><Heart size={13} fill="currentColor" aria-hidden="true" /></span>)}</span>
+          <span className="game-topline-chances" aria-label={t.chancesLabel}>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}><FavoritesIcon size={13} fill="currentColor" aria-hidden="true" /></span>)}</span>
           <span className={`game-topline-timer ${timerUrgency}`}><TimerIcon size={16} aria-hidden="true" /> {timer}</span>
           <span className="game-topline-pot">{money(currentPrize)}</span>
         </div>
@@ -2388,7 +2432,7 @@ function Game(props: {
         </div>
         {answerInfo && (
           <div role="status" aria-live="polite" className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
-            <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? <Check size={20} aria-hidden="true" /> : <AlertTriangle size={20} aria-hidden="true" />}</div>
+            <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? <ConfirmIcon size={20} aria-hidden="true" /> : <WarningIcon size={20} aria-hidden="true" />}</div>
             <div className="answer-info-content">
               <div className="answer-info-header">
                 <strong>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</strong>
@@ -2397,7 +2441,7 @@ function Game(props: {
               <p>{answerInfo.explanation}</p>
               <div className="answer-info-actions">
                 <em>{infoUi.next}</em>
-                <button className="answer-info-next focus-ring" type="button" autoFocus onClick={advanceAfterAnswer}>{infoUi.action} ↵</button>
+                <button className="answer-info-next focus-ring inline-flex items-center gap-2" type="button" autoFocus onClick={advanceAfterAnswer}>{infoUi.action}<ForwardIcon size={16} /></button>
               </div>
             </div>
           </div>
@@ -2413,8 +2457,11 @@ function Game(props: {
       </section>
       <aside className="space-y-5">
         <div className="glass rounded-[28px] p-5">
-          <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold"><Sparkles size={16} aria-hidden="true" /></span></div>
-          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => triggerLifeline(type)}><span>{type === 'fifty' ? <Percent size={18} aria-hidden="true" /> : type === 'swap' ? <RefreshCw size={18} aria-hidden="true" /> : type === 'phone' ? <Phone size={18} aria-hidden="true" /> : <Users size={18} aria-hidden="true" />}</span><span>{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>)}</div>
+          <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold"><HintsIcon size={16} aria-hidden="true" /></span></div>
+          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
+            const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
+            return <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => triggerLifeline(type)} aria-label={t[type]} title={t[type]}><span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span><span className="sr-only">{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>;
+          })}</div>
           <p className="mt-4 text-sm leading-6 text-white/55">{t.reuseHint}</p>
         </div>
         <div className="glass rounded-[28px] p-5">
@@ -2529,7 +2576,7 @@ function Result({ t, authUi, isAuthenticated, state, correctCount, elapsed, priz
   return (
     <section className="mx-auto grid min-h-[calc(100vh-104px)] max-w-5xl place-items-center px-6 pb-14">
       <div className="glass w-full rounded-[34px] p-8 text-center md:p-12">
-        <div className="mx-auto mb-5 text-7xl text-gold"><Trophy size={56} aria-hidden="true" /></div>
+        <div className="mx-auto mb-5 text-7xl text-gold"><AchievementsIcon size={56} aria-hidden="true" /></div>
         <h2 className="text-5xl font-black">{title}</h2>
         <p className="mx-auto mt-4 max-w-2xl text-xl leading-8 text-white/70">{fmt(t.resultSummary, { correct: correctCount, time, prize: money(prize) })}</p>
         <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
@@ -2577,7 +2624,7 @@ function Leaderboard({ t, entries, status, nickname, authUi, setNickname, bestPr
           : '';
 
   return (
-    <Panel title={t.lbTitle} icon={<Star size={26} aria-hidden="true" />}>
+    <Panel title={t.lbTitle} icon={<LeaderboardIcon size={26} aria-hidden="true" />}>
       <div className="leaderboard-layout">
         <section className="leaderboard-profile-card">
           <p className="leaderboard-eyebrow">{t.lbSubtitle}</p>
@@ -2600,10 +2647,11 @@ function Leaderboard({ t, entries, status, nickname, authUi, setNickname, bestPr
           </p>
           <p className="leaderboard-hint">{t.lbNicknameHint}</p>
           <button
-            className="premium-button focus-ring w-full"
+            className="premium-button focus-ring inline-flex w-full items-center justify-center gap-2"
             disabled={status === 'saving' || !validation.ok}
             onClick={() => void setNickname(draft)}
           >
+            <ConfirmIcon size={16} />
             {t.lbSave}
           </button>
           {message && <div className={`leaderboard-message ${status}`} aria-live="polite">{message}</div>}
@@ -2740,7 +2788,16 @@ function Admin(props: {
         <div className="mt-7 border-t border-white/10 pt-6">
           <div className="mb-3 font-extrabold">{t.importExport}</div>
           <textarea className="form-input min-h-28" value={importText} onChange={event => setImportText(event.target.value)} aria-label={t.importExport} />
-          <div className="mt-3 grid grid-cols-2 gap-3"><button className="ghost-button focus-ring" onClick={importQuestions}>{t.importBtn}</button><button className="ghost-button focus-ring" onClick={exportQuestions}>{t.exportBtn}</button></div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={importQuestions}>
+              <ImportIcon size={16} />
+              {t.importBtn}
+            </button>
+            <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={exportQuestions}>
+              <ExportIcon size={16} />
+              {t.exportBtn}
+            </button>
+          </div>
         </div>
       </aside>
       <section className="glass rounded-[30px] p-6">
@@ -2755,7 +2812,20 @@ function Admin(props: {
               <article key={String(item.id)} className="rounded-3xl border border-white/10 bg-white/[0.07] p-4 transition hover:border-gold/35 hover:bg-white/10">
                 <div className="flex flex-col justify-between gap-4 xl:flex-row">
                   <div><div className="mb-2 flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-gold/15 px-3 py-1 text-gold">{localized.category}</span><span className="rounded-full bg-azure/15 px-3 py-1 text-azure">{localized.difficulty}</span></div><h3 className="text-xl font-extrabold">{localized.question}</h3><p className="mt-2 text-white/58">{t.correctLbl}: {localized.answers[item.correctIndex]}</p></div>
-                  <div className="flex gap-2"><button className="ghost-button focus-ring" onClick={() => { setForm(item); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{t.editBtn}</button><button className="ghost-button focus-ring" onClick={() => setExtraQuestions(previous => [{ ...item, id: `copy-${Date.now()}`, question: `${item.question} (עותק)` }, ...previous])}>{t.dupBtn}</button><button className="ghost-button focus-ring" onClick={() => setExtraQuestions(previous => previous.filter(question => question.id !== item.id))}>{t.delBtn}</button></div>
+                  <div className="flex flex-wrap gap-2">
+                    <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => { setForm(item); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                      <EditIcon size={16} />
+                      {t.editBtn}
+                    </button>
+                    <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => setExtraQuestions(previous => [{ ...item, id: `copy-${Date.now()}`, question: `${item.question} (עותק)` }, ...previous])}>
+                      <CopyIcon size={16} />
+                      {t.dupBtn}
+                    </button>
+                    <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => setExtraQuestions(previous => previous.filter(question => question.id !== item.id))}>
+                      <DeleteIcon size={16} />
+                      {t.delBtn}
+                    </button>
+                  </div>
                 </div>
               </article>
             );
@@ -2780,8 +2850,14 @@ function QuestionForm({ t, locale, form, setForm, save, reset }: { t: Record<str
       {form.answers.map((answer, index) => <Field key={index} label={`${t.answerLbl} ${letters[index]}`}><input className="form-input" value={answer} onChange={event => { const answers = form.answers.map((item, answerIndex) => answerIndex === index ? event.target.value : item); setForm({ ...form, answers, options: answers }); }} /></Field>)}
       <div className="grid grid-cols-2 gap-3"><select className="form-input" value={form.correctIndex} onChange={event => setForm({ ...form, correctIndex: Number(event.target.value) })}>{letters.map((letter, index) => <option key={letter} value={index}>{t.correctOpt}: {letter}</option>)}</select><select className="form-input" value={form.difficulty} onChange={event => setForm({ ...form, difficulty: event.target.value })}>{difficulties.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
       <div className="grid grid-cols-2 gap-3"><input className="form-input" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} /><input className="form-input" value={form.imageUrl || ''} onChange={event => setForm({ ...form, imageUrl: event.target.value })} aria-label={t.imageLink} placeholder={t.imageLink} /></div>
-      <button className="premium-button focus-ring w-full" onClick={save}>{t.saveQuestion}</button>
-      <button className="ghost-button focus-ring w-full" onClick={reset}>{t.clearForm}</button>
+      <button className="premium-button focus-ring inline-flex w-full items-center justify-center gap-2" onClick={save}>
+        <ConfirmIcon size={16} />
+        {t.saveQuestion}
+      </button>
+      <button className="ghost-button focus-ring inline-flex w-full items-center justify-center gap-2" onClick={reset}>
+        <CloseIcon size={16} />
+        {t.clearForm}
+      </button>
     </div>
   );
 }
@@ -2799,8 +2875,14 @@ function GameExitModal({ t, stay, leave }: { t: Record<string, string>; stay: ()
         <h3 id="exit-title">{t.exitTitle}</h3>
         <p>{t.exitBody}</p>
         <div className="mt-5 flex gap-3">
-          <button className="premium-button focus-ring flex-1" type="button" autoFocus onClick={stay}>{t.exitStay}</button>
-          <button className="ghost-button focus-ring flex-1" type="button" onClick={leave}>{t.exitLeave}</button>
+          <button className="premium-button focus-ring inline-flex flex-1 items-center justify-center gap-2" type="button" autoFocus onClick={stay}>
+            <BackIcon size={16} />
+            {t.exitStay}
+          </button>
+          <button className="ghost-button focus-ring inline-flex flex-1 items-center justify-center gap-2" type="button" onClick={leave}>
+            <HomeIcon size={16} />
+            {t.exitLeave}
+          </button>
         </div>
       </div>
     </div>
@@ -2816,18 +2898,27 @@ function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, str
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="paid-title">
       <div className="glass modal-card">
-        <div className="text-4xl text-gold">$</div>
+        <div className="text-4xl text-gold" aria-hidden="true"><WalletIcon size={34} /></div>
         <h3 id="paid-title">{t.paidTitle}</h3>
         <p>{fmt(t.paidBody, { label: t[pending.type], price: money(pending.price) })}</p>
         <div className="rounded-2xl bg-white/[0.07] p-4 text-sm text-white/65">{fmt(t.paidPotInfo, { pot: money(pot) })}</div>
-        <div className="mt-5 flex gap-3"><button className="premium-button focus-ring flex-1" onClick={confirm}>{t.confirmPay}</button><button className="ghost-button focus-ring flex-1" onClick={cancel}>{t.cancelBtn}</button></div>
+        <div className="mt-5 flex gap-3">
+          <button className="premium-button focus-ring inline-flex flex-1 items-center justify-center gap-2" onClick={confirm}>
+            <PaymentsIcon size={16} />
+            {t.confirmPay}
+          </button>
+          <button className="ghost-button focus-ring inline-flex flex-1 items-center justify-center gap-2" onClick={cancel}>
+            <CloseIcon size={16} />
+            {t.cancelBtn}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 function Contact({ t, sent, setSent }: { t: Record<string, string>; sent: boolean; setSent: (value: boolean) => void }) {
-  return <Panel title={t.contact} icon={<Mail size={26} aria-hidden="true" />}><div className="grid gap-4"><Field label={t.fullName}><input className="form-input" /></Field><Field label={t.email}><input className="form-input" type="email" /></Field><Field label={t.message}><textarea className="form-input min-h-36" /></Field><button className="premium-button focus-ring" onClick={() => setSent(true)}>{t.sendMsg}</button>{sent && <Success text={t.contactSuccess} />}</div></Panel>;
+  return <Panel title={t.contact} icon={<MailIcon size={26} aria-hidden="true" />}><div className="grid gap-4"><Field label={t.fullName}><input className="form-input" /></Field><Field label={t.email}><input className="form-input" type="email" /></Field><Field label={t.message}><textarea className="form-input min-h-36" /></Field><button className="premium-button focus-ring inline-flex items-center justify-center gap-2" onClick={() => setSent(true)}><MailIcon size={16} />{t.sendMsg}</button>{sent && <Success text={t.contactSuccess} />}</div></Panel>;
 }
 
 const ACHIEVEMENT_KEYS: Record<string, string> = {
@@ -2838,7 +2929,7 @@ const ACHIEVEMENT_KEYS: Record<string, string> = {
 };
 
 function Profile({ t, stats }: { t: Record<string, string>; stats: Stats }) {
-  return <Panel title={t.profile} icon={<Star size={26} aria-hidden="true" />}><div className="grid gap-4 md:grid-cols-3"><Metric value={String(stats.games)} label={t.gamesPlayed} /><Metric value={money(stats.bestPrize)} label={t.bestWin} gold /><Metric value={String(stats.correct)} label={t.correctTotal} /><Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold /><Metric value={String(stats.lifelines)} label={t.lifelinesUsed} /><Metric value={String(stats.achievements.length)} label={t.achievementsLbl} /></div><div className="mt-6 rounded-3xl border border-white/12 bg-white/[0.07] p-5"><h3 className="mb-3 text-xl font-black">{t.achievementsLbl}</h3><div className="flex flex-wrap gap-3">{stats.achievements.map(item => <span key={item} className="rounded-full bg-gold/15 px-4 py-2 text-sm font-bold text-gold">{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div></div></Panel>;
+  return <Panel title={t.profile} icon={<ProfileIcon size={26} aria-hidden="true" />}><div className="grid gap-4 md:grid-cols-3"><Metric value={String(stats.games)} label={t.gamesPlayed} /><Metric value={money(stats.bestPrize)} label={t.bestWin} gold /><Metric value={String(stats.correct)} label={t.correctTotal} /><Metric value={money(stats.totalMoney)} label={t.moneyTotal} gold /><Metric value={String(stats.lifelines)} label={t.lifelinesUsed} /><Metric value={String(stats.achievements.length)} label={t.achievementsLbl} /></div><div className="mt-6 rounded-3xl border border-white/12 bg-white/[0.07] p-5"><h3 className="mb-3 text-xl font-black">{t.achievementsLbl}</h3><div className="flex flex-wrap gap-3">{stats.achievements.map(item => <span key={item} className="rounded-full bg-gold/15 px-4 py-2 text-sm font-bold text-gold">{ACHIEVEMENT_KEYS[item] ? t[ACHIEVEMENT_KEYS[item]] : item}</span>)}</div></div></Panel>;
 }
 
 function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record<string, string>; authUi: Record<string, string>; user: PublicAuthUser | null; nickname: string; stats: Stats }) {
@@ -2848,7 +2939,7 @@ function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record<string
   const winRate = stats.games > 0 && stats.bestPrize >= 1000000 ? `${Math.round((1 / stats.games) * 100)}%` : '0%';
 
   return (
-    <Panel title={t.profile} icon="ג˜…">
+    <Panel title={t.profile} icon={<ProfileIcon size={26} aria-hidden="true" />}>
       <section className="profile-hero-card">
         {user?.avatarUrl ? <img className="profile-avatar" src={user.avatarUrl} alt="" /> : <span className="profile-avatar" aria-hidden="true">{initialsFor(displayName)}</span>}
         <div>
@@ -2886,7 +2977,7 @@ function SettingsPanel({ t, settings, setSettings, reset }: { t: Record<string, 
     { value: 'דרמטית', label: t.timerDramatic },
     { value: 'אינטנסיבית', label: t.timerIntense }
   ];
-  return <Panel title={t.settings} icon={<SettingsIcon size={26} aria-hidden="true" />}><div className="grid gap-4"><label className="setting-row"><span>{t.soundLbl}</span><input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} /></label><label className="setting-row"><span>{t.effectsLbl}</span><input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} /></label><Field label={t.timerLbl}><select className="form-input" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>{timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field><button className="ghost-button focus-ring" onClick={reset}>{t.resetData}</button></div></Panel>;
+  return <Panel title={t.settings} icon={<SettingsIcon size={26} aria-hidden="true" />}><div className="grid gap-4"><label className="setting-row"><span>{t.soundLbl}</span><input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} /></label><label className="setting-row"><span>{t.effectsLbl}</span><input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} /></label><Field label={t.timerLbl}><select className="form-input" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>{timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field><button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={reset}><SubscriptionIcon size={16} />{t.resetData}</button></div></Panel>;
 }
 
 function mapAuthUser(user: User): PublicAuthUser {

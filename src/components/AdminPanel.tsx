@@ -2,6 +2,18 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import {
+  BackIcon,
+  CloseIcon,
+  CopyIcon,
+  DeleteIcon,
+  EditIcon,
+  ExportIcon,
+  ImportIcon,
+  SearchIcon,
+  SettingsIcon,
+  ConfirmIcon
+} from '@/lib/design/icons';
 import { localizeCategory, localizeQuestion } from '@/lib/localization';
 import type { Locale, Question } from '@/lib/types';
 
@@ -159,7 +171,7 @@ export default function AdminPanel({ questions }: { questions: Question[] }) {
     <main className="app-shell font-hebrew premium-typography" dir={dir}>
       <div className="particles" aria-hidden="true">{Array.from({ length: 24 }, (_, index) => <span key={index} className="particle" style={{ right: `${(index * 37) % 100}%`, animationDelay: `${-(index * 1.5)}s`, ['--duration' as string]: `${24 + (index % 9)}s`, ['--opacity' as string]: `${0.25 + (index % 5) * 0.08}`, ['--x' as string]: `${index % 2 ? 70 : -70}px` }} />)}</div>
       <header className="relative z-20 mx-auto flex w-full max-w-[1680px] flex-col gap-4 px-5 pt-5 md:flex-row md:items-center md:justify-between lg:px-8">
-        <Link className="ghost-button focus-ring" href="/">{ui.back}</Link>
+        <Link className="ghost-button focus-ring inline-flex items-center gap-2" href="/"><BackIcon size={16} />{ui.back}</Link>
         <div className="text-right">
           <p className="text-gold">{ui.sub}</p>
           <h1 className="text-5xl font-black md:text-7xl">{ui.title}</h1>
@@ -171,15 +183,15 @@ export default function AdminPanel({ questions }: { questions: Question[] }) {
         <aside className="glass rounded-[30px] p-6">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-3xl font-black">{ui.editTitle}</h2>
-            <span className="text-gold">⚙</span>
+            <span className="text-gold"><SettingsIcon size={18} aria-hidden="true" /></span>
           </div>
           <QuestionForm ui={ui} locale={locale} form={form} setForm={setForm} save={saveQuestion} reset={() => setForm(emptyQuestion())} />
           <div className="mt-7 border-t border-white/10 pt-6">
             <div className="mb-3 font-extrabold">{ui.importExport}</div>
             <textarea className="form-input min-h-28" value={importText} onChange={event => setImportText(event.target.value)} aria-label={ui.importExport} />
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <button className="ghost-button focus-ring" onClick={importQuestions}>{ui.importBtn}</button>
-              <button className="ghost-button focus-ring" onClick={exportQuestions}>{ui.exportBtn}</button>
+              <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={importQuestions}><ImportIcon size={16} />{ui.importBtn}</button>
+              <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={exportQuestions}><ExportIcon size={16} />{ui.exportBtn}</button>
             </div>
           </div>
         </aside>
@@ -191,7 +203,10 @@ export default function AdminPanel({ questions }: { questions: Question[] }) {
               <p className="mt-1 text-white/58">{fmt(ui.poolCount, { total: allQuestions.length, shown: rows.length })}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <input className="form-input py-3 pl-4 pr-10 sm:w-72" value={query} onChange={event => setQuery(event.target.value)} placeholder={ui.searchPh} />
+              <div className="admin-search-shell sm:w-72">
+                <SearchIcon size={16} aria-hidden="true" className="admin-search-icon" />
+                <input className="form-input py-3 pl-4 pr-10 sm:w-72" value={query} onChange={event => setQuery(event.target.value)} placeholder={ui.searchPh} />
+              </div>
               <select className="form-input" value={locale} onChange={event => setLocale(event.target.value as Locale)} aria-label={ui.displayLang}>
                 <option value="he">עברית</option>
                 <option value="en">English</option>
@@ -232,9 +247,9 @@ export default function AdminPanel({ questions }: { questions: Question[] }) {
                     <p className="mt-2 text-white/58">{ui.correct}: {question.answers[question.correctIndex]}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button className="ghost-button focus-ring" onClick={() => { setForm(question); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{ui.edit}</button>
-                    <button className="ghost-button focus-ring" onClick={() => setLocalQuestions(previous => [{ ...question, id: `copy-${Date.now()}`, question: `${question.question} (עותק)` }, ...previous])}>{ui.duplicate}</button>
-                    <button className="ghost-button focus-ring" onClick={() => setLocalQuestions(previous => previous.filter(item => item.id !== question.id))}>{ui.delete}</button>
+                    <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => { setForm(question); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><EditIcon size={16} />{ui.edit}</button>
+                    <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => setLocalQuestions(previous => [{ ...question, id: `copy-${Date.now()}`, question: `${question.question} (עותק)` }, ...previous])}><CopyIcon size={16} />{ui.duplicate}</button>
+                    <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => setLocalQuestions(previous => previous.filter(item => item.id !== question.id))}><DeleteIcon size={16} />{ui.delete}</button>
                   </div>
                 </div>
               </article>
@@ -274,8 +289,8 @@ function QuestionForm({ ui, locale, form, setForm, save, reset }: { ui: Record<s
         <input className="form-input" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} />
         <input className="form-input" value={form.imageUrl || ''} onChange={event => setForm({ ...form, imageUrl: event.target.value })} placeholder={ui.imageLink} />
       </div>
-      <button className="premium-button focus-ring w-full" onClick={save}>{ui.saveQuestion}</button>
-      <button className="ghost-button focus-ring w-full" onClick={reset}>{ui.clearForm}</button>
+      <button className="premium-button focus-ring inline-flex w-full items-center justify-center gap-2" onClick={save}><ConfirmIcon size={16} />{ui.saveQuestion}</button>
+      <button className="ghost-button focus-ring inline-flex w-full items-center justify-center gap-2" onClick={reset}><CloseIcon size={16} />{ui.clearForm}</button>
     </div>
   );
 }

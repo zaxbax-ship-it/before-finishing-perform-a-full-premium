@@ -2,10 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
+import {
+  AchievementsIcon,
+  CelebrationIcon,
+  CopyIcon,
+  MultiplayerIcon,
+  PhoneFriendIcon,
+  PlayIcon,
+  PremiumIcon,
+  RefreshIcon,
+  ShareIcon,
+  AudienceIcon,
+  FiftyFiftyIcon
+} from '@/lib/design/icons';
 import { getMultiplayerCopy, multiplayerOptionLetter } from '@/lib/multiplayer/localization';
 import { revealSection } from '@/lib/ui/revealSection';
 import { localizeCategory } from '@/lib/localization';
-import { Copy, Crown, PartyPopper, Share2, Trophy } from 'lucide-react';
 import type {
   MultiplayerActionResult,
   MultiplayerErrorCode,
@@ -393,7 +405,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
         <div className="multiplayer-hero glass">
           <div>
             <p className="multiplayer-kicker">{copy.nav}</p>
-            <h1>{copy.title}</h1>
+            <h1 className="inline-flex items-center gap-3"><MultiplayerIcon size={28} />{copy.title}</h1>
             <p>{copy.subtitle}</p>
           </div>
           <div className="multiplayer-status-card">
@@ -423,10 +435,12 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               ))}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <button className="premium-button focus-ring" disabled={status === 'loading'} onClick={() => createOrQuick('quick_match')}>
+              <button className="premium-button focus-ring inline-flex items-center justify-center gap-2" disabled={status === 'loading'} onClick={() => createOrQuick('quick_match')}>
+                <PlayIcon size={16} />
                 {copy.quick}
               </button>
-              <button className="ghost-button focus-ring" disabled={status === 'loading'} onClick={() => createOrQuick('create')}>
+              <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" disabled={status === 'loading'} onClick={() => createOrQuick('create')}>
+                <PremiumIcon size={16} />
                 {copy.create}
               </button>
             </div>
@@ -435,7 +449,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           <section className="glass multiplayer-panel">
             <div className="multiplayer-panel-heading">
               <h2>{copy.openGames}</h2>
-              <button className="ghost-button focus-ring" onClick={refreshLobbies}>{copy.refresh}</button>
+              <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={refreshLobbies}><RefreshIcon size={16} />{copy.refresh}</button>
             </div>
             <div className="multiplayer-lobby-list">
               {lobbies.length === 0 && <p className="multiplayer-empty">{copy.noGames}</p>}
@@ -443,7 +457,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
                 <article key={lobby.id} className="multiplayer-lobby-card">
                   <div className="multiplayer-lobby-info">
                     <strong>
-                      <Crown size={14} aria-hidden="true" className="lobby-host-icon" />
+                      <PremiumIcon size={14} aria-hidden="true" className="lobby-host-icon" />
                       {(lobby.players.find(player => player.id === lobby.hostPlayerId) || lobby.players[0])?.nickname || copy.host}
                     </strong>
                     <span>{copy.players}: {lobby.playerCount} / {lobby.maxPlayers} · {copy[statusKey(lobby.status)] || lobby.status}</span>
@@ -452,7 +466,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
                       <em>{lobby.category ? localizeCategory(locale, lobby.category) : copy.anyCategory}</em>
                     </span>
                   </div>
-                  <button className="ghost-button focus-ring" onClick={() => joinLobby(lobby.id)}>{copy.join}</button>
+                  <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={() => joinLobby(lobby.id)}><PlayIcon size={16} />{copy.join}</button>
                 </article>
               ))}
             </div>
@@ -468,7 +482,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           <div className="multiplayer-roster">
             {gameState.lobby.players.map(player => (
               <span key={player.id} className={player.id === gameState.me?.id ? 'roster-me' : undefined}>
-                {player.id === gameState.lobby.hostPlayerId && <Crown size={13} aria-hidden="true" />}
+                {player.id === gameState.lobby.hostPlayerId && <PremiumIcon size={13} aria-hidden="true" />}
                 {player.nickname}
                 {player.id === gameState.me?.id && <em> · {copy.you}</em>}
               </span>
@@ -479,19 +493,19 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               <span className="multiplayer-invite-code">{copy.lobbyCode}: <strong>{lobbyShortCode(activeLobbyId)}</strong></span>
               <div className="multiplayer-invite-actions">
                 <button type="button" className="ghost-button focus-ring" onClick={copyInvite}>
-                  <Copy size={15} aria-hidden="true" /> {inviteCopied ? copy.inviteCopied : copy.copyInvite}
+                  <CopyIcon size={15} aria-hidden="true" /> {inviteCopied ? copy.inviteCopied : copy.copyInvite}
                 </button>
                 <button type="button" className="ghost-button focus-ring" onClick={shareInvite}>
-                  <Share2 size={15} aria-hidden="true" /> {copy.shareInvite}
+                  <ShareIcon size={15} aria-hidden="true" /> {copy.shareInvite}
                 </button>
               </div>
             </div>
           )}
           <div className="multiplayer-actions">
             {gameState.lobby.playerCount >= 2 && gameState.me?.id === gameState.lobby.hostPlayerId && (
-              <button className="premium-button focus-ring" onClick={startGame}>{copy.startGame}</button>
+              <button className="premium-button focus-ring inline-flex items-center justify-center gap-2" onClick={startGame}><PlayIcon size={16} />{copy.startGame}</button>
             )}
-            <button className="ghost-button focus-ring" onClick={leave}>{copy.leave}</button>
+            <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={leave}><RefreshIcon size={16} />{copy.leave}</button>
           </div>
         </section>
       )}
@@ -548,12 +562,12 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       {gameState?.game?.status === 'finished' && (
         <section className="glass multiplayer-results multiplayer-celebrate">
           <div className="multiplayer-champion" role="status">
-            <Trophy size={44} aria-hidden="true" className="champion-trophy" />
+            <AchievementsIcon size={44} aria-hidden="true" className="champion-trophy" />
             <div>
               <span>{copy.champion}</span>
               <strong>{[...gameState.results].sort((a, b) => (a.rank || 99) - (b.rank || 99))[0] ? gameState.players.find(player => player.id === [...gameState.results].sort((a, b) => (a.rank || 99) - (b.rank || 99))[0].playerId)?.nickname : ''}</strong>
             </div>
-            <PartyPopper size={26} aria-hidden="true" className="champion-pop" />
+            <CelebrationIcon size={26} aria-hidden="true" className="champion-pop" />
           </div>
           <h2>{copy.results}</h2>
           <MultiplayerScoreboard copy={copy} state={gameState} />
@@ -563,7 +577,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               <strong>{money(myResult.totalPrize)}</strong>
             </div>
           )}
-          <button className="premium-button focus-ring" onClick={leave}>{copy.playAgain}</button>
+          <button className="premium-button focus-ring inline-flex items-center justify-center gap-2" onClick={leave}><PlayIcon size={16} />{copy.playAgain}</button>
         </section>
       )}
 
@@ -606,6 +620,7 @@ function MultiplayerLifelines({
       <div className="multiplayer-lifeline-grid">
         {LIFELINES.map(lifeline => {
           const count = counts[lifeline] || 0;
+          const LifelineIcon = lifeline === 'fifty_fifty' ? FiftyFiftyIcon : lifeline === 'audience' ? AudienceIcon : PhoneFriendIcon;
           return (
             <article key={lifeline} className="multiplayer-lifeline-card">
               <button
@@ -613,8 +628,11 @@ function MultiplayerLifelines({
                 disabled={disabled || count <= 0}
                 onClick={() => onUse(lifeline)}
                 type="button"
+                aria-label={lifelineLabel(lifeline, copy)}
+                title={lifelineLabel(lifeline, copy)}
               >
-                <span>{lifelineLabel(lifeline, copy)}</span>
+                <span className="multiplayer-lifeline-icon-shell"><LifelineIcon size={18} aria-hidden="true" /></span>
+                <span className="sr-only">{lifelineLabel(lifeline, copy)}</span>
                 <strong>{count}</strong>
               </button>
               <button
@@ -623,7 +641,7 @@ function MultiplayerLifelines({
                 onClick={() => onBuy(lifeline)}
                 type="button"
               >
-                {copy.buyExtra} {money(LIFELINE_COST)}
+                <RefreshIcon size={14} aria-hidden="true" /> {copy.buyExtra} {money(LIFELINE_COST)}
               </button>
             </article>
           );
