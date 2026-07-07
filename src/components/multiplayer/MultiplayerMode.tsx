@@ -493,14 +493,27 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           <div className="multiplayer-loader" aria-hidden="true" />
           <h2>{copy.waiting}</h2>
           <p>{gameState.lobby.playerCount} / {gameState.lobby.maxPlayers} {copy.players}</p>
-          <div className="multiplayer-roster">
-            {gameState.lobby.players.map(player => (
-              <span key={player.id} className={player.id === gameState.me?.id ? 'roster-me' : undefined}>
-                {player.id === gameState.lobby.hostPlayerId && <PremiumIcon size={13} aria-hidden="true" />}
-                {player.nickname}
-                {player.id === gameState.me?.id && <em> · {copy.you}</em>}
-              </span>
-            ))}
+          <div className="multiplayer-roster grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 w-full max-w-4xl mx-auto my-6">
+            {gameState.lobby.players.map(player => {
+              const isHost = player.id === gameState.lobby.hostPlayerId;
+              const isMe = player.id === gameState.me?.id;
+              return (
+                <div key={player.id} className={`roster-player-card glass p-5 rounded-[22px] flex flex-col items-center text-center relative border transition-all duration-300 ${isMe ? 'border-gold/50 shadow-gold/5' : 'border-white/10'}`}>
+                  {isHost && (
+                    <span className="absolute top-3 right-3 text-gold" title={copy.host}>
+                      <PremiumIcon size={16} aria-hidden="true" />
+                    </span>
+                  )}
+                  <div className="avatar-placeholder h-12 w-12 rounded-2xl bg-gold/10 text-gold flex items-center justify-center text-lg font-black mb-3">
+                    {player.nickname.slice(0, 2).toUpperCase()}
+                  </div>
+                  <strong className="text-white block truncate w-full font-bold">{player.nickname}</strong>
+                  <span className="text-xs text-white/50 mt-2 block">
+                    {isHost ? copy.host : copy.players} {isMe && `(${copy.you})`}
+                  </span>
+                </div>
+              );
+            })}
           </div>
           {activeLobbyId && (
             <div className="multiplayer-invite" aria-label={copy.lobbyCode}>

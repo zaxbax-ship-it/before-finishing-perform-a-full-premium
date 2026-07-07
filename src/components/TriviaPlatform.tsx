@@ -5,6 +5,7 @@ import { AdSlot, GameplayAdSlot } from '@/components/ads/AdSlot';
 import { MultiplayerMode } from '@/components/multiplayer/MultiplayerMode';
 import {
   AchievementsIcon,
+  CelebrationIcon,
   AdminIcon,
   AudienceIcon,
   BackIcon,
@@ -2332,7 +2333,7 @@ function Home({ t, locale, questionCount, soloLabel, multiplayerLabel, start, op
     <section className="home-landing mx-auto w-full max-w-[1680px] px-5 pb-16 lg:px-8">
       {/* Hero first: intro through the single primary Start Game button. */}
       <div className="grid items-center gap-12 lg:grid-cols-[.86fr_1fr]">
-        <div className="glass relative min-h-[420px] overflow-hidden rounded-[36px] p-8 lg:min-h-[560px]">
+        <div className="home-hero-prize-card relative min-h-[420px] overflow-hidden rounded-[36px] p-8 lg:min-h-[560px]">
           <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
           <div className="relative grid h-full place-items-center text-center">
             <div>
@@ -2720,13 +2721,18 @@ function Leaderboard({ t, entries, status, nickname, authUi, setNickname, bestPr
                 <span role="columnheader">{t.lbPlayer}</span>
                 <span role="columnheader">{t.lbBest}</span>
               </div>
-              {entries.map((entry, index) => (
-                <div key={entry.id} className="leaderboard-row" role="row">
-                  <span className="leaderboard-rank" role="cell">{index + 1}</span>
-                  <strong role="cell">{entry.nickname || entry.displayName}</strong>
-                  <span className="leaderboard-prize" role="cell">{money(entry.bestPrize)}</span>
-                </div>
-              ))}
+              {entries.map((entry, index) => {
+                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                return (
+                  <div key={entry.id} className={`leaderboard-row ${rankClass}`} role="row">
+                    <span className="leaderboard-rank font-black" role="cell">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                    </span>
+                    <strong role="cell" className={index < 3 ? 'text-white font-black' : 'text-white/80'}>{entry.nickname || entry.displayName}</strong>
+                    <span className="leaderboard-prize" role="cell">{money(entry.bestPrize)}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -2972,7 +2978,31 @@ function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<string, str
 }
 
 function Contact({ t, sent, setSent }: { t: Record<string, string>; sent: boolean; setSent: (value: boolean) => void }) {
-  return <Panel title={t.contact} icon={<MailIcon size={26} aria-hidden="true" />}><div className="grid gap-4"><Field label={t.fullName}><input className="form-input" /></Field><Field label={t.email}><input className="form-input" type="email" /></Field><Field label={t.message}><textarea className="form-input min-h-36" /></Field><button className="premium-button focus-ring inline-flex items-center justify-center gap-2" onClick={() => setSent(true)}><MailIcon size={16} />{t.sendMsg}</button>{sent && <Success text={t.contactSuccess} />}</div></Panel>;
+  return (
+    <Panel title={t.contact} icon={<MailIcon size={26} aria-hidden="true" />}>
+      <div className="grid gap-5 max-w-xl mx-auto">
+        <Field label={t.fullName}>
+          <input className="form-input" />
+        </Field>
+        <Field label={t.email}>
+          <input className="form-input" type="email" />
+        </Field>
+        <Field label={t.message}>
+          <textarea className="form-input min-h-36" />
+        </Field>
+        <button className="premium-button focus-ring inline-flex items-center justify-center gap-2 w-full" onClick={() => setSent(true)}>
+          <MailIcon size={16} />
+          {t.sendMsg}
+        </button>
+        {sent && (
+          <div className="mt-4 p-5 rounded-2xl border border-emerald-300/30 bg-emerald-300/10 text-emerald-100 flex items-center gap-3">
+            <span className="text-emerald-400"><ConfirmIcon size={20} /></span>
+            <span className="font-bold">{t.contactSuccess}</span>
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
 }
 
 const ACHIEVEMENT_KEYS: Record<string, string> = {
@@ -3031,7 +3061,41 @@ function SettingsPanel({ t, settings, setSettings, reset }: { t: Record<string, 
     { value: 'דרמטית', label: t.timerDramatic },
     { value: 'אינטנסיבית', label: t.timerIntense }
   ];
-  return <Panel title={t.settings} icon={<SettingsIcon size={26} aria-hidden="true" />}><div className="grid gap-4"><label className="setting-row"><span>{t.soundLbl}</span><input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} /></label><label className="setting-row"><span>{t.effectsLbl}</span><input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} /></label><Field label={t.timerLbl}><select className="form-input" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>{timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field><button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={reset}><SubscriptionIcon size={16} />{t.resetData}</button></div></Panel>;
+  return (
+    <Panel title={t.settings} icon={<SettingsIcon size={26} aria-hidden="true" />}>
+      <div className="grid gap-6 max-w-2xl mx-auto">
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="setting-row flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all cursor-pointer">
+            <span className="flex items-center gap-3">
+              <span className="text-gold"><AudienceIcon size={20} /></span>
+              <span className="font-bold">{t.soundLbl}</span>
+            </span>
+            <input type="checkbox" checked={settings.sound} onChange={event => setSettings(value => ({ ...value, sound: event.target.checked }))} className="h-5 w-5 rounded accent-gold" />
+          </label>
+          <label className="setting-row flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-all cursor-pointer">
+            <span className="flex items-center gap-3">
+              <span className="text-gold"><CelebrationIcon size={20} /></span>
+              <span className="font-bold">{t.effectsLbl}</span>
+            </span>
+            <input type="checkbox" checked={settings.effects} onChange={event => setSettings(value => ({ ...value, effects: event.target.checked }))} className="h-5 w-5 rounded accent-gold" />
+          </label>
+        </div>
+
+        <Field label={t.timerLbl}>
+          <div className="relative">
+            <select className="form-input !py-3 !px-4" value={settings.timer} onChange={event => setSettings(value => ({ ...value, timer: event.target.value }))}>
+              {timerOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </select>
+          </div>
+        </Field>
+
+        <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2 mt-4" onClick={reset}>
+          <DeleteIcon size={16} />
+          {t.resetData}
+        </button>
+      </div>
+    </Panel>
+  );
 }
 
 function mapAuthUser(user: User): PublicAuthUser {

@@ -183,6 +183,9 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .leaderboard-message.taken,.leaderboard-message.error{border-color:rgba(255,97,114,.42);background:rgba(255,97,114,.1);color:#ffc2c8}
 .leaderboard-list{display:grid;gap:.55rem}
 .leaderboard-row{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(112px,.48fr);gap:.75rem;align-items:center;border:1px solid hsla(0,0%,100%,.1);border-radius:18px;background:linear-gradient(145deg,hsla(0,0%,100%,.08),hsla(0,0%,100%,.035));padding:.85rem 1rem}
+.leaderboard-row.rank-1{border-color:rgba(247,202,103,.48) !important;background:linear-gradient(145deg,rgba(247,202,103,.16),rgba(255,255,255,.04)) !important;box-shadow:0 8px 24px rgba(247,202,103,.08)}
+.leaderboard-row.rank-2{border-color:rgba(255,255,255,.28) !important;background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.03)) !important}
+.leaderboard-row.rank-3{border-color:rgba(205,127,50,.28) !important;background:linear-gradient(145deg,rgba(205,127,50,.08),rgba(255,255,255,.03)) !important}
 .leaderboard-head{background:transparent;border-color:transparent;color:hsla(0,0%,100%,.55);font-size:.8rem;font-weight:900;text-transform:uppercase}
 .leaderboard-rank{display:grid;place-items:center;width:40px;height:40px;border-radius:14px;background:hsla(41,90%,69%,.16);color:var(--gold);font-weight:950}
 .leaderboard-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-weight:950}
@@ -196,6 +199,26 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .lifeline-tile:hover .lifeline-icon-shell{border-color:hsla(41,90%,69%,.48);box-shadow:inset 0 1px 0 hsla(0,0%,100%,.18),0 14px 32px hsla(41,90%,69%,.16)}
 .admin-search-shell{position:relative}
 .admin-search-icon{position:absolute;inset-inline-end:.9rem;top:50%;transform:translateY(-50%);pointer-events:none;color:hsla(0,0%,100%,.45)}
+
+/* Premium Home Hero Prize Card Styling */
+.home-hero-prize-card {
+  position: relative;
+  background: radial-gradient(circle at 50% 30%, rgba(247, 202, 103, 0.22), transparent 50%),
+              linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 42%, rgba(10, 26, 63, 0.52));
+  border: 1px solid rgba(247, 202, 103, 0.28);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.44), 
+              0 0 46px rgba(247, 202, 103, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(26px) saturate(1.24);
+  transition: transform var(--duration-normal) var(--ease-spring), border-color var(--duration-normal) ease, box-shadow var(--duration-normal) ease;
+}
+.home-hero-prize-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(247, 202, 103, 0.48);
+  box-shadow: 0 44px 110px rgba(0, 0, 0, 0.52), 
+              0 0 62px rgba(247, 202, 103, 0.22),
+              inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
 
 /* Premium mobile-friendly horizontal swipe navigation for header menu */
 @media (max-width: 1024px) {
