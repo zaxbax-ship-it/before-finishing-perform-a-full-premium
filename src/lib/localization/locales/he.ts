@@ -257,7 +257,12 @@ const resources: LocaleResources = {
     "exitHomeAria": "חזרה לדף הבית",
     "levelLabel": "רמה",
     "xpLabel": "נקודות ניסיון",
-    "contactError": "שליחת ההודעה נכשלה. נסו שוב בעוד רגע."
+    "contactError": "שליחת ההודעה נכשלה. נסו שוב בעוד רגע.",
+    "lifeOfferTitle": "נגמרו לכם החיים",
+    "lifeOfferBody": "אפשר להמשיך לשחק תמורת 50% מהזכייה הנוכחית.",
+    "lifeOfferAccept": "קנו חיים והמשיכו",
+    "lifeOfferDecline": "סיימו את המשחק",
+    "lifeOfferCost": "המחיר: {price}"
   },
   "authUi": {
     "signIn": "כניסה",

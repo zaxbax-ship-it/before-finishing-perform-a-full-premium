@@ -806,3 +806,17 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
   border-radius: var(--radius-full);
   background: rgba(8, 16, 31, 0.14);
 }
+
+/* Extra-life offer: the exact price is the decision, so it gets the stage. */
+.life-offer-cost {
+  margin-top: var(--space-md);
+  border: 1px solid hsla(41, 90%, 69%, 0.42);
+  border-radius: var(--radius-lg);
+  background: hsla(41, 90%, 69%, 0.12);
+  padding: var(--space-md);
+  color: #fff2b4;
+  font-size: 1.2rem;
+  font-weight: 950;
+  text-align: center;
+  text-shadow: 0 0 18px hsla(41, 90%, 69%, 0.35);
+}

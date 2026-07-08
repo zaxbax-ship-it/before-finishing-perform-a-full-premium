@@ -1606,7 +1606,12 @@ const resources: LocaleResources = {
     "exitHomeAria": "На главную",
     "levelLabel": "Уровень",
     "xpLabel": "Опыт",
-    "contactError": "Не удалось отправить сообщение. Повторите попытку через минуту."
+    "contactError": "Не удалось отправить сообщение. Повторите попытку через минуту.",
+    "lifeOfferTitle": "Вы потеряли все жизни",
+    "lifeOfferBody": "Можно продолжить, пожертвовав 50% текущего выигрыша.",
+    "lifeOfferAccept": "Купить жизнь и продолжить",
+    "lifeOfferDecline": "Завершить игру",
+    "lifeOfferCost": "Цена: {price}"
   },
   "authUi": {
     "signIn": "Войти",

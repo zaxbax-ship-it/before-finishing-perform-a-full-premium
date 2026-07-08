@@ -1734,7 +1734,12 @@ const resources: LocaleResources = {
     "exitHomeAria": "Back to home",
     "levelLabel": "Level",
     "xpLabel": "XP",
-    "contactError": "Sending failed. Please try again in a moment."
+    "contactError": "Sending failed. Please try again in a moment.",
+    "lifeOfferTitle": "You have lost all your lives",
+    "lifeOfferBody": "You may continue by sacrificing 50% of your current winnings.",
+    "lifeOfferAccept": "Buy a life and continue",
+    "lifeOfferDecline": "End the game",
+    "lifeOfferCost": "Price: {price}"
   },
   "authUi": {
     "signIn": "Sign In",

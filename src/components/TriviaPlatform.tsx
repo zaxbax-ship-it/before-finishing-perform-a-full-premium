@@ -27,6 +27,7 @@ import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
+import { applyPurchase, availablePot, extraLifeCost, guaranteedForRung, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
 import type { PlayerProgressionState } from '@/lib/progression/types';
 import type { LeaderboardEntry } from '@/lib/domain/models';
@@ -50,6 +51,7 @@ import { LanguageMenu } from '@/components/trivia/chrome/LanguageMenu';
 import { Particles } from '@/components/trivia/chrome/Particles';
 import { PublicAuthArea } from '@/components/trivia/chrome/PublicAuthArea';
 import { GameExitModal } from '@/components/trivia/modals/GameExitModal';
+import { LifeOfferModal } from '@/components/trivia/modals/LifeOfferModal';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game } from '@/components/trivia/screens/Game';
 import { PremiumProfile } from '@/components/trivia/screens/PremiumProfile';
@@ -161,7 +163,13 @@ export default function TriviaPlatform({
   const [selected, setSelected] = useState<number | null>(null);
   const [hiddenAnswers, setHiddenAnswers] = useState<number[]>([]);
   const [timer, setTimer] = useState(SOLO_TIMER_SECONDS);
-  const [chances, setChances] = useState(3);
+  const [chances, setChances] = useState(SOLO_INITIAL_LIVES);
+  // Economy state: which question is on stage (decoupled from the ladder
+  // rung), everything spent in-game, and the one-time extra-life offer.
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [deductions, setDeductions] = useState(0);
+  const [extraLifeUsed, setExtraLifeUsed] = useState(false);
+  const [lifeOffer, setLifeOffer] = useState<{ cost: number; reason: EndState } | null>(null);
   const [lifelineUses, setLifelineUses] = useState<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
   const [advice, setAdvice] = useState('');
   const [notice, setNotice] = useState('');
@@ -208,10 +216,12 @@ export default function TriviaPlatform({
   // Categories are derived from the locale-playable pool so non-Hebrew players
   // never see categories that would have zero playable questions.
   const categories = useMemo(() => Array.from(new Set(playableQuestions.map(question => question.category))).sort(), [playableQuestions]);
-  const current = gameSet[round] ? localizeQuestion(gameSet[round], locale) : undefined;
-  const currentPrize = MONEY[Math.max(0, round - 1)] || 0;
+  const current = gameSet[questionIndex] ? localizeQuestion(gameSet[questionIndex], locale) : undefined;
+  // All money figures come from the economy module — the pot reflects every
+  // in-game purchase and can never go negative.
+  const currentPrize = availablePot(MONEY, round, deductions);
   const nextPrize = MONEY[round] || MONEY[MONEY.length - 1];
-  const guaranteedPrize = round > 9 ? MONEY[9] : round > 4 ? MONEY[4] : 0;
+  const guaranteedPrize = guaranteedForRung(MONEY, round);
   const progress = Math.round(((round + 1) / 15) * 100);
   const timerUrgency = timer <= 8 ? 'danger' : timer <= 15 ? 'warn' : '';
 
@@ -370,10 +380,10 @@ export default function TriviaPlatform({
   // heading under the fixed bar and move focus there (see revealSection).
   useEffect(() => {
     revealSection(screenSectionRef.current);
-  }, [screen, round]);
+  }, [screen, questionIndex]);
 
   useEffect(() => {
-    if (screen !== 'game' || selected !== null) return;
+    if (screen !== 'game' || selected !== null || lifeOffer !== null) return;
     if (timer <= 0) {
       loseChance('timeout');
       return;
@@ -383,7 +393,7 @@ export default function TriviaPlatform({
       if (timer <= 6) playAudioEvent('timer.tick');
     }, 1000);
     return () => window.clearTimeout(id);
-  }, [screen, selected, settings.sound, timer]);
+  }, [screen, selected, settings.sound, timer, lifeOffer]);
 
   useEffect(() => {
     if (screen !== 'game') return;
@@ -568,11 +578,15 @@ export default function TriviaPlatform({
     setGameSet(pool);
     rememberSeenQuestions(pool);
     setRound(0);
+    setQuestionIndex(0);
+    setDeductions(0);
+    setExtraLifeUsed(false);
+    setLifeOffer(null);
     setOrder(shuffle([0, 1, 2, 3]));
     setSelected(null);
     setHiddenAnswers([]);
     setTimer(SOLO_TIMER_SECONDS);
-    setChances(3);
+    setChances(SOLO_INITIAL_LIVES);
     setLifelineUses({ fifty: 0, swap: 0, phone: 0, audience: 0 });
     setAdvice('');
     setNotice('');
@@ -581,15 +595,27 @@ export default function TriviaPlatform({
     playAudioEvent('game.start');
   }
 
-  function nextQuestion() {
+  /** Puts the next question on stage without touching the ladder. */
+  function presentNextQuestion() {
     clearAdvanceTimer();
     advancingRef.current = false;
-    if (round >= 14) {
-      finish('win', MONEY[14]);
-      return;
-    }
-    if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
-    setRound(value => value + 1);
+    const nextIndex = questionIndex + 1;
+    setGameSet(previous => {
+      if (previous[nextIndex]) return previous;
+      // Wrong answers consume questions without climbing, so the set can run
+      // past its initial 15 — extend it from the playable pool.
+      const usedIds = new Set(previous.map(item => item.id));
+      const seenSet = new Set(seenQuestionIds);
+      const pool = shuffle(playableQuestions.filter(question => !usedIds.has(question.id)));
+      const fresh = pool.find(question => !seenSet.has(questionId(question))) || pool[0];
+      if (fresh) {
+        rememberSeenQuestions([fresh]);
+        return [...previous, fresh];
+      }
+      // Exhausted pool: repeat an earlier question rather than blanking the game.
+      return [...previous, previous[nextIndex % previous.length]];
+    });
+    setQuestionIndex(nextIndex);
     setOrder(shuffle([0, 1, 2, 3]));
     setSelected(null);
     setHiddenAnswers([]);
@@ -598,18 +624,64 @@ export default function TriviaPlatform({
     setNotice('');
   }
 
+  /** Correct answer: secure the rung and climb. The only path that raises the pot. */
+  function climbLadder() {
+    clearAdvanceTimer();
+    if (round >= 14) {
+      finishWithReason('win');
+      return;
+    }
+    if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
+    setRound(value => value + 1);
+    presentNextQuestion();
+  }
+
+  /** Third life lost: one dramatic chance to buy a single life for half the pot. */
+  function handleFinalLifeLost(reason: EndState) {
+    clearAdvanceTimer();
+    advancingRef.current = false;
+    if (!extraLifeUsed) {
+      setLifeOffer({ cost: extraLifeCost(MONEY, round, deductions), reason });
+      return;
+    }
+    finishWithReason(reason);
+  }
+
+  function acceptLifeOffer() {
+    if (!lifeOffer) return;
+    setDeductions(value => applyPurchase(value, lifeOffer.cost));
+    setExtraLifeUsed(true);
+    setChances(1);
+    setLifeOffer(null);
+    playAudioEvent('lifeline.used');
+    presentNextQuestion();
+  }
+
+  function declineLifeOffer() {
+    if (!lifeOffer) return;
+    const reason = lifeOffer.reason;
+    setLifeOffer(null);
+    finishWithReason(reason);
+  }
+
+  /** Every game ending settles through the economy module. */
+  function finishWithReason(reason: EndState) {
+    finish(reason, payoutFor(MONEY, reason === 'win' ? MONEY.length : round, deductions, reason === 'win' ? 'win' : reason === 'quit' ? 'quit' : reason === 'timeout' ? 'timeout' : 'lost'));
+  }
+
   function completeAnsweredQuestion(answerIndex: number) {
     if (!current) return;
     if (answerIndex === current.correctIndex) {
-      nextQuestion();
+      climbLadder();
       return;
     }
+    // Wrong answer: never climbs the ladder, never awards the rung prize.
     if (chances > 1) {
       setChances(value => value - 1);
-      nextQuestion();
+      presentNextQuestion();
       return;
     }
-    finish('lost', guaranteedPrize);
+    handleFinalLifeLost('lost');
   }
 
   function advanceAfterAnswer() {
@@ -634,10 +706,10 @@ export default function TriviaPlatform({
     if (chances > 1) {
       setChances(value => value - 1);
       setNotice(reason === 'timeout' ? t.timeoutNotice : t.wrongNotice);
-      scheduleAdvance(nextQuestion);
+      scheduleAdvance(presentNextQuestion);
       return;
     }
-    finish(reason, guaranteedPrize);
+    handleFinalLifeLost(reason);
   }
 
   function finish(state: EndState, prize: number) {
@@ -700,10 +772,10 @@ export default function TriviaPlatform({
     if (type === 'swap') {
       const usedIds = new Set(gameSet.map(item => item.id));
       const seenSet = new Set(seenQuestionIds);
-      const replacements = shuffle(playableQuestions.filter(question => question.category === gameSet[round].category && !usedIds.has(question.id)));
+      const replacements = shuffle(playableQuestions.filter(question => question.category === gameSet[questionIndex].category && !usedIds.has(question.id)));
       const replacement = replacements.find(question => !seenSet.has(questionId(question))) || replacements[0];
       if (replacement) {
-        setGameSet(previous => previous.map((item, index) => index === round ? replacement : item));
+        setGameSet(previous => previous.map((item, index) => index === questionIndex ? replacement : item));
         rememberSeenQuestions([replacement]);
         setOrder(shuffle([0, 1, 2, 3]));
         setHiddenAnswers([]);
@@ -715,7 +787,10 @@ export default function TriviaPlatform({
       const optionLetters = OPTION_LETTERS[locale] || LETTERS;
       setAdvice(fmt(t.audienceAdvice, { letter: optionLetters[order.indexOf(current.correctIndex)] }));
     }
-    if (price > 0) setNotice(fmt(t.paidDeducted, { amount: money(price) }));
+    if (price > 0) {
+      setDeductions(value => applyPurchase(value, price));
+      setNotice(fmt(t.paidDeducted, { amount: money(price) }));
+    }
   }
 
   function saveQuestion() {
@@ -961,7 +1036,7 @@ export default function TriviaPlatform({
           chooseAnswer={chooseAnswer}
           advanceAfterAnswer={advanceAfterAnswer}
           triggerLifeline={triggerLifeline}
-          quit={() => finish('quit', currentPrize || guaranteedPrize)}
+          quit={() => finishWithReason('quit')}
           requestExit={() => setExitPrompt(true)}
         />
       )}
@@ -1010,6 +1085,7 @@ export default function TriviaPlatform({
       {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
       </div>
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => setPendingPaid(null)} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
+      {lifeOffer && <LifeOfferModal t={t} cost={lifeOffer.cost} accept={acceptLifeOffer} decline={declineLifeOffer} />}
       {exitPrompt && (
         <GameExitModal
           t={t}

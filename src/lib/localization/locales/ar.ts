@@ -1606,7 +1606,12 @@ const resources: LocaleResources = {
     "exitHomeAria": "العودة إلى الرئيسية",
     "levelLabel": "المستوى",
     "xpLabel": "نقاط الخبرة",
-    "contactError": "فشل إرسال الرسالة. حاول مرة أخرى بعد قليل."
+    "contactError": "فشل إرسال الرسالة. حاول مرة أخرى بعد قليل.",
+    "lifeOfferTitle": "لقد خسرت كل المحاولات",
+    "lifeOfferBody": "يمكنك المتابعة مقابل 50% من أرباحك الحالية.",
+    "lifeOfferAccept": "اشترِ محاولة وتابع",
+    "lifeOfferDecline": "إنهاء اللعبة",
+    "lifeOfferCost": "السعر: {price}"
   },
   "authUi": {
     "signIn": "تسجيل الدخول",

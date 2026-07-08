@@ -1602,7 +1602,12 @@ const resources: LocaleResources = {
     "exitHomeAria": "ወደ መነሻ ተመለስ",
     "levelLabel": "ደረጃ",
     "xpLabel": "የልምድ ነጥቦች",
-    "contactError": "መልዕክቱን መላክ አልተሳካም። ትንሽ ቆይተው እንደገና ይሞክሩ።"
+    "contactError": "መልዕክቱን መላክ አልተሳካም። ትንሽ ቆይተው እንደገና ይሞክሩ።",
+    "lifeOfferTitle": "ሁሉም ሕይወቶችዎ አልቀዋል",
+    "lifeOfferBody": "የአሁኑን ትርፍዎን 50% በመክፈል መቀጠል ይችላሉ።",
+    "lifeOfferAccept": "ሕይወት ገዝተው ይቀጥሉ",
+    "lifeOfferDecline": "ጨዋታውን ጨርሱ",
+    "lifeOfferCost": "ዋጋ: {price}"
   },
   "authUi": {
     "signIn": "ግባ",
