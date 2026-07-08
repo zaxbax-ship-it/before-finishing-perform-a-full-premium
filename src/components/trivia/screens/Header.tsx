@@ -14,6 +14,7 @@ import {
   SettingsIcon,
   SupportIcon
 } from '@/lib/design/icons';
+import { playAudioEvent } from '@/lib/audio';
 import type { Screen } from '../types';
 import { useDialogFocus } from '../useDialogFocus';
 
@@ -34,16 +35,16 @@ export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: R
       </button>
 
       {/* Single menu button opens the side drawer (app-style, no wrapped rows). */}
-      <button className="icon-button focus-ring" onClick={() => setDrawerOpen(true)} aria-label={t.menu || 'Menu'} title={t.menu || 'Menu'}>
+      <button className="icon-button focus-ring" onClick={() => { playAudioEvent('ui.open'); setDrawerOpen(true); }} aria-label={t.menu || 'Menu'} title={t.menu || 'Menu'}>
         <MenuIcon size={22} />
       </button>
 
       {drawerOpen && (
-        <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)}>
+        <div className="drawer-backdrop" onClick={() => { playAudioEvent('ui.close'); setDrawerOpen(false); }}>
           <div className="drawer-panel glass" ref={drawerRef} role="dialog" aria-modal="true" aria-label={t.headline} onClick={e => e.stopPropagation()}>
             <div className="drawer-head">
               <strong>{t.headline}</strong>
-              <button className="icon-button focus-ring" onClick={() => setDrawerOpen(false)} aria-label={t.close || 'Close'} title={t.close || 'Close'}><CloseIcon size={18} /></button>
+              <button className="icon-button focus-ring" onClick={() => { playAudioEvent('ui.close'); setDrawerOpen(false); }} aria-label={t.close || 'Close'} title={t.close || 'Close'}><CloseIcon size={18} /></button>
             </div>
             <div className="drawer-nav" role="navigation" aria-label={t.headline}>
               <button className="drawer-item focus-ring" onClick={() => { setDrawerOpen(false); start(); }}><PlayIcon size={18} />{t.start}</button>

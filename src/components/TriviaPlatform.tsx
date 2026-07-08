@@ -26,6 +26,7 @@ import { ensureLocaleResources, localizeCategory, localizeQuestion } from '@/lib
 import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
+import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
 import type { PlayerProgressionState } from '@/lib/progression/types';
 import type { LeaderboardEntry } from '@/lib/domain/models';
@@ -98,42 +99,6 @@ function emptyQuestion(): GameQuestion {
     correctIndex: 0,
     explanation: ''
   };
-}
-
-const TONES: Record<string, { notes: number[]; type: OscillatorType; step: number; length: number; volume: number }> = {
-  win: { notes: [523, 659, 784, 1046, 1318, 1568], type: 'sine', step: 0.11, length: 0.34, volume: 0.14 },
-  correct: { notes: [523, 659, 784], type: 'triangle', step: 0.07, length: 0.22, volume: 0.13 },
-  wrong: { notes: [220, 160, 110], type: 'sawtooth', step: 0.09, length: 0.24, volume: 0.1 },
-  timeout: { notes: [440, 350, 262, 196], type: 'square', step: 0.12, length: 0.26, volume: 0.09 },
-  countdown: { notes: [520], type: 'sine', step: 0.08, length: 0.12, volume: 0.1 },
-  click: { notes: [660], type: 'triangle', step: 0.05, length: 0.09, volume: 0.08 },
-  start: { notes: [392, 523, 659, 784], type: 'sine', step: 0.09, length: 0.28, volume: 0.13 },
-  lifeline: { notes: [880, 1174, 1568], type: 'sine', step: 0.06, length: 0.16, volume: 0.11 },
-  safe: { notes: [659, 784, 988, 1318], type: 'triangle', step: 0.1, length: 0.3, volume: 0.12 },
-  cashout: { notes: [784, 659, 784, 1046], type: 'sine', step: 0.1, length: 0.26, volume: 0.12 },
-  suspense: { notes: [196, 208], type: 'sine', step: 0.16, length: 0.4, volume: 0.06 }
-};
-
-function tone(kind: string, enabled: boolean) {
-  if (!enabled || typeof window === 'undefined') return;
-  const AudioCtor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AudioCtor) return;
-  const ctx = new AudioCtor();
-  const preset = TONES[kind] || TONES.click;
-  preset.notes.forEach((freq, index) => {
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.type = preset.type;
-    oscillator.frequency.value = freq;
-    const start = ctx.currentTime + index * preset.step;
-    gain.gain.setValueAtTime(0.001, start);
-    gain.gain.exponentialRampToValueAtTime(preset.volume, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, start + preset.length);
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.start(start);
-    oscillator.stop(start + preset.length + 0.03);
-  });
 }
 
 function readLocal<T>(key: string, fallback: T): T {
@@ -290,6 +255,12 @@ export default function TriviaPlatform({
     try { sessionStorage.setItem(SCREEN_MEMORY_KEY, screen); } catch { /* unavailable */ }
   }, [screen]);
 
+  // The audio engine follows the sound setting; components then emit
+  // semantic events without threading the flag around.
+  useEffect(() => {
+    setAudioEnabled(settings.sound);
+  }, [settings.sound]);
+
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
     setAuthConfigured(Boolean(supabase));
@@ -409,7 +380,7 @@ export default function TriviaPlatform({
     }
     const id = window.setTimeout(() => {
       setTimer(value => value - 1);
-      if (timer <= 6) tone('countdown', settings.sound);
+      if (timer <= 6) playAudioEvent('timer.tick');
     }, 1000);
     return () => window.clearTimeout(id);
   }, [screen, selected, settings.sound, timer]);
@@ -502,7 +473,7 @@ export default function TriviaPlatform({
   async function signOut() {
     await createAuthService().signOut();
     setAuthUser(null);
-    tone('click', settings.sound);
+    playAudioEvent('ui.tap');
   }
 
   async function submitLeaderboardScore(publicNickname: string, prize: number, correctCount: number) {
@@ -527,7 +498,7 @@ export default function TriviaPlatform({
     if (next === 'admin' && initialScreen !== 'admin') return;
     clearAdvanceTimer();
     setScreen(next);
-    tone('click', settings.sound);
+    playAudioEvent('ui.tap');
   }
 
   function rememberSeenQuestions(items: Pick<Question, 'id'>[]) {
@@ -607,7 +578,7 @@ export default function TriviaPlatform({
     setNotice('');
     setElapsed(0);
     setScreen('game');
-    tone('start', settings.sound);
+    playAudioEvent('game.start');
   }
 
   function nextQuestion() {
@@ -617,7 +588,7 @@ export default function TriviaPlatform({
       finish('win', MONEY[14]);
       return;
     }
-    if (SAFE_STEPS.includes(round)) tone('safe', settings.sound);
+    if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
     setRound(value => value + 1);
     setOrder(shuffle([0, 1, 2, 3]));
     setSelected(null);
@@ -652,14 +623,14 @@ export default function TriviaPlatform({
     if (!current || selected !== null) return;
     setSelected(index);
     const correct = index === current.correctIndex;
-    tone(correct ? 'correct' : 'wrong', settings.sound);
+    playAudioEvent(correct ? 'answer.correct' : 'answer.wrong');
     // No auto-advance after answering: the player reviews the explanation and
     // chooses when to continue via the Next button (or keyboard). The timeout
     // path below still expires unanswered questions automatically.
   }
 
   function loseChance(reason: EndState) {
-    if (reason === 'timeout') tone('timeout', settings.sound);
+    if (reason === 'timeout') playAudioEvent('timer.expired');
     if (chances > 1) {
       setChances(value => value - 1);
       setNotice(reason === 'timeout' ? t.timeoutNotice : t.wrongNotice);
@@ -674,7 +645,7 @@ export default function TriviaPlatform({
     setEndState(state);
     setFinalPrize(prize);
     setScreen('result');
-    tone(state === 'win' ? 'win' : state === 'quit' ? 'cashout' : state === 'timeout' ? 'timeout' : 'wrong', settings.sound);
+    playAudioEvent(state === 'win' ? 'game.victory' : state === 'quit' ? 'game.cashout' : state === 'timeout' ? 'timer.expired' : 'game.defeat');
     const lifelines = Object.values(lifelineUses).reduce((sum, value) => sum + value, 0);
     setStats(previous => ({
       games: previous.games + 1,
@@ -684,13 +655,22 @@ export default function TriviaPlatform({
       lifelines: previous.lifelines + lifelines,
       achievements: Array.from(new Set([...previous.achievements, prize >= 1000000 ? 'מיליון דולר' : prize >= 250000 ? 'שחקן בכיר' : 'משחק הושלם']))
     }));
-    setProgression(applyGameToLocalProgression({
+    const progressionUpdate = applyGameToLocalProgression({
       mode: 'solo',
       won: state === 'win',
       correctAnswers: round,
       prize,
       lifelinesUsed: lifelines
-    }).state);
+    });
+    // Reward chimes are staggered behind the end-of-game cue so the fanfare,
+    // level-up and achievement sounds never stack on top of each other.
+    if (progressionUpdate.state.level > progression.level) {
+      window.setTimeout(() => playAudioEvent('progression.levelUp'), 900);
+    }
+    if (progressionUpdate.unlocked.length > 0) {
+      window.setTimeout(() => playAudioEvent('progression.achievement'), 1500);
+    }
+    setProgression(progressionUpdate.state);
     const publicNickname = nickname || readLocal(NICKNAME_KEY, '');
     if (publicNickname) {
       void submitLeaderboardScore(publicNickname, prize, Math.min(15, state === 'win' ? 15 : round));
@@ -712,7 +692,7 @@ export default function TriviaPlatform({
     if (!current) return;
     setPendingPaid(null);
     setLifelineUses(previous => ({ ...previous, [type]: previous[type] + 1 }));
-    tone('lifeline', settings.sound);
+    playAudioEvent('lifeline.used');
     if (type === 'fifty') {
       setHiddenAnswers(order.filter(index => index !== current.correctIndex).slice(0, 2));
       setAdvice(t.fiftyAdvice);
@@ -786,11 +766,11 @@ export default function TriviaPlatform({
         if (submission.moderation.status === 'auto_approved') {
           const question = submission.question || submissionToQuestion(submission);
           setExtraQuestions(previous => [normalize(question), ...previous]);
-          tone('correct', settings.sound);
+          playAudioEvent('ui.success');
         } else if (submission.moderation.status === 'rejected') {
-          tone('wrong', settings.sound);
+          playAudioEvent('ui.error');
         } else {
-          tone('safe', settings.sound);
+          playAudioEvent('ui.notice');
         }
         setCommunityProviderLabel(data.provider === 'database' ? 'Supabase + AI moderation ready' : 'Local JSON + mock AI ready');
         setCommunityMessage(communityT[submission.moderation.status === 'auto_approved' ? 'autoApproved' : submission.moderation.status === 'needs_review' ? 'needsReview' : 'rejected']);
@@ -823,11 +803,11 @@ export default function TriviaPlatform({
       const question = submissionToQuestion(submission);
       submission = { ...submission, question };
       setExtraQuestions(previous => [normalize(question), ...previous]);
-      tone('correct', settings.sound);
+      playAudioEvent('ui.success');
     } else if (moderation.status === 'rejected') {
-      tone('wrong', settings.sound);
+      playAudioEvent('ui.error');
     } else {
-      tone('safe', settings.sound);
+      playAudioEvent('ui.notice');
     }
 
     setCommunitySubmissions(previous => [submission, ...previous]);
@@ -861,7 +841,7 @@ export default function TriviaPlatform({
           : [normalize(question), ...currentQuestions]
         );
         setAuditLogs(previous => [createAudit('admin_approved_submission', id, 'Question published from review queue'), ...previous].slice(0, 80));
-        tone('correct', settings.sound);
+        playAudioEvent('ui.success');
         return;
       }
     } catch {
@@ -883,7 +863,7 @@ export default function TriviaPlatform({
       };
     }));
     setAuditLogs(previous => [createAudit('admin_approved_submission', id, 'Question published from review queue'), ...previous].slice(0, 80));
-    tone('correct', settings.sound);
+    playAudioEvent('ui.success');
   }
 
   async function rejectSubmission(id: string) {
@@ -897,7 +877,7 @@ export default function TriviaPlatform({
       if (response.ok && data?.ok && data.submission) {
         setCommunitySubmissions(previous => previous.map(item => item.id === id ? data.submission : item));
         setAuditLogs(previous => [createAudit('admin_rejected_submission', id, 'Question rejected from review queue'), ...previous].slice(0, 80));
-        tone('wrong', settings.sound);
+        playAudioEvent('ui.error');
         return;
       }
     } catch {
@@ -913,7 +893,7 @@ export default function TriviaPlatform({
       : item
     ));
     setAuditLogs(previous => [createAudit('admin_rejected_submission', id, 'Question rejected from review queue'), ...previous].slice(0, 80));
-    tone('wrong', settings.sound);
+    playAudioEvent('ui.error');
   }
 
   return (
