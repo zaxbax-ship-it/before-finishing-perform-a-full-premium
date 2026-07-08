@@ -144,7 +144,11 @@
   display: flex;
   justify-content: flex-end;
   min-width: 0;
-  flex: 1 1 auto;
+  /* Physical right anchor: margin-left:auto is direction-independent, so the
+     account controls stay at the physical right in RTL and LTR alike (the
+     inner dir attribute only flips their internal order). */
+  flex: 0 1 auto;
+  margin-left: auto;
 }
 
 .language-corner {

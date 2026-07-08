@@ -52,7 +52,7 @@ import { GameExitModal } from '@/components/trivia/modals/GameExitModal';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game } from '@/components/trivia/screens/Game';
 import { PremiumProfile } from '@/components/trivia/screens/PremiumProfile';
-import { LANGUAGE_OPTIONS, LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS } from '@/components/trivia/constants';
+import { LANGUAGE_OPTIONS, LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
 
 const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
@@ -191,7 +191,7 @@ export default function TriviaPlatform({
   const [order, setOrder] = useState([0, 1, 2, 3]);
   const [selected, setSelected] = useState<number | null>(null);
   const [hiddenAnswers, setHiddenAnswers] = useState<number[]>([]);
-  const [timer, setTimer] = useState(45);
+  const [timer, setTimer] = useState(SOLO_TIMER_SECONDS);
   const [chances, setChances] = useState(3);
   const [lifelineUses, setLifelineUses] = useState<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
   const [advice, setAdvice] = useState('');
@@ -577,7 +577,7 @@ export default function TriviaPlatform({
     setOrder(shuffle([0, 1, 2, 3]));
     setSelected(null);
     setHiddenAnswers([]);
-    setTimer(45);
+    setTimer(SOLO_TIMER_SECONDS);
     setChances(3);
     setLifelineUses({ fifty: 0, swap: 0, phone: 0, audience: 0 });
     setAdvice('');
@@ -599,7 +599,7 @@ export default function TriviaPlatform({
     setOrder(shuffle([0, 1, 2, 3]));
     setSelected(null);
     setHiddenAnswers([]);
-    setTimer(45);
+    setTimer(SOLO_TIMER_SECONDS);
     setAdvice('');
     setNotice('');
   }

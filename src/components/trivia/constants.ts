@@ -29,6 +29,10 @@ export const MONEY = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 2500
 
 export const SAFE_STEPS = [4, 9, 14];
 
+/** Solo round timer in seconds. Presentation (the timer ring) derives its
+ * progress from the same constant the game clock uses. */
+export const SOLO_TIMER_SECONDS = 45;
+
 /** Price of re-using a lifeline: a fixed ceiling capped at 25% of the current pot. */
 export function priceFor(type: Lifeline, pot: number) {
   const fixed = type === 'fifty' ? 5000 : type === 'swap' ? 8000 : type === 'audience' ? 10000 : 12000;

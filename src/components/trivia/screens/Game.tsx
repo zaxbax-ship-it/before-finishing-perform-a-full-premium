@@ -1,7 +1,7 @@
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
-import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, PhoneFriendIcon, SwapQuestionIcon, TimerIcon, WarningIcon } from '@/lib/design/icons';
+import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, PhoneFriendIcon, SwapQuestionIcon, WarningIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
-import { LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS } from '../constants';
+import { LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
 import { money } from '../format';
 import { getInfoUi } from '../i18n';
 import type { GameQuestion, Lifeline } from '../types';
@@ -32,6 +32,9 @@ export function Game(props: {
 }) {
   const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
+  // Countdown ring: purely presentational — same clock, same 45s duration.
+  const RING_CIRCUMFERENCE = 2 * Math.PI * 23;
+  const timerRatio = Math.max(0, Math.min(1, timer / SOLO_TIMER_SECONDS));
   const infoUi = getInfoUi(locale);
   const answerInfo = selected !== null ? {
     correct: selected === current.correctIndex,
@@ -45,7 +48,20 @@ export function Game(props: {
           <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
           <span className="game-topline-info">{t.question} {round + 1}/15 · {current.category}</span>
           <span className="game-topline-chances" aria-label={t.chancesLabel}>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}><FavoritesIcon size={13} fill="currentColor" aria-hidden="true" /></span>)}</span>
-          <span className={`game-topline-timer ${timerUrgency}`}><TimerIcon size={16} aria-hidden="true" /> {timer}</span>
+          <span className={`game-timer-ring ${timerUrgency}`} role="timer">
+            <svg viewBox="0 0 52 52" aria-hidden="true">
+              <circle className="ring-track" cx="26" cy="26" r="23" />
+              <circle
+                className="ring-progress"
+                cx="26"
+                cy="26"
+                r="23"
+                transform="rotate(-90 26 26)"
+                style={{ strokeDasharray: RING_CIRCUMFERENCE, strokeDashoffset: RING_CIRCUMFERENCE * (1 - timerRatio) }}
+              />
+            </svg>
+            <strong>{timer}</strong>
+          </span>
           <span className="game-topline-pot">{money(currentPrize)}</span>
         </div>
         {current.imageUrl && (

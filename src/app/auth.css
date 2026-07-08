@@ -358,10 +358,8 @@
   }
 
   .public-auth-actions {
-    width: min(360px, calc(100vw - 20px));
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-radius: 24px;
+    width: auto;
+    gap: 8px;
   }
 
   .auth-link-button { min-height: 44px; padding: 0 12px; }
@@ -376,13 +374,29 @@
     top: auto;
     right: auto;
     margin: 0;
-    width: 100%;
+    width: auto;
   }
 
-  .public-auth-actions,
-  .public-user-menu,
+  .public-auth-actions {
+    width: auto;
+    padding: 4px;
+    gap: 6px;
+  }
+
+  .public-auth-actions .auth-link-button.icon-only {
+    min-height: 44px;
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .public-user-menu {
+    width: auto;
+    max-width: calc(100vw - 88px);
+  }
+
   .public-user-dropdown {
-    width: 100%;
+    width: min(360px, calc(100vw - 20px));
   }
 
   .public-user-dropdown {

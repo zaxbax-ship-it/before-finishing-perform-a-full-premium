@@ -90,9 +90,9 @@
 /* Question-first layout: slim top strip so question + answers stay in one frame */
 .game-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;border:1px solid hsla(0,0%,100%,.14);border-radius:999px;background:hsla(0,0%,100%,.06);box-shadow:inset 0 1px 0 hsla(0,0%,100%,.09);padding:9px 18px;font-weight:850}
 .game-topline-info{color:var(--gold);font-size:.92rem;white-space:nowrap}
-.game-topline-timer{display:inline-flex;align-items:center;gap:7px;color:#fff;font-size:1.12rem;font-feature-settings:"tnum"}
-.game-topline-timer.warn{color:var(--gold);animation:timer-breathe 1.1s ease-in-out infinite}
-.game-topline-timer.danger{color:var(--danger);animation:timer-panic .55s ease-in-out infinite}
+
+
+
 .game-topline-pot{color:#fff2b4;font-size:.95rem;white-space:nowrap;text-shadow:0 0 18px hsla(41,90%,69%,.35)}
 @media (max-width:640px){
 .game-active .game-topline{margin-bottom:10px;padding:7px 13px;gap:7px}
@@ -387,4 +387,76 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 @keyframes ambient-breathe {
   0%, 100% { opacity: 0.78; }
   50% { opacity: 0.7; }
+}
+
+/* Mobile top bar: one aligned control line (menu · language · auth · brand).
+   The utility corners are physically anchored (language left, auth right in
+   both directions), so the header clears them with physical padding. */
+@media (max-width: 640px) {
+  .public-header.app-header {
+    padding-top: max(10px, env(safe-area-inset-top));
+    padding-left: 66px;
+    padding-right: 112px;
+    min-height: 48px;
+  }
+  /* On the single-line bar the crown mark is the brand; the full title lives
+     in the drawer header, so the text never squeezes the row on small phones. */
+  .public-header.app-header .app-brand-text {
+    display: none;
+  }
+  /* Signed-in: the account pill is wide, so keep the header on its own row. */
+  .app-shell:has(.public-user-menu) .public-header.app-header {
+    padding-top: 74px;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+/* Competitive countdown ring: the game clock rendered as a shrinking gold
+   halo. Urgency escalates through the existing breathe/panic keyframes; the
+   ring maps 1:1 to a native progress ring in SwiftUI / Compose. */
+.game-timer-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle at 50% 30%, hsla(41, 90%, 69%, 0.14), transparent 70%), rgba(4, 10, 26, 0.55);
+  box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.12), 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+.game-timer-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.game-timer-ring .ring-track { fill: none; stroke: hsla(0, 0%, 100%, 0.12); stroke-width: 4; }
+.game-timer-ring .ring-progress {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px hsla(41, 90%, 69%, 0.5));
+  transition: stroke-dashoffset 1s linear, stroke var(--duration-normal) ease, filter var(--duration-normal) ease;
+}
+.game-timer-ring strong {
+  position: relative;
+  color: #fff;
+  font-size: 1.14rem;
+  font-weight: 950;
+  line-height: 1;
+  font-feature-settings: "tnum";
+}
+.game-timer-ring.warn { animation: timer-breathe 1.1s ease-in-out infinite; }
+.game-timer-ring.warn .ring-progress { filter: drop-shadow(0 0 10px hsla(41, 90%, 69%, 0.85)); }
+.game-timer-ring.warn strong { color: var(--gold); }
+.game-timer-ring.danger { animation: timer-panic 0.55s ease-in-out infinite; box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.12), 0 0 24px rgba(255, 97, 114, 0.35); }
+.game-timer-ring.danger .ring-progress { stroke: var(--danger); filter: drop-shadow(0 0 12px rgba(255, 97, 114, 0.85)); }
+.game-timer-ring.danger strong { color: var(--danger); }
+.game-active .game-timer-ring { width: 48px; height: 48px; }
+.game-active .game-timer-ring strong { font-size: 1rem; }
+
+/* Short landscape viewports: compact ring (must out-rank the game-active sizing). */
+@media (max-height: 560px) and (orientation: landscape) {
+  .game-timer-ring,
+  .game-active .game-timer-ring { width: 42px; height: 42px; }
+  .game-timer-ring strong,
+  .game-active .game-timer-ring strong { font-size: 0.92rem; }
 }
