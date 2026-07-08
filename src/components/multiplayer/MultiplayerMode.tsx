@@ -159,9 +159,11 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     // Invitation links (/?join=<lobbyId>) queue an auto-join that fires once
     // the anonymous identity is ready (see effect below joinLobby).
     const joinTarget = new URLSearchParams(window.location.search).get('join');
-    if (joinTarget && !(storedSession?.lobbyId === joinTarget)) {
+    if (joinTarget) {
+      // Always strip the invite param so a stale ?join= can never hijack a
+      // later load of / (e.g. pressing Back from the login page).
       window.history.replaceState(null, '', window.location.pathname);
-      setPendingJoin(joinTarget);
+      if (!(storedSession?.lobbyId === joinTarget)) setPendingJoin(joinTarget);
     }
   }, []);
 

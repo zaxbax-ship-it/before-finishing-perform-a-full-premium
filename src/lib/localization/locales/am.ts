@@ -1601,7 +1601,8 @@ const resources: LocaleResources = {
     "exitLeave": "ወደ መነሻ ውጣ",
     "exitHomeAria": "ወደ መነሻ ተመለስ",
     "levelLabel": "ደረጃ",
-    "xpLabel": "የልምድ ነጥቦች"
+    "xpLabel": "የልምድ ነጥቦች",
+    "contactError": "መልዕክቱን መላክ አልተሳካም። ትንሽ ቆይተው እንደገና ይሞክሩ።"
   },
   "authUi": {
     "signIn": "ግባ",

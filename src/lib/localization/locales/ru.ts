@@ -1605,7 +1605,8 @@ const resources: LocaleResources = {
     "exitLeave": "Выйти на главную",
     "exitHomeAria": "На главную",
     "levelLabel": "Уровень",
-    "xpLabel": "Опыт"
+    "xpLabel": "Опыт",
+    "contactError": "Не удалось отправить сообщение. Повторите попытку через минуту."
   },
   "authUi": {
     "signIn": "Войти",

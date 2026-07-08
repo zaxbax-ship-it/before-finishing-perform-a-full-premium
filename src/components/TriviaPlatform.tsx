@@ -64,6 +64,10 @@ const AUDIT_KEY = 'premium-trivia-audit-log-v1';
 const NICKNAME_KEY = 'premium-trivia-public-nickname-v1';
 const LOCALE_KEY = 'premium-trivia-locale-v1';
 const SUPPORTED_LOCALES: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
+const SCREEN_MEMORY_KEY = 'premium-trivia-screen-v1';
+// Screens that can be restored after back/forward navigation. Live-state
+// screens (game, result) cannot be resurrected after a reload.
+const RESTORABLE_SCREENS: Screen[] = ['home', 'categories', 'rules', 'leaderboard', 'profile', 'settings', 'submit', 'contact', 'multiplayer'];
 function normalize(question: Question): GameQuestion {
   const answers = question.options || (question as unknown as { answers?: string[] }).answers || [];
   return {
@@ -260,12 +264,31 @@ export default function TriviaPlatform({
     setCommunitySubmissions(readLocal(COMMUNITY_KEY, []));
     setAuditLogs(readLocal(AUDIT_KEY, []));
     // Invitation deep-links (/?join=...) land directly on the multiplayer screen.
-    if (new URLSearchParams(window.location.search).get('join')) setScreen('multiplayer');
+    if (new URLSearchParams(window.location.search).get('join')) {
+      setScreen('multiplayer');
+    } else {
+      // Browser back/forward (e.g. returning from /login) restores the screen
+      // the user actually left instead of resetting to home. Runs before the
+      // screen-memory effect below writes its first value.
+      const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+      if (navigationEntry?.type === 'back_forward') {
+        try {
+          const storedScreen = sessionStorage.getItem(SCREEN_MEMORY_KEY) as Screen | null;
+          if (storedScreen && RESTORABLE_SCREENS.includes(storedScreen)) setScreen(storedScreen);
+        } catch { /* sessionStorage unavailable */ }
+      }
+    }
     setSettings(readLocal(SETTINGS_KEY, { sound: true, effects: true, timer: 'דרמטית' }));
     setStats(normalizeStats(readLocal(STATS_KEY, { games: 0, bestPrize: 0, totalMoney: 0, correct: 0, lifelines: 0, achievements: ['כניסה לאולפן'] })));
     setNicknameState(readLocal(NICKNAME_KEY, ''));
     void refreshLeaderboard();
   }, []);
+
+  // Session-scoped screen memory: lets back/forward navigation return to the
+  // screen the user actually left (see the restore in the mount effect above).
+  useEffect(() => {
+    try { sessionStorage.setItem(SCREEN_MEMORY_KEY, screen); } catch { /* unavailable */ }
+  }, [screen]);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();

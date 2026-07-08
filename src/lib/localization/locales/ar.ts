@@ -1605,7 +1605,8 @@ const resources: LocaleResources = {
     "exitLeave": "الخروج إلى الرئيسية",
     "exitHomeAria": "العودة إلى الرئيسية",
     "levelLabel": "المستوى",
-    "xpLabel": "نقاط الخبرة"
+    "xpLabel": "نقاط الخبرة",
+    "contactError": "فشل إرسال الرسالة. حاول مرة أخرى بعد قليل."
   },
   "authUi": {
     "signIn": "تسجيل الدخول",

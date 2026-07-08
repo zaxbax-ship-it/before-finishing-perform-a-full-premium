@@ -16,6 +16,17 @@ export default function LoginForm({
   googleOAuthConfigured: boolean;
 }) {
   const router = useRouter();
+
+  function handleBack() {
+    // Prefer real history when the user arrived from inside the site;
+    // otherwise (direct URL / external referrer) fall back to home.
+    if (document.referrer.startsWith(window.location.origin) && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/');
+  }
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -102,6 +113,7 @@ export default function LoginForm({
       )}
 
       <div className="auth-links">
+        <button type="button" className="focus-ring" onClick={handleBack}>חזרה</button>
         <Link className="focus-ring" href="/reset-password">שכחתי סיסמה</Link>
         <Link className="focus-ring" href="/signup">יצירת חשבון</Link>
       </div>

@@ -256,7 +256,8 @@ const resources: LocaleResources = {
     "exitLeave": "יציאה לדף הבית",
     "exitHomeAria": "חזרה לדף הבית",
     "levelLabel": "רמה",
-    "xpLabel": "נקודות ניסיון"
+    "xpLabel": "נקודות ניסיון",
+    "contactError": "שליחת ההודעה נכשלה. נסו שוב בעוד רגע."
   },
   "authUi": {
     "signIn": "כניסה",

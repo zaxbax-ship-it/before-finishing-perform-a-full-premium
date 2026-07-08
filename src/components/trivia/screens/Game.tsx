@@ -1,5 +1,8 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
-import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WarningIcon } from '@/lib/design/icons';
+import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
 import { money } from '../format';
@@ -36,6 +39,11 @@ export function Game(props: {
   const RING_CIRCUMFERENCE = 2 * Math.PI * 23;
   const timerRatio = Math.max(0, Math.min(1, timer / SOLO_TIMER_SECONDS));
   const infoUi = getInfoUi(locale);
+  const nextButtonRef = useRef<HTMLButtonElement | null>(null);
+  // Keyboard flow: focus moves to the continue button once an answer locks in.
+  useEffect(() => {
+    if (selected !== null) nextButtonRef.current?.focus();
+  }, [selected]);
   const answerInfo = selected !== null ? {
     correct: selected === current.correctIndex,
     answer: current.correctAnswer || current.answers[current.correctIndex],
@@ -69,34 +77,36 @@ export function Game(props: {
             <img src={current.imageUrl} alt={infoUi.imageAlt} className="h-full w-full object-cover" />
           </div>
         )}
-        <h2 className="question-text mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl">{current.question}</h2>
-        <div className="answers-grid grid gap-4 md:grid-cols-2">
+        <h2 key={`q-${current.id}`} className="question-text stage-enter mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl">{current.question}</h2>
+        <div key={`a-${current.id}`} className="answers-grid grid gap-4 md:grid-cols-2">
           {order.map((answerIndex, displayIndex) => {
             const state = selected === null ? '' : answerIndex === current.correctIndex ? 'correct' : selected === answerIndex ? 'wrong' : '';
             return (
-              <button key={answerIndex} disabled={selected !== null || hiddenAnswers.includes(answerIndex)} onClick={() => chooseAnswer(answerIndex)} className={['answer-button focus-ring', state, hiddenAnswers.includes(answerIndex) ? 'eliminated' : ''].join(' ')}>
-                <span className="ml-3 inline-grid h-9 w-9 place-items-center rounded-full bg-white/12 text-gold font-black">{optionLetters[displayIndex]}</span>
+              <button key={answerIndex} disabled={selected !== null || hiddenAnswers.includes(answerIndex)} onClick={() => chooseAnswer(answerIndex)} className={['answer-button focus-ring', state, hiddenAnswers.includes(answerIndex) ? 'eliminated' : ''].join(' ')} style={{ ['--enter-delay' as string]: `${displayIndex * 70}ms` }}>
+                <span className="answer-letter ml-3 inline-grid h-9 w-9 place-items-center rounded-full font-black">{optionLetters[displayIndex]}</span>
                 <span className="text-xl font-bold">{current.answers[answerIndex]}</span>
               </button>
             );
           })}
         </div>
-        {answerInfo && (
-          <div role="status" aria-live="polite" className={answerInfo.correct ? 'answer-info-card correct' : 'answer-info-card wrong'}>
-            <div className="answer-info-icon" aria-hidden="true">{answerInfo.correct ? <ConfirmIcon size={20} aria-hidden="true" /> : <WarningIcon size={20} aria-hidden="true" />}</div>
-            <div className="answer-info-content">
-              <div className="answer-info-header">
-                <strong>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</strong>
-                <span>{infoUi.answer}: {answerInfo.answer}</span>
-              </div>
-              <p>{answerInfo.explanation}</p>
-              <div className="answer-info-actions">
-                <em>{infoUi.next}</em>
-                <button className="answer-info-next focus-ring inline-flex items-center gap-2" type="button" autoFocus onClick={advanceAfterAnswer}>{infoUi.action}<ForwardIcon size={16} /></button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Player-paced continue: always present, disabled until an answer is
+            locked in, then armed with the activation pulse. No auto-advance —
+            the player controls the pace. */}
+        <div className="game-next-row">
+          <button
+            ref={nextButtonRef}
+            type="button"
+            className={`game-next-button focus-ring ${answerInfo ? 'ready' : ''}`}
+            disabled={!answerInfo}
+            onClick={advanceAfterAnswer}
+          >
+            {infoUi.action}
+            <ForwardIcon size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <span className="sr-only" role="status" aria-live="assertive">
+          {answerInfo ? `${answerInfo.correct ? infoUi.correct : infoUi.wrong}. ${infoUi.answer}: ${answerInfo.answer}` : ''}
+        </span>
         {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}
         {notice && <div className="mt-6 rounded-3xl border border-gold/40 bg-gold/10 p-5 text-lg leading-8 text-gold">{notice}</div>}
         {/* Slim meta strip: only information not already shown in the topline. */}

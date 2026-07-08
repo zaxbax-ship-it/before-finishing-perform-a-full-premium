@@ -1733,7 +1733,8 @@ const resources: LocaleResources = {
     "exitLeave": "Exit to home",
     "exitHomeAria": "Back to home",
     "levelLabel": "Level",
-    "xpLabel": "XP"
+    "xpLabel": "XP",
+    "contactError": "Sending failed. Please try again in a moment."
   },
   "authUi": {
     "signIn": "Sign In",

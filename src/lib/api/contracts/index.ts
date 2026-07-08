@@ -34,3 +34,5 @@ export type { ListLobbiesResponse, MultiplayerLobbySummaryDto } from './multipla
 export { isCheckoutSessionResponse, isEntitlementsResponse } from './payments';
 export type { CheckoutSessionResponse, EntitlementsResponse } from './payments';
 
+export { isContactSubmitResponse } from './contact';
+export type { ContactSubmitResponse } from './contact';
