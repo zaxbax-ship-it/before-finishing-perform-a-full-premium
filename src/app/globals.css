@@ -57,6 +57,8 @@
   --z-header-lang: 120;
   --z-language-corner: 130;
   --z-auth-corner: 135;
+  /* Full-screen overlays (nav drawer) must cover the floating utility corners. */
+  --z-overlay: 200;
 
   /* Transition & Animation Duration Tokens */
   --duration-fast: 0.15s;
@@ -347,6 +349,11 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
    utility bar (language + account) too so nothing floats over the game's own
    top strip (home button, timer, prize). Language/account are set before play. */
 .game-active .top-utility-bar { display: none; }
+
+/* The nav drawer is modal: it must cover the floating language/account corners
+   (which float at z 130-150), otherwise they collide with drawer content on
+   small screens where the panel is full-width. */
+.drawer-backdrop { z-index: var(--z-overlay); }
 
 /* Micro-interactions: consistent pressed feedback on interactive surfaces that
    previously only had hover states (buttons/cards already covered elsewhere). */

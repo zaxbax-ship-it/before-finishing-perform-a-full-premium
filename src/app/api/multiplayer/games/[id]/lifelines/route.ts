@@ -20,6 +20,7 @@ type LifelineBody = {
   playerToken?: unknown;
   roundId?: unknown;
   lifeline?: unknown;
+  idempotencyKey?: unknown;
 };
 
 export async function POST(request: Request, context: RouteContext) {
@@ -45,7 +46,7 @@ export async function POST(request: Request, context: RouteContext) {
       lifeline: stringValue(body.lifeline) as MultiplayerLifelineId
     };
     const result = action === 'buy_lifeline'
-      ? await service.buyLifeline(base)
+      ? await service.buyLifeline({ ...base, idempotencyKey: stringValue(body.idempotencyKey).slice(0, 80) || undefined })
       : await service.useLifeline({ ...base, roundId: stringValue(body.roundId) });
 
     if (!result.ok) {

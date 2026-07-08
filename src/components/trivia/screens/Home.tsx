@@ -2,13 +2,13 @@ import { AdSlot } from '@/components/ads/AdSlot';
 import { MultiplayerIcon, PremiumBadgeIcon, PremiumIcon, SinglePlayerIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { money } from '../format';
-import { MARKETING_QUESTIONS } from '../i18n';
+import { getMarketingQuestions } from '../i18n';
 import { Metric } from '../primitives';
 import type { Screen } from '../types';
 
 export function Home({ t, locale, soloLabel, multiplayerLabel, start, open }: { t: Record<string, string>; locale: Locale; soloLabel: string; multiplayerLabel: string; start: () => void; open: (screen: Screen) => void }) {
   // Non-numeric marketing phrase — accurate across every locale, no hard count to contradict.
-  const marketingQuestions = MARKETING_QUESTIONS[locale] || MARKETING_QUESTIONS.he;
+  const marketingQuestions = getMarketingQuestions(locale);
   return (
     <section className="home-landing mx-auto w-full max-w-[1680px] px-5 pb-16 lg:px-8">
       {/* Hero: brand statement through the two primary action cards below. */}

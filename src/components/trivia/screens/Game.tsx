@@ -3,7 +3,7 @@ import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, 
 import type { Locale } from '@/lib/types';
 import { LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS } from '../constants';
 import { money } from '../format';
-import { INFO_UI } from '../i18n';
+import { getInfoUi } from '../i18n';
 import type { GameQuestion, Lifeline } from '../types';
 
 export function Game(props: {
@@ -32,7 +32,7 @@ export function Game(props: {
 }) {
   const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
-  const infoUi = INFO_UI[locale];
+  const infoUi = getInfoUi(locale);
   const answerInfo = selected !== null ? {
     correct: selected === current.correctIndex,
     answer: current.correctAnswer || current.answers[current.correctIndex],

@@ -14,7 +14,7 @@ import {
   SettingsIcon,
   ConfirmIcon
 } from '@/lib/design/icons';
-import { localizeCategory, localizeQuestion } from '@/lib/localization';
+import { ensureLocaleResources, localizeCategory, localizeQuestion } from '@/lib/localization';
 import type { Locale, Question } from '@/lib/types';
 
 type AdminQuestion = Question & { answers: string[]; imageUrl?: string };
@@ -207,7 +207,7 @@ export default function AdminPanel({ questions }: { questions: Question[] }) {
                 <SearchIcon size={16} aria-hidden="true" className="admin-search-icon" />
                 <input className="form-input py-3 pl-4 pr-10 sm:w-72" value={query} onChange={event => setQuery(event.target.value)} placeholder={ui.searchPh} />
               </div>
-              <select className="form-input" value={locale} onChange={event => setLocale(event.target.value as Locale)} aria-label={ui.displayLang}>
+              <select className="form-input" value={locale} onChange={event => { const next = event.target.value as Locale; void ensureLocaleResources(next).finally(() => setLocale(next)); }} aria-label={ui.displayLang}>
                 <option value="he">עברית</option>
                 <option value="en">English</option>
                 <option value="ar">العربية</option>

@@ -38,6 +38,57 @@ const DEFAULT_LIFELINES: MultiplayerLifelineInventory = { fifty_fifty: 1, audien
 const EXTRA_LIFELINE_COST = 5000;
 const multiplayerServiceLogger = createLogger('multiplayer-service');
 
+/**
+ * Reliability guards (single-process scope).
+ *
+ * `withPlayerLock` serializes the stateful actions of one player (answer,
+ * lifeline, purchase) so rapid double-taps, duplicate tabs and racing retries
+ * cannot interleave check-then-act sections. The Postgres schema additionally
+ * enforces `unique (round_id, player_id)` and (migration 007) a single winning
+ * answer per round, so a multi-instance deployment stays correct even where
+ * this in-process lock cannot reach.
+ *
+ * `processedPurchases` makes lifeline purchases idempotent: the client sends a
+ * stable `idempotencyKey` per logical purchase; a replay within the TTL is
+ * acknowledged without charging again. In-memory by design — a multi-instance
+ * deployment would back this with Redis (the Upstash client already used for
+ * rate limiting), documented as a deliberate follow-up.
+ */
+const playerActionLocks = new Map<string, Promise<unknown>>();
+
+async function withPlayerLock<T>(playerId: string, task: () => Promise<T>): Promise<T> {
+  const previous = playerActionLocks.get(playerId) || Promise.resolve();
+  const run = previous.then(task, task);
+  const gate = run.then(() => undefined, () => undefined);
+  playerActionLocks.set(playerId, gate);
+  try {
+    return await run;
+  } finally {
+    if (playerActionLocks.get(playerId) === gate) playerActionLocks.delete(playerId);
+  }
+}
+
+const PURCHASE_KEY_TTL_MS = 15 * 60 * 1000;
+const processedPurchases = new Map<string, number>();
+
+function sweepProcessedPurchases() {
+  if (processedPurchases.size < 200) return;
+  const cutoff = Date.now() - PURCHASE_KEY_TTL_MS;
+  for (const [key, at] of processedPurchases) {
+    if (at < cutoff) processedPurchases.delete(key);
+  }
+}
+
+function purchaseAlreadyProcessed(key: string) {
+  sweepProcessedPurchases();
+  const at = processedPurchases.get(key);
+  return at !== undefined && Date.now() - at < PURCHASE_KEY_TTL_MS;
+}
+
+function rememberPurchase(key: string) {
+  processedPurchases.set(key, Date.now());
+}
+
 const now = () => new Date();
 const iso = () => now().toISOString();
 const id = (prefix: string) => `${prefix}-${Date.now()}-${crypto.randomUUID()}`;
@@ -541,6 +592,14 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       return fail('Game is not active.', 'game_not_active');
     }
 
+    // Retry safety: a resubmitted purchase (lost response, flaky mobile
+    // network) is acknowledged without charging again. Intentional repeat
+    // purchases use a fresh key, so they still work.
+    const purchaseKey = input.idempotencyKey ? `${player.id}:${input.idempotencyKey}` : undefined;
+    if (purchaseKey && purchaseAlreadyProcessed(purchaseKey)) {
+      return { ok: true, gameState: await getGameState(game.id, input) };
+    }
+
     const answers = await repositories.multiplayer.listAnswers(game.id);
     if (playerAvailablePrize(answers, player) < EXTRA_LIFELINE_COST) {
       return fail('Not enough fictional winnings are available.', 'insufficient_winnings');
@@ -555,6 +614,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       spentPrize: (player.spentPrize || 0) + EXTRA_LIFELINE_COST,
       lastSeenAt: iso()
     });
+    if (purchaseKey) rememberPurchase(purchaseKey);
 
     await recordAudit('multiplayer_lifeline_purchased', 'multiplayer_game', game.id, {
       playerId: player.id,
@@ -669,9 +729,12 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     joinLobby,
     leaveLobby,
     startGame,
-    submitAnswer,
-    useLifeline,
-    buyLifeline,
+    // Stateful player actions are serialized per player so double-taps,
+    // duplicate tabs and racing retries cannot interleave check-then-act steps.
+    submitAnswer: (input: MultiplayerAnswerInput) => withPlayerLock(input.playerId, () => submitAnswer(input)),
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- server-side service function that happens to be named use*; not a React Hook
+    useLifeline: (input: MultiplayerLifelineInput) => withPlayerLock(input.playerId, () => useLifeline(input)),
+    buyLifeline: (input: MultiplayerBuyLifelineInput) => withPlayerLock(input.playerId, () => buyLifeline(input)),
     advanceRound,
     getLobbyState,
     getGameState

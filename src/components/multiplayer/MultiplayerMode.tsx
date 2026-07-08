@@ -58,6 +58,15 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   const [pendingJoin, setPendingJoin] = useState<string | undefined>();
   const shellRef = useRef<HTMLElement | null>(null);
 
+  // Reliability guards: monotonically ordered state application (a late poll
+  // response must not overwrite a newer action result), a single in-flight
+  // stateful action (rapid double-taps / duplicate tabs), and a stable
+  // idempotency key per logical lifeline purchase (network retry safety).
+  const requestSeqRef = useRef(0);
+  const appliedSeqRef = useRef(0);
+  const actionInFlightRef = useRef(false);
+  const purchaseKeysRef = useRef<Partial<Record<MultiplayerLifelineId, string>>>({});
+
   const activeGameId = gameState?.game?.id || credentials?.gameId;
   const activeLobbyId = gameState?.lobby?.id || credentials?.lobbyId;
   const currentRound = gameState?.currentRound;
@@ -97,7 +106,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   async function refreshLobbies() {
     setStatus('loading');
     try {
-      const response = await fetch('/api/multiplayer/lobbies', { cache: 'no-store' });
+      const response = await fetch('/api/multiplayer/lobbies', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       const data = await response.json();
       if (response.ok && Array.isArray(data?.lobbies)) {
         setLobbies(data.lobbies);
@@ -112,6 +121,9 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   }
 
   async function refreshState(session: StoredSession, gameId?: string, lobbyId?: string) {
+    // Ordered application: a slow poll that started before a newer action
+    // result must not clobber it when it finally arrives.
+    const seq = ++requestSeqRef.current;
     try {
       const response = await fetch(
         gameId
@@ -121,11 +133,13 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           cache: 'no-store',
+          signal: AbortSignal.timeout(10000),
           body: JSON.stringify({ action: 'state', playerId: session.playerId, playerToken: session.playerToken })
         }
       );
       const data = await response.json();
-      if (response.ok && data?.gameState) {
+      if (response.ok && data?.gameState && seq > appliedSeqRef.current) {
+        appliedSeqRef.current = seq;
         setGameState(data.gameState);
         if (data.gameState.game?.id) persistSession({ ...session, gameId: data.gameState.game.id, lobbyId: data.gameState.lobby.id });
       }
@@ -207,17 +221,21 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     const cleaned = typedNickname.length >= 3 ? typedNickname : defaultNickname(anonymousId);
     if (cleaned !== nickname) setNickname(cleaned);
 
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
     setStatus('loading');
     setMessage(copy.joining);
+    const seq = ++requestSeqRef.current;
     try {
       const response = await fetch('/api/multiplayer/lobbies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({ action, nickname: cleaned, anonymousId, maxPlayers, locale })
       });
       const data = await response.json() as MultiplayerActionResult;
       if (response.ok && data.ok) {
-        applyActionResult(data);
+        applyActionResult(data, seq);
         setStatus('idle');
         setMessage('');
         return;
@@ -227,6 +245,8 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       return;
     } catch {
       // Handled below.
+    } finally {
+      actionInFlightRef.current = false;
     }
     setStatus('error');
     setMessage(copy.error);
@@ -237,101 +257,136 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     const typedNickname = cleanNickname(nickname);
     const cleaned = typedNickname.length >= 3 ? typedNickname : defaultNickname(anonymousId);
     if (cleaned !== nickname) setNickname(cleaned);
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
     setStatus('loading');
+    const seq = ++requestSeqRef.current;
     try {
       const response = await fetch(`/api/multiplayer/lobbies/${encodeURIComponent(lobbyId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({ action: 'join', nickname: cleaned, anonymousId })
       });
       const data = await response.json() as MultiplayerActionResult;
-      applyActionResult(data);
+      applyActionResult(data, seq);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
+    } finally {
+      actionInFlightRef.current = false;
     }
   }
 
   async function startGame() {
     if (!credentials?.playerId || !credentials.playerToken || !gameState?.lobby.id) return;
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
     setStatus('loading');
+    const seq = ++requestSeqRef.current;
     try {
       const response = await fetch(`/api/multiplayer/lobbies/${encodeURIComponent(gameState.lobby.id)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({ action: 'start', ...credentials })
       });
       const data = await response.json() as MultiplayerActionResult;
-      applyActionResult(data);
+      applyActionResult(data, seq);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
+    } finally {
+      actionInFlightRef.current = false;
     }
   }
 
   async function submitAnswer(answerIndex: number) {
     if (!credentials?.playerId || !credentials.playerToken || !activeGameId || !currentRound || currentRound.hasAnswered) return;
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
     setStatus('loading');
+    const seq = ++requestSeqRef.current;
     try {
       const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/answers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({ ...credentials, roundId: currentRound.id, answerIndex })
       });
       const data = await response.json() as MultiplayerActionResult;
-      applyActionResult(data);
+      applyActionResult(data, seq);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
+    } finally {
+      actionInFlightRef.current = false;
     }
   }
 
   async function useLifeline(lifeline: MultiplayerLifelineId) {
     if (!credentials?.playerId || !credentials.playerToken || !activeGameId || !currentRound || currentRound.hasAnswered) return;
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
     setStatus('loading');
+    const seq = ++requestSeqRef.current;
     try {
       const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/lifelines`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({ ...credentials, roundId: currentRound.id, lifeline })
       });
       const data = await response.json() as MultiplayerActionResult;
-      applyActionResult(data);
+      applyActionResult(data, seq);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
+    } finally {
+      actionInFlightRef.current = false;
     }
   }
 
   async function buyLifeline(lifeline: MultiplayerLifelineId) {
     if (!credentials?.playerId || !credentials.playerToken || !activeGameId) return;
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
+    // Stable key per logical purchase: a retry after a lost response reuses
+    // it, so the server acknowledges once and never charges twice.
+    const idempotencyKey = purchaseKeysRef.current[lifeline] || crypto.randomUUID();
+    purchaseKeysRef.current[lifeline] = idempotencyKey;
     setStatus('loading');
+    const seq = ++requestSeqRef.current;
     try {
       const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/lifelines`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'buy', ...credentials, lifeline })
+        signal: AbortSignal.timeout(15000),
+        body: JSON.stringify({ action: 'buy', ...credentials, lifeline, idempotencyKey })
       });
       const data = await response.json() as MultiplayerActionResult;
-      applyActionResult(data);
+      if (response.ok && data.ok) delete purchaseKeysRef.current[lifeline];
+      applyActionResult(data, seq);
       setStatus(response.ok && data.ok ? 'idle' : 'error');
       if (response.ok && data.ok) setMessage('');
       if (!data.ok) setMessage(multiplayerErrorMessage(data, copy));
     } catch {
       setStatus('error');
       setMessage(copy.error);
+    } finally {
+      actionInFlightRef.current = false;
     }
   }
 
@@ -353,7 +408,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     await refreshLobbies();
   }
 
-  function applyActionResult(data: MultiplayerActionResult) {
+  function applyActionResult(data: MultiplayerActionResult, seq: number) {
     if (data.credentials) {
       const session = {
         ...data.credentials,
@@ -362,8 +417,13 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       };
       persistSession(session);
     }
-    if (data.gameState) setGameState(data.gameState);
-    if (data.lobby) {
+    // Ordered application — an older response never overwrites newer state.
+    if (data.gameState && seq > appliedSeqRef.current) {
+      appliedSeqRef.current = seq;
+      setGameState(data.gameState);
+    }
+    if (data.lobby && seq > appliedSeqRef.current) {
+      appliedSeqRef.current = seq;
       setGameState({
         lobby: data.lobby,
         players: [],

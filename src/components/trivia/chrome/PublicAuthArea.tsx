@@ -42,7 +42,7 @@ export function PublicAuthArea({
   if (!ready) {
     return (
       <div className="public-auth-corner" aria-label={ui.account}>
-        <div className="public-auth-skeleton" />
+        <div className="public-auth-skeleton icon-pair" />
       </div>
     );
   }
@@ -50,8 +50,8 @@ export function PublicAuthArea({
   if (!configured || !user) {
     return (
       <nav className="public-auth-corner public-auth-actions" aria-label={ui.account}>
-        <a className="auth-link-button secondary focus-ring inline-flex items-center gap-2" href="/login"><LoginIcon size={16} />{ui.signIn}</a>
-        <a className="auth-link-button primary focus-ring inline-flex items-center gap-2" href="/signup"><ProfileIcon size={16} />{ui.createAccount}</a>
+        <a className="auth-link-button secondary icon-only focus-ring" href="/login" aria-label={ui.signIn} title={ui.signIn}><LoginIcon size={20} aria-hidden="true" /></a>
+        <a className="auth-link-button primary icon-only focus-ring" href="/signup" aria-label={ui.createAccount} title={ui.createAccount}><ProfileIcon size={20} aria-hidden="true" /></a>
       </nav>
     );
   }

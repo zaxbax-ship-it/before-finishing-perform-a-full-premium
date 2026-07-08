@@ -232,6 +232,12 @@ export type MultiplayerLifelineInput = MultiplayerPlayerCredentials & {
 export type MultiplayerBuyLifelineInput = MultiplayerPlayerCredentials & {
   gameId: EntityId;
   lifeline: MultiplayerLifelineId;
+  /**
+   * Optional client-generated key that makes a purchase retry-safe: the same
+   * key is acknowledged once, so a resubmission after a lost response cannot
+   * charge twice. Native mobile clients should send it too.
+   */
+  idempotencyKey?: string;
 };
 
 export type MultiplayerActionResult = {
