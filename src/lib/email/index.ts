@@ -44,11 +44,30 @@ export function getContactNotifyEmail(): string | undefined {
   return process.env.CONTACT_NOTIFY_EMAIL?.trim() || undefined;
 }
 
+/**
+ * Presence-only snapshot of the email configuration, safe to log verbatim:
+ * booleans and the provider kind, never values. This is what production
+ * diagnostics rely on to tell "provider inactive" from "no destination
+ * configured" from "sender not set (sandbox delivery only)".
+ */
+export function describeEmailConfig(): {
+  provider: EmailNotificationProvider['kind'];
+  notifyEmailConfigured: boolean;
+  fromEmailConfigured: boolean;
+} {
+  return {
+    provider: isEmailConfigured() ? 'resend' : 'noop',
+    notifyEmailConfigured: Boolean(getContactNotifyEmail()),
+    fromEmailConfigured: Boolean(process.env.CONTACT_FROM_EMAIL?.trim())
+  };
+}
+
 const noopProvider: EmailNotificationProvider = {
   kind: 'noop',
   async send(message) {
-    emailLogger.info('Email provider not configured; message not sent.', {
-      to: message.to,
+    // Warn level on purpose: a caller wanted an email delivered and the
+    // provider is inactive — this must be visible in production logs.
+    emailLogger.warn('Email provider not configured (RESEND_API_KEY missing); message not sent.', {
       subject: message.subject
     });
     return { ok: false, error: 'email_not_configured' };
@@ -60,6 +79,11 @@ function createResendProvider(apiKey: string): EmailNotificationProvider {
     kind: 'resend',
     async send(message) {
       try {
+        emailLogger.info('Sending email via Resend.', {
+          subject: message.subject,
+          hasReplyTo: Boolean(message.replyTo),
+          usingDefaultFrom: !process.env.CONTACT_FROM_EMAIL?.trim()
+        });
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -80,6 +104,7 @@ function createResendProvider(apiKey: string): EmailNotificationProvider {
           emailLogger.warn('Email delivery failed.', { status: response.status, error: data.message });
           return { ok: false, error: data.message || `resend_http_${response.status}` };
         }
+        emailLogger.info('Email accepted by Resend.', { status: response.status, id: data.id });
         return { ok: true, id: data.id };
       } catch (error) {
         emailLogger.warn('Email delivery failed.', {

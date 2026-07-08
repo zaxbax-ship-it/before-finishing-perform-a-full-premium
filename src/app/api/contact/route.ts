@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import { getClientIdentity, hashIdentity, internalServerError, publicJsonError, readLimitedJson } from '@/lib/api/communitySecurity';
 import { checkRateLimit, getCommunitySubmissionRateLimit } from '@/lib/infrastructure/rateLimit';
-import { getContactNotifyEmail, getEmailProvider } from '@/lib/email';
+import { describeEmailConfig, getContactNotifyEmail, getEmailProvider } from '@/lib/email';
 import { createLogger } from '@/lib/infrastructure/logger';
 import type { ContactSubmitResponse } from '@/lib/api/contracts';
 
@@ -10,8 +10,10 @@ import type { ContactSubmitResponse } from '@/lib/api/contracts';
  * Contact form intake. Success is returned only after the message is actually
  * persisted: it is stored through the repository layer as an admin-channel
  * notification, mirrored into the audit log (visible in the admin dashboard),
- * and written to the structured server log. Email delivery is a documented
- * follow-up (Resend is staged in .env.example but not configured).
+ * and written to the structured server log. Email notification is best-effort
+ * on top of that: it requires RESEND_API_KEY + CONTACT_NOTIFY_EMAIL (and a
+ * verified CONTACT_FROM_EMAIL for non-sandbox delivery); its configuration
+ * state and every send attempt/outcome are logged, values never are.
  */
 const contactLogger = createLogger('contact');
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -67,22 +69,56 @@ export async function POST(request: Request) {
 
     // Best-effort email notification: the message is already persisted above,
     // so delivery failures (or a missing provider) never affect the response.
+    // The config snapshot is presence-only (booleans + provider kind) — safe
+    // to log, and it makes a skipped/no-op send visible in production.
+    const emailConfig = describeEmailConfig();
     const notifyEmail = getContactNotifyEmail();
-    if (notifyEmail) {
-      void getEmailProvider()
-        .send({
-          to: notifyEmail,
-          subject: `New contact message from ${name}`,
-          text: `Name: ${name}
+    contactLogger.info('Contact email notification status.', {
+      notificationId: notification.id,
+      ...emailConfig,
+      willAttempt: Boolean(notifyEmail)
+    });
+    if (!notifyEmail) {
+      contactLogger.warn('Contact notification email skipped: CONTACT_NOTIFY_EMAIL is not set.', {
+        notificationId: notification.id
+      });
+    } else {
+      const sendNotification = async () => {
+        try {
+          const result = await getEmailProvider().send({
+            to: notifyEmail,
+            subject: `New contact message from ${name}`,
+            text: `Name: ${name}
 Email: ${email}
 
 ${message}`,
-          replyTo: email
-        })
-        .then(result => {
-          if (result.ok) contactLogger.info('Contact notification email sent.', { id: result.id });
-        })
-        .catch(() => undefined);
+            replyTo: email
+          });
+          if (result.ok) {
+            contactLogger.info('Contact notification email sent.', { notificationId: notification.id, id: result.id });
+          } else {
+            contactLogger.warn('Contact notification email not sent.', {
+              notificationId: notification.id,
+              provider: emailConfig.provider,
+              error: result.error
+            });
+          }
+        } catch (sendError) {
+          contactLogger.warn('Contact notification email failed unexpectedly.', {
+            notificationId: notification.id,
+            error: sendError instanceof Error ? sendError.message : 'Unknown error'
+          });
+        }
+      };
+      // On serverless the function freezes once the response is returned, so a
+      // dangling promise silently dies before Resend is ever reached. after()
+      // keeps the instance alive until the send completes; the inline await is
+      // the fallback for contexts without a Next request scope (e.g. tests).
+      try {
+        after(sendNotification);
+      } catch {
+        await sendNotification();
+      }
     }
 
     return NextResponse.json(
