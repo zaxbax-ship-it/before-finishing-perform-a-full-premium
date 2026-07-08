@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import TriviaPlatform from '@/components/TriviaPlatform';
 import { createTriviaDataService } from '@/lib/services/triviaDataService';
 import { API_QUESTION_SAMPLE_SIZE } from '@/lib/services/questionSampling';
-import { enforcementActive, requirePermission } from '@/lib/auth/guards';
+import { adminAccessMode, requirePermission, warnLockedAdminAccess, warnOpenAdminAccess } from '@/lib/auth/guards';
 import { AuthorizationError, type AdminContext } from '@/lib/auth/types';
 import AdminAuthBar from './AdminAuthBar';
 
@@ -12,8 +12,20 @@ export const dynamic = 'force-dynamic';
 
 export default async function Admin() {
   let context: AdminContext | undefined;
+  const mode = adminAccessMode();
 
-  if (enforcementActive()) {
+  // Production without enforced auth fails closed: nobody can be authorized
+  // when there is no auth backend, so everyone is denied.
+  if (mode === 'locked') {
+    warnLockedAdminAccess('page:/admin');
+    redirect('/forbidden');
+  }
+
+  if (mode === 'open-dev') {
+    warnOpenAdminAccess('page:/admin');
+  }
+
+  if (mode === 'enforced') {
     try {
       context = await requirePermission('submissions.read');
     } catch (error) {

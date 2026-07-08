@@ -18,8 +18,16 @@ import {
  *     permission checks run server-side in the page / route handlers.
  */
 export async function middleware(request: NextRequest) {
-  // Open local mode (no Supabase Auth configured): do nothing, preserve behavior.
+  // No Supabase Auth configured: open mode is allowed only outside production.
+  // In a production runtime the admin area fails closed at the edge as well
+  // (the /admin page and admin APIs enforce the same rule server-side).
   if (!isSupabaseAuthConfigured()) {
+    if (process.env.NODE_ENV === 'production' && request.nextUrl.pathname.startsWith('/admin')) {
+      const forbiddenUrl = request.nextUrl.clone();
+      forbiddenUrl.pathname = '/forbidden';
+      forbiddenUrl.search = '';
+      return NextResponse.redirect(forbiddenUrl);
+    }
     return NextResponse.next();
   }
 
