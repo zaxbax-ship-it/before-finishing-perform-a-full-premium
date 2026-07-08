@@ -5,6 +5,7 @@ import type { EntityId } from '@/lib/domain/models';
 import type { Locale, Question } from '@/lib/types';
 import { listGameplayQuestionsWithBundledFallback } from '@/lib/services/gameplayQuestionSource';
 import { createLogger } from '@/lib/infrastructure/logger';
+import { MultiplayerNotFoundError } from './errors';
 import type {
   MultiplayerActionResult,
   MultiplayerAnswer,
@@ -654,7 +655,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
 
   async function getLobbyState(lobbyId: EntityId, credentials?: MultiplayerPlayerCredentials): Promise<MultiplayerPublicGameState> {
     const lobby = await repositories.multiplayer.findLobby(lobbyId);
-    if (!lobby) throw new Error('Lobby was not found.');
+    if (!lobby) throw new MultiplayerNotFoundError('lobby_not_found', 'Lobby was not found.');
     if (lobby.gameId) return getGameState(lobby.gameId, credentials);
 
     const players = await repositories.multiplayer.listPlayers(lobby.id);
@@ -671,10 +672,10 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
 
   async function getGameState(gameId: EntityId, credentials?: MultiplayerPlayerCredentials): Promise<MultiplayerPublicGameState> {
     const game = await repositories.multiplayer.findGame(gameId);
-    if (!game) throw new Error('Game was not found.');
+    if (!game) throw new MultiplayerNotFoundError('game_not_found', 'Game was not found.');
 
     const lobby = await repositories.multiplayer.findLobby(game.lobbyId);
-    if (!lobby) throw new Error('Lobby was not found.');
+    if (!lobby) throw new MultiplayerNotFoundError('lobby_not_found', 'Lobby was not found.');
 
     const [players, rounds, answers, results] = await Promise.all([
       repositories.multiplayer.listPlayers(lobby.id),

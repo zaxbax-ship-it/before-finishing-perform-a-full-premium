@@ -21,6 +21,7 @@ export type MultiplayerLifelineUse = MultiplayerLifelineEffect & {
 export type MultiplayerErrorCode =
   | 'invalid_nickname'
   | 'lobby_not_found'
+  | 'game_not_found'
   | 'lobby_expired'
   | 'lobby_not_accepting'
   | 'lobby_full'

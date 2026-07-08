@@ -6,6 +6,7 @@ import { createLogger } from '@/lib/infrastructure/logger';
 import type { RepositoryProvider } from '@/lib/repositories/interfaces';
 import { createDatabaseRepositoryProvider } from '@/lib/repositories/providers/databaseProvider';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
+import { MultiplayerNotFoundError } from '@/lib/multiplayer/errors';
 import { getClientIdentity } from './communitySecurity';
 
 const MAX_MULTIPLAYER_JSON_BYTES = 12 * 1024;
@@ -114,9 +115,26 @@ type MultiplayerFailureContext = {
 };
 
 export function multiplayerApiErrorResponse(scope: string, error: unknown, context: MultiplayerFailureContext = {}) {
+  const route = context.route || scope;
+
+  // A vanished lobby/game is an expected client condition, not a server fault:
+  // answer with a typed 404 so clients clear the stale session and stop polling,
+  // and log at warn level to keep monitoring quiet.
+  if (error instanceof MultiplayerNotFoundError) {
+    multiplayerApiLogger.warn('Multiplayer resource not found.', {
+      route,
+      action: context.action || 'unknown',
+      status: 404,
+      code: error.code
+    });
+    return NextResponse.json(
+      { ok: false, error: error.publicMessage, errorCode: error.code },
+      { status: 404, headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
+
   const code = context.code || safeMultiplayerErrorCode(error);
   const status = error instanceof MultiplayerApiError ? error.status : 500;
-  const route = context.route || scope;
 
   multiplayerApiLogger.error('Multiplayer API request failed.', {
     route,

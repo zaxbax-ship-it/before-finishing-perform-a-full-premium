@@ -103,6 +103,20 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
+  /**
+   * The lobby/game this client was tracking no longer exists. Drop the stored
+   * session and clear local room state so polling stops (the effects that poll
+   * are gated on an active lobby/game id) and the user lands back on the
+   * multiplayer hub with a clear explanation.
+   */
+  function abandonStaleSession() {
+    localStorage.removeItem(SESSION_KEY);
+    setCredentials(undefined);
+    setGameState(undefined);
+    setMessage(copy.sessionEnded);
+    void refreshLobbies();
+  }
+
   async function refreshLobbies() {
     setStatus('loading');
     try {
@@ -137,14 +151,22 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           body: JSON.stringify({ action: 'state', playerId: session.playerId, playerToken: session.playerToken })
         }
       );
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
+      // The lobby/game this session points at is gone: abandon it and return
+      // to the hub instead of retrying a dead resource on every poll.
+      if (response.status === 404 || isSessionGoneCode(data?.errorCode)) {
+        abandonStaleSession();
+        return;
+      }
       if (response.ok && data?.gameState && seq > appliedSeqRef.current) {
         appliedSeqRef.current = seq;
         setGameState(data.gameState);
         if (data.gameState.game?.id) persistSession({ ...session, gameId: data.gameState.game.id, lobbyId: data.gameState.lobby.id });
       }
     } catch {
-      // The local fallback keeps the room usable even when realtime is offline.
+      // Network/timeout is transient — keep the room usable and never discard
+      // the session on a connectivity blip. Only an authoritative not-found
+      // response (handled above) abandons the session.
     }
   }
 
@@ -894,6 +916,12 @@ function localizeNotification(value: string, copy: ReturnType<typeof getMultipla
   if (/game finished/i.test(value)) return copy.finished;
   if (/question is live/i.test(value)) return copy.questionLive;
   return value;
+}
+
+/** Error codes that mean the tracked lobby/game is gone and the stored session
+ *  must be abandoned. Kept as a stable list so native clients share the rule. */
+function isSessionGoneCode(code: unknown): boolean {
+  return code === 'lobby_not_found' || code === 'game_not_found';
 }
 
 function multiplayerErrorMessage(data: Pick<MultiplayerActionResult, 'error' | 'errorCode'>, copy: ReturnType<typeof getMultiplayerCopy>) {
