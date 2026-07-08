@@ -22,6 +22,7 @@ import type {
   UserSubscription,
   UserEntitlement,
   PaymentTransaction,
+  PlayerProgression,
   ISODateTime
 } from '@/lib/domain/models';
 import type {
@@ -207,6 +208,19 @@ function userPayload(input: CreateUserDto | Partial<CreateUserDto & { isActive: 
     locale: input.locale,
     is_active: 'isActive' in input ? input.isActive : undefined,
     updated_at: now()
+  };
+}
+
+function mapProgression(row: SupabaseRow): PlayerProgression {
+  return {
+    id: stringValue(row.id),
+    playerKey: stringValue(row.player_key),
+    xp: Number(row.xp) || 0,
+    level: Number(row.level) || 1,
+    gamesPlayed: Number(row.games_played) || 0,
+    unlockedAchievements: Array.isArray(row.unlocked_achievements) ? (row.unlocked_achievements as string[]) : [],
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at)
   };
 }
 
@@ -1381,6 +1395,30 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       async listResults(gameId) {
         const rows = await client.list<SupabaseRow>('multiplayer_results', `select=*&${eq('game_id', gameId)}&order=rank.asc`);
         return rows.map(mapMultiplayerResult);
+      }
+    },
+    progression: {
+      async find(playerKey) {
+        const rows = await client.list<SupabaseRow>('player_progression', `select=*&${eq('player_key', playerKey)}&limit=1`);
+        return rows[0] ? mapProgression(rows[0]) : undefined;
+      },
+      async save(progression) {
+        const date = now();
+        const payload = {
+          player_key: progression.playerKey,
+          xp: progression.xp,
+          level: progression.level,
+          games_played: progression.gamesPlayed,
+          unlocked_achievements: progression.unlockedAchievements,
+          updated_at: date
+        };
+        const existing = await this.find(progression.playerKey);
+        if (existing) {
+          const row = await client.update<SupabaseRow>('player_progression', eq('player_key', progression.playerKey), payload);
+          return mapProgression(row);
+        }
+        const row = await client.insert<SupabaseRow>('player_progression', { ...payload, id: id('prog'), created_at: date });
+        return mapProgression(row);
       }
     },
     payments: {

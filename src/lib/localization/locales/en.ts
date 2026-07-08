@@ -1731,7 +1731,9 @@ const resources: LocaleResources = {
     "exitBody": "Your progress and current bank will not be saved if you leave now.",
     "exitStay": "Keep playing",
     "exitLeave": "Exit to home",
-    "exitHomeAria": "Back to home"
+    "exitHomeAria": "Back to home",
+    "levelLabel": "Level",
+    "xpLabel": "XP"
   },
   "authUi": {
     "signIn": "Sign In",

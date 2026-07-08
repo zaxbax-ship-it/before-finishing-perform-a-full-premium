@@ -1603,7 +1603,9 @@ const resources: LocaleResources = {
     "exitBody": "لن يتم حفظ تقدمك ورصيدك الحالي إذا غادرت الآن.",
     "exitStay": "متابعة اللعب",
     "exitLeave": "الخروج إلى الرئيسية",
-    "exitHomeAria": "العودة إلى الرئيسية"
+    "exitHomeAria": "العودة إلى الرئيسية",
+    "levelLabel": "المستوى",
+    "xpLabel": "نقاط الخبرة"
   },
   "authUi": {
     "signIn": "تسجيل الدخول",

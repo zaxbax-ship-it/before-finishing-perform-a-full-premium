@@ -191,3 +191,18 @@ export type PaymentTransaction = {
   createdAt: ISODateTime;
 };
 
+/**
+ * A player's persisted progression (XP, level, achievements). `playerKey` is
+ * the authenticated user id when signed in, or the anonymous device id — the
+ * same identity model the leaderboard and multiplayer already use.
+ */
+export type PlayerProgression = {
+  id: EntityId;
+  playerKey: string;
+  xp: number;
+  level: number;
+  gamesPlayed: number;
+  unlockedAchievements: string[];
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+};

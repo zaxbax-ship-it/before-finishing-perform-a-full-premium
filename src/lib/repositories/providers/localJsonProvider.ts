@@ -21,7 +21,8 @@ import type {
   User,
   UserSubscription,
   UserEntitlement,
-  PaymentTransaction
+  PaymentTransaction,
+  PlayerProgression
 } from '@/lib/domain/models';
 import type {
   MultiplayerAnswer,
@@ -91,6 +92,7 @@ type LocalState = {
   multiplayerAnswers: MultiplayerAnswer[];
   multiplayerResults: MultiplayerResult[];
   subscriptions: UserSubscription[];
+  playerProgression: PlayerProgression[];
   entitlements: UserEntitlement[];
   transactions: PaymentTransaction[];
 };
@@ -135,6 +137,7 @@ function createInitialState(): LocalState {
     multiplayerAnswers: [],
     multiplayerResults: [],
     subscriptions: [],
+    playerProgression: [],
     entitlements: [],
     transactions: []
   };
@@ -693,6 +696,23 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
         return state.multiplayerResults
           .filter(result => result.gameId === gameId)
           .sort((first, second) => first.rank - second.rank);
+      }
+    },
+    progression: {
+      async find(playerKey) {
+        return state.playerProgression.find(item => item.playerKey === playerKey);
+      },
+      async save(progression) {
+        const date = new Date().toISOString();
+        const existing = state.playerProgression.find(item => item.playerKey === progression.playerKey);
+        const record: PlayerProgression = {
+          ...progression,
+          id: existing?.id || progression.id || `prog-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          createdAt: existing?.createdAt || progression.createdAt || date,
+          updatedAt: date
+        };
+        state.playerProgression = [record, ...state.playerProgression.filter(item => item.playerKey !== progression.playerKey)];
+        return record;
       }
     },
     payments: {

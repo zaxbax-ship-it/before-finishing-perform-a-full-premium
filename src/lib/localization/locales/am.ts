@@ -1599,7 +1599,9 @@ const resources: LocaleResources = {
     "exitBody": "አሁን ከወጡ እድገትዎ እና ያለው ሽልማት አይቀመጡም።",
     "exitStay": "መጫወት ቀጥል",
     "exitLeave": "ወደ መነሻ ውጣ",
-    "exitHomeAria": "ወደ መነሻ ተመለስ"
+    "exitHomeAria": "ወደ መነሻ ተመለስ",
+    "levelLabel": "ደረጃ",
+    "xpLabel": "የልምድ ነጥቦች"
   },
   "authUi": {
     "signIn": "ግባ",

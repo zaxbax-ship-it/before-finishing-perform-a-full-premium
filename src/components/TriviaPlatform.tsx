@@ -26,6 +26,8 @@ import { ensureLocaleResources, localizeCategory, localizeQuestion } from '@/lib
 import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
+import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
+import type { PlayerProgressionState } from '@/lib/progression/types';
 import type { LeaderboardEntry } from '@/lib/domain/models';
 import { createAuthService } from '@/lib/auth/authService';
 import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
@@ -213,6 +215,8 @@ export default function TriviaPlatform({
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [leaderboardStatus, setLeaderboardStatus] = useState<LeaderboardStatus>('idle');
   const [nickname, setNicknameState] = useState('');
+  // Static default for SSR/hydration parity; the mount effect loads the stored value.
+  const [progression, setProgression] = useState<PlayerProgressionState>({ playerKey: 'local-player', xp: 0, level: 1, gamesPlayed: 0, unlockedAchievements: [], updatedAt: '' });
   const [authUser, setAuthUser] = useState<PublicAuthUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authConfigured, setAuthConfigured] = useState(false);
@@ -302,6 +306,11 @@ export default function TriviaPlatform({
     if (stored && SUPPORTED_LOCALES.includes(stored as Locale)) {
       void ensureLocaleResources(stored as Locale).finally(() => setLocale(stored as Locale));
     }
+  }, []);
+
+  // Hydrate locally persisted progression after mount (SSR renders the default).
+  useEffect(() => {
+    setProgression(readLocalProgression());
   }, []);
 
   function changeLocale(next: Locale) {
@@ -652,6 +661,13 @@ export default function TriviaPlatform({
       lifelines: previous.lifelines + lifelines,
       achievements: Array.from(new Set([...previous.achievements, prize >= 1000000 ? 'מיליון דולר' : prize >= 250000 ? 'שחקן בכיר' : 'משחק הושלם']))
     }));
+    setProgression(applyGameToLocalProgression({
+      mode: 'solo',
+      won: state === 'win',
+      correctAnswers: round,
+      prize,
+      lifelinesUsed: lifelines
+    }).state);
     const publicNickname = nickname || readLocal(NICKNAME_KEY, '');
     if (publicNickname) {
       void submitLeaderboardScore(publicNickname, prize, Math.min(15, state === 'win' ? 15 : round));
@@ -987,7 +1003,7 @@ export default function TriviaPlatform({
           bestPrize={stats.bestPrize}
         />
       )}
-      {screen === 'profile' && <PremiumProfile t={t} authUi={authT} user={authUser} nickname={nickname} stats={stats} />}
+      {screen === 'profile' && <PremiumProfile t={t} authUi={authT} user={authUser} nickname={nickname} stats={stats} progression={progression} />}
       {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
       </div>
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => setPendingPaid(null)} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}

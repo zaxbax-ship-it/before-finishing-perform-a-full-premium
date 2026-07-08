@@ -254,7 +254,9 @@ const resources: LocaleResources = {
     "exitBody": "ההתקדמות והקופה הנוכחית לא יישמרו אם תצאו עכשיו.",
     "exitStay": "להמשיך לשחק",
     "exitLeave": "יציאה לדף הבית",
-    "exitHomeAria": "חזרה לדף הבית"
+    "exitHomeAria": "חזרה לדף הבית",
+    "levelLabel": "רמה",
+    "xpLabel": "נקודות ניסיון"
   },
   "authUi": {
     "signIn": "כניסה",

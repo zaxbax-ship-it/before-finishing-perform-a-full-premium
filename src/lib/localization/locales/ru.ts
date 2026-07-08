@@ -1603,7 +1603,9 @@ const resources: LocaleResources = {
     "exitBody": "Прогресс и текущий банк не сохранятся, если вы выйдете сейчас.",
     "exitStay": "Продолжить игру",
     "exitLeave": "Выйти на главную",
-    "exitHomeAria": "На главную"
+    "exitHomeAria": "На главную",
+    "levelLabel": "Уровень",
+    "xpLabel": "Опыт"
   },
   "authUi": {
     "signIn": "Войти",

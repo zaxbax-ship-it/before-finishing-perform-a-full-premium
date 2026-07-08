@@ -20,6 +20,7 @@ import type {
   UserSubscription,
   UserEntitlement,
   PaymentTransaction,
+  PlayerProgression,
   ISODateTime
 } from '@/lib/domain/models';
 import type {
@@ -209,6 +210,11 @@ export interface PaymentsRepository {
   listTransactionsByUserId(userId: EntityId): Promise<PaymentTransaction[]>;
 }
 
+export interface ProgressionRepository {
+  find(playerKey: string): Promise<PlayerProgression | undefined>;
+  save(progression: Omit<PlayerProgression, 'id' | 'createdAt' | 'updatedAt'> & { id?: EntityId; createdAt?: ISODateTime; updatedAt?: ISODateTime }): Promise<PlayerProgression>;
+}
+
 export type RepositoryProviderKind = 'local-json' | 'database';
 
 export type RepositoryProvider = {
@@ -228,4 +234,5 @@ export type RepositoryProvider = {
   leaderboard: LeaderboardRepository;
   multiplayer: MultiplayerRepository;
   payments: PaymentsRepository;
+  progression: ProgressionRepository;
 };

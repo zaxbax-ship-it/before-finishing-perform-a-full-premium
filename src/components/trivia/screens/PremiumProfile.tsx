@@ -2,9 +2,10 @@ import { ProfileIcon } from '@/lib/design/icons';
 import { initialsFor, money } from '../format';
 import { ACHIEVEMENT_KEYS } from '../i18n';
 import { Metric, Panel } from '../primitives';
+import type { PlayerProgressionState } from '@/lib/progression/types';
 import type { PublicAuthUser, Stats } from '../types';
 
-export function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record<string, string>; authUi: Record<string, string>; user: PublicAuthUser | null; nickname: string; stats: Stats }) {
+export function PremiumProfile({ t, authUi, user, nickname, stats, progression }: { t: Record<string, string>; authUi: Record<string, string>; user: PublicAuthUser | null; nickname: string; stats: Stats; progression: PlayerProgressionState }) {
   const displayName = nickname || user?.displayName || user?.email?.split('@')[0] || authUi.notSignedIn;
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—';
   const highestCorrect = Math.min(15, stats.correct);
@@ -21,6 +22,8 @@ export function PremiumProfile({ t, authUi, user, nickname, stats }: { t: Record
         </div>
       </section>
       <div className="profile-metrics-grid">
+        <Metric value={String(progression.level)} label={t.levelLabel} gold />
+        <Metric value={progression.xp.toLocaleString()} label={t.xpLabel} />
         <Metric value={nickname || '—'} label={authUi.nicknamePlaceholder} />
         <Metric value={displayName} label="Display Name" />
         <Metric value={user?.email || '—'} label={authUi.privateEmail} />
