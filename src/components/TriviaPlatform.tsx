@@ -1045,10 +1045,10 @@ function CommunitySubmit(props: {
     <section className="mx-auto grid w-full max-w-[1180px] gap-6 px-5 pb-16 pt-8 lg:px-8">
       <div className="glass rounded-[34px] p-6 md:p-10">
         <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="mb-4 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold">Community Studio</p>
+          <div className="text-center">
+            <p className="mx-auto mb-4 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold">Community Studio</p>
             <h1 className="text-4xl font-black md:text-6xl">{ui.submitTitle}</h1>
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-white/68">{ui.submitIntro}</p>
+            <p className="mx-auto mt-4 max-w-3xl text-lg leading-8 text-white/68">{ui.submitIntro}</p>
           </div>
           <div className="rounded-3xl border border-white/12 bg-white/[0.06] p-4 text-sm text-white/60">
             {ui.localMode}

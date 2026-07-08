@@ -389,26 +389,57 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
   50% { opacity: 0.7; }
 }
 
-/* Mobile top bar: one aligned control line (menu · language · auth · brand).
-   The utility corners are physically anchored (language left, auth right in
-   both directions), so the header clears them with physical padding. */
+/* Premium mobile app bar: five elements on one optically aligned line —
+   [language][menu] · crown (true center) · [sign-in][sign-up]. All controls
+   are identical 44px glass circles with a uniform 10px rhythm; the crown is
+   48px and absolutely centered, so it always has generous breathing room.
+   Physical anchoring keeps RTL and LTR pixel-identical. */
 @media (max-width: 640px) {
   .public-header.app-header {
+    position: relative;
     padding-top: max(10px, env(safe-area-inset-top));
-    padding-left: 66px;
-    padding-right: 112px;
-    min-height: 48px;
+    padding-left: 0;
+    padding-right: 0;
+    min-height: 64px;
   }
-  /* On the single-line bar the crown mark is the brand; the full title lives
-     in the drawer header, so the text never squeezes the row on small phones. */
+  .public-header.app-header .app-brand {
+    position: absolute;
+    left: 50%;
+    top: max(10px, env(safe-area-inset-top));
+    transform: translateX(-50%);
+  }
   .public-header.app-header .app-brand-text {
     display: none;
+  }
+  /* Menu joins the language trigger as the left cluster (physical, both dirs). */
+  .public-header.app-header > .icon-button {
+    position: absolute;
+    left: 64px;
+    top: calc(max(10px, env(safe-area-inset-top)) + 2px);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  /* The auth pair sheds its pill container: four identical circles, one bar. */
+  .public-auth-actions {
+    padding: 0;
+    gap: 10px;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
   }
   /* Signed-in: the account pill is wide, so keep the header on its own row. */
   .app-shell:has(.public-user-menu) .public-header.app-header {
     padding-top: 74px;
     padding-left: 1.25rem;
     padding-right: 1.25rem;
+  }
+  .app-shell:has(.public-user-menu) .public-header.app-header .app-brand,
+  .app-shell:has(.public-user-menu) .public-header.app-header > .icon-button {
+    position: static;
+    transform: none;
   }
 }
 
@@ -459,4 +490,123 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
   .game-active .game-timer-ring { width: 42px; height: 42px; }
   .game-timer-ring strong,
   .game-active .game-timer-ring strong { font-size: 0.92rem; }
+}
+
+/* ==========================================================================
+   Text-alignment design rule: every component centers its own text.
+   Components keep their layout position; only their inner text is centered.
+   Deliberate exceptions (documented in the design system): form inputs and
+   field labels, tabular rows (leaderboard table, admin lists), numbered
+   rule rows, long-form legal pages, and title rows with trailing actions.
+   Maps to native as: multiline text alignment = .center (SwiftUI) /
+   textAlign = TextAlign.Center (Compose) at the component level.
+   ========================================================================== */
+.premium-button,
+.ghost-button {
+  justify-content: center;
+  text-align: center;
+}
+.drawer-item,
+.language-option,
+.public-user-dropdown [role="menuitem"] {
+  justify-content: center;
+  text-align: center;
+}
+.answer-button { text-align: center; }
+.category-card { align-items: center; text-align: center; }
+.question-text { text-align: center; margin-inline: auto; }
+.game-topline-info { text-align: center; }
+.answer-info-content p { text-align: center; }
+.leaderboard-eyebrow,
+.leaderboard-personal-best,
+.leaderboard-hint,
+.leaderboard-message { text-align: center; }
+.profile-hero-card > div { text-align: center; }
+
+/* ==========================================================================
+   Prize ladder — the climb rendered as a premium game-show board.
+   Same values, same order, same gameplay; presentation only. States:
+   .passed (already climbed), .current (live prize), .safe (guaranteed
+   milestone), .top (the million). Maps to a native List/Column of tier rows.
+   ========================================================================== */
+.prize-ladder {
+  display: grid;
+  gap: 6px;
+}
+.prize-ladder .ladder-item {
+  grid-template-columns: 30px 1fr auto;
+  gap: 10px;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  border: 1px solid hsla(0, 0%, 100%, 0.09);
+  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.045), hsla(0, 0%, 100%, 0.015));
+  color: hsla(0, 0%, 100%, 0.62);
+  transition: transform var(--duration-normal) var(--ease-spring), border-color var(--duration-normal) ease, background var(--duration-normal) ease, box-shadow var(--duration-normal) ease, opacity var(--duration-normal) ease;
+}
+.prize-ladder .ladder-step {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: hsla(0, 0%, 100%, 0.07);
+  color: hsla(0, 0%, 100%, 0.55);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+.prize-ladder .ladder-amount {
+  font-weight: 900;
+  font-feature-settings: "tnum";
+  letter-spacing: 0.01em;
+}
+.prize-ladder .ladder-badge {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  color: hsla(0, 0%, 100%, 0.4);
+}
+/* Climbed rungs recede so the eye reads progress at a glance. */
+.prize-ladder .ladder-item.passed {
+  opacity: 0.48;
+}
+.prize-ladder .ladder-item.passed .ladder-badge { color: var(--success); }
+/* Guaranteed milestones: azure-marked safety rungs. */
+.prize-ladder .ladder-item.safe {
+  border-color: rgba(69, 194, 255, 0.34);
+  background: linear-gradient(135deg, rgba(69, 194, 255, 0.10), hsla(0, 0%, 100%, 0.02));
+}
+.prize-ladder .ladder-item.safe .ladder-step {
+  background: rgba(69, 194, 255, 0.18);
+  color: var(--azure);
+}
+.prize-ladder .ladder-item.safe .ladder-badge { color: var(--azure); }
+/* The million: a golden summit. */
+.prize-ladder .ladder-item.top {
+  border-color: hsla(41, 90%, 69%, 0.42);
+  background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.16), rgba(9, 22, 52, 0.55));
+}
+.prize-ladder .ladder-item.top .ladder-amount { color: var(--gold); }
+.prize-ladder .ladder-item.top .ladder-badge { color: var(--gold); }
+/* The live prize: the ladder's beating heart. The glow hands off smoothly
+   between rungs because every state change is transitioned. */
+.prize-ladder .ladder-item.current {
+  transform: scale(1.035);
+  color: #fff;
+  border-color: hsla(41, 90%, 69%, 0.9);
+  background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.30), rgba(69, 194, 255, 0.10));
+  box-shadow: 0 0 26px hsla(41, 90%, 69%, 0.30), inset 0 1px 0 hsla(0, 0%, 100%, 0.22);
+  animation: ladder-live 2.4s ease-in-out infinite;
+}
+.prize-ladder .ladder-item.current .ladder-step {
+  background: var(--gold);
+  color: #08101f;
+}
+.prize-ladder .ladder-item.current .ladder-amount {
+  color: #fff2b4;
+  font-size: 1.06em;
+  text-shadow: 0 0 16px hsla(41, 90%, 69%, 0.45);
+}
+@keyframes ladder-live {
+  0%, 100% { box-shadow: 0 0 26px hsla(41, 90%, 69%, 0.30), inset 0 1px 0 hsla(0, 0%, 100%, 0.22); }
+  50% { box-shadow: 0 0 38px hsla(41, 90%, 69%, 0.44), inset 0 1px 0 hsla(0, 0%, 100%, 0.26); }
 }

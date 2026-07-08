@@ -24,10 +24,10 @@ export function Home({ t, locale, soloLabel, multiplayerLabel, start, open }: { 
             </div>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-center">
           <p className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold shadow-gold"><PremiumBadgeIcon size={14} aria-hidden="true" /> {t.pill}</p>
           <h1 className="text-6xl font-black leading-[.92] md:text-[112px]">{t.headline}</h1>
-          <p className="mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
+          <p className="mx-auto mt-7 max-w-4xl text-2xl font-bold leading-9 text-white/78">{t.intro}</p>
         </div>
       </div>
 

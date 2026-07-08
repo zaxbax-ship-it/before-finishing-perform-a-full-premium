@@ -23,7 +23,7 @@
   align-items: center;
   gap: var(--space-sm);
   margin-bottom: 22px;
-  text-align: right;
+  text-align: center;
 }
 
 .auth-brand-badge {
@@ -378,9 +378,15 @@
   }
 
   .public-auth-actions {
+    /* Free-standing circles on the mobile app bar: uniform 10px rhythm,
+       no pill container (each button carries its own glass). */
     width: auto;
-    padding: 4px;
-    gap: 6px;
+    padding: 0;
+    gap: 10px;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
   .public-auth-actions .auth-link-button.icon-only {

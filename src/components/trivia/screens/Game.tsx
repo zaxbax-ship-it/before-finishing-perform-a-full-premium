@@ -1,5 +1,5 @@
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
-import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, PhoneFriendIcon, SwapQuestionIcon, WarningIcon } from '@/lib/design/icons';
+import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WarningIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
 import { money } from '../format';
@@ -117,7 +117,20 @@ export function Game(props: {
         </div>
         <div className="glass rounded-[28px] p-5">
           <h3 className="mb-4 text-xl font-extrabold">{t.ladder}</h3>
-          <div className="space-y-2">{MONEY.map((amount, index) => <div key={`${amount}-${index}`} className={['ladder-item', index === round ? 'current' : '', SAFE_STEPS.includes(index) ? 'safe' : ''].join(' ')}><span>{index + 1}</span><strong>{money(amount)}</strong></div>).reverse()}</div>
+          <div className="prize-ladder">{MONEY.map((amount, index) => {
+            const isTop = index === MONEY.length - 1;
+            const isSafe = SAFE_STEPS.includes(index);
+            const state = index === round ? 'current' : index < round ? 'passed' : '';
+            return (
+              <div key={`${amount}-${index}`} className={['ladder-item', state, isSafe ? 'safe' : '', isTop ? 'top' : ''].join(' ')}>
+                <span className="ladder-step">{index + 1}</span>
+                <strong className="ladder-amount">{money(amount)}</strong>
+                <span className="ladder-badge" aria-hidden="true">
+                  {isTop ? <PremiumIcon size={15} /> : isSafe ? <LeaderboardIcon size={14} /> : state === 'passed' ? <ConfirmIcon size={13} /> : null}
+                </span>
+              </div>
+            );
+          }).reverse()}</div>
         </div>
         <div className="glass rounded-[28px] p-5">
           <div className="text-sm text-white/55">{t.guaranteed}</div>
