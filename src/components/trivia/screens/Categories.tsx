@@ -1,5 +1,5 @@
 import { AdSlot } from '@/components/ads/AdSlot';
-import { CategoriesIcon, QuizIcon } from '@/lib/design/icons';
+import { CategoriesIcon, ForwardIcon, QuizIcon } from '@/lib/design/icons';
 import { localizeCategory, localizeCategoryDescription } from '@/lib/localization';
 import type { Locale } from '@/lib/types';
 
@@ -9,8 +9,14 @@ export function Categories({ t, locale, categories, startGame }: { t: Record<str
       <p className="mx-auto mb-8 flex w-fit items-center gap-2 rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold"><CategoriesIcon size={14} aria-hidden="true" /> {t.catPill}</p>
       <h1 className="mx-auto max-w-5xl text-center text-6xl font-black md:text-[86px]">{t.choose}</h1>
       <p className="mx-auto mt-5 max-w-4xl text-center text-xl leading-8 text-white/72">{t.chooseText}</p>
+      {/* Primary path: one prominent option that plays the full bank, above
+          every specific category. */}
+      <button className="play-all-banner focus-ring" onClick={() => startGame('הכול')}>
+        <span className="play-all-icon"><QuizIcon size={22} aria-hidden="true" /></span>
+        <span className="play-all-label">{t.all}</span>
+        <ForwardIcon size={18} aria-hidden="true" />
+      </button>
       <AdSlot placement="categories-top" className="mt-7" />
-      <button className="ghost-button focus-ring mt-8 inline-flex items-center gap-2 lg:min-w-56" onClick={() => startGame('הכול')}><QuizIcon size={16} />{t.all}</button>
       <div className="category-grid mt-8">
         {categories.map(category => (
           <button key={category} className="category-card focus-ring glass" onClick={() => startGame(category)}>

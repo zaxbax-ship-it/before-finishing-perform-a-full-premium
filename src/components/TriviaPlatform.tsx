@@ -924,7 +924,7 @@ export default function TriviaPlatform({
       {screen === 'admin' && adminHeader}
       {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div ref={screenSectionRef} tabIndex={-1} className="screen-section">
-      {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => startGame('הכול')} open={open} />}
+      {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}

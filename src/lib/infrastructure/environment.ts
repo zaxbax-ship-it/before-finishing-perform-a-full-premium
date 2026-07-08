@@ -70,6 +70,8 @@ export const ENVIRONMENT_SPECS: EnvironmentVariableSpec[] = [
   { name: 'LEMON_SQUEEZY_STORE_ID', visibility: 'server', description: 'Lemon Squeezy Store ID.' },
   { name: 'LEMON_SQUEEZY_WEBHOOK_SECRET', visibility: 'server', description: 'Lemon Squeezy Webhook verification secret.' },
   { name: 'RESEND_API_KEY', visibility: 'server', description: 'Resend server API key.' },
+  { name: 'CONTACT_NOTIFY_EMAIL', visibility: 'server', description: 'Inbox that receives contact-form notification emails.' },
+  { name: 'CONTACT_FROM_EMAIL', visibility: 'server', description: 'Verified Resend sender for contact notifications (optional; sandbox sender by default).' },
   { name: 'NEXT_PUBLIC_SENTRY_DSN', visibility: 'public', description: 'Public Sentry DSN for browser and server event capture.' },
   { name: 'NEXT_PUBLIC_SENTRY_ENVIRONMENT', visibility: 'public', description: 'Sentry environment label such as development, preview, or production.' },
   { name: 'NEXT_PUBLIC_SENTRY_RELEASE', visibility: 'public', description: 'Optional release identifier shown in Sentry issues.' },

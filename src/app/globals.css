@@ -771,3 +771,38 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
   font-weight: 850;
   text-align: center;
 }
+
+/* "Play all categories" — the primary option on the category chooser: a full
+   gold banner above the grid. Maps to a native hero list-header button. */
+.play-all-banner {
+  margin-top: var(--space-xl);
+  width: 100%;
+  min-height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: var(--radius-2xl);
+  padding: 0 26px;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #08101f;
+  border: 1px solid rgba(255, 228, 154, 0.72);
+  background: linear-gradient(135deg, #fff7c9, #f8d36f 36%, #d99b38 68%, #9f641f);
+  box-shadow: 0 20px 52px hsla(41, 90%, 69%, 0.32), inset 0 1px 0 hsla(0, 0%, 100%, 0.8);
+  transition: transform var(--duration-normal) var(--ease-spring), box-shadow var(--duration-normal) var(--ease-default), filter var(--duration-normal) var(--ease-default);
+}
+.play-all-banner:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.12) brightness(1.03);
+  box-shadow: 0 26px 64px hsla(41, 90%, 69%, 0.4), 0 0 24px hsla(41, 90%, 69%, 0.2);
+}
+.play-all-banner:active { transform: translateY(0) scale(0.995); }
+.play-all-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: rgba(8, 16, 31, 0.14);
+}

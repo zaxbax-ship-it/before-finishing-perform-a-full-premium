@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import { getClientIdentity, hashIdentity, internalServerError, publicJsonError, readLimitedJson } from '@/lib/api/communitySecurity';
 import { checkRateLimit, getCommunitySubmissionRateLimit } from '@/lib/infrastructure/rateLimit';
+import { getContactNotifyEmail, getEmailProvider } from '@/lib/email';
 import { createLogger } from '@/lib/infrastructure/logger';
 import type { ContactSubmitResponse } from '@/lib/api/contracts';
 
@@ -63,6 +64,26 @@ export async function POST(request: Request) {
       email,
       preview: message.slice(0, 160)
     });
+
+    // Best-effort email notification: the message is already persisted above,
+    // so delivery failures (or a missing provider) never affect the response.
+    const notifyEmail = getContactNotifyEmail();
+    if (notifyEmail) {
+      void getEmailProvider()
+        .send({
+          to: notifyEmail,
+          subject: `New contact message from ${name}`,
+          text: `Name: ${name}
+Email: ${email}
+
+${message}`,
+          replyTo: email
+        })
+        .then(result => {
+          if (result.ok) contactLogger.info('Contact notification email sent.', { id: result.id });
+        })
+        .catch(() => undefined);
+    }
 
     return NextResponse.json(
       { ok: true, id: notification.id } satisfies ContactSubmitResponse,
