@@ -1658,6 +1658,7 @@ const resources: LocaleResources = {
     "accuracy": "Accuracy",
     "timeLabel": "Time",
     "shareBtn": "Share Result",
+    "shareCopied": "Copied — share it!",
     "shareText": "I won {prize}",
     "paidTitle": "Use a Lifeline Again",
     "paidBody": "Use {label} again in exchange for {price}?",

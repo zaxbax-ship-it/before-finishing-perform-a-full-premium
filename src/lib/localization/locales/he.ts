@@ -181,6 +181,7 @@ const resources: LocaleResources = {
     "accuracy": "דיוק",
     "timeLabel": "זמן",
     "shareBtn": "שיתוף תוצאה",
+    "shareCopied": "הטקסט הועתק — שתפו!",
     "shareText": "זכיתי ב-{prize}",
     "paidTitle": "שימוש חוזר בגלגל הצלה",
     "paidBody": "האם להשתמש שוב ב{label} בתמורה ל{price}?",

@@ -1526,6 +1526,7 @@ const resources: LocaleResources = {
     "accuracy": "ትክክለኛነት",
     "timeLabel": "ጊዜ",
     "shareBtn": "ውጤት አጋራ",
+    "shareCopied": "ተቀድቷል — ያጋሩ!",
     "shareText": "{prize} አሸንፌያለሁ",
     "paidTitle": "እርዳታን እንደገና መጠቀም",
     "paidBody": "{label}ን በ{price} ዋጋ እንደገና መጠቀም ይፈልጋሉ?",

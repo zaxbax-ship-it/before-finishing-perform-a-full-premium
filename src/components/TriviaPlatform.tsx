@@ -1001,7 +1001,7 @@ export default function TriviaPlatform({
       </div>
       {screen === 'admin' && adminHeader}
       {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
-      <div ref={screenSectionRef} tabIndex={-1} className="screen-section">
+      <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}

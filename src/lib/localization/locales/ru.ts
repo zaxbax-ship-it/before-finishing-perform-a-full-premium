@@ -1530,6 +1530,7 @@ const resources: LocaleResources = {
     "accuracy": "Точность",
     "timeLabel": "Время",
     "shareBtn": "Поделиться результатом",
+    "shareCopied": "Скопировано — поделитесь!",
     "shareText": "Я выиграл {prize}",
     "paidTitle": "Повторное использование подсказки",
     "paidBody": "Использовать {label} еще раз за {price}?",
