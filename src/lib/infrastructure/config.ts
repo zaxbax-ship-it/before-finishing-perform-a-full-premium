@@ -120,7 +120,9 @@ export function getProductionConfig(): ProductionConfig {
     ads: {
       enabled: readBooleanEnv('NEXT_PUBLIC_ADS_ENABLED'),
       provider: adProvider || 'none',
-      placeholders: readBooleanEnv('NEXT_PUBLIC_AD_PLACEHOLDERS', true),
+      // Placeholders are a development aid; production defaults to clean
+      // pages until a provider is actually connected (env still overrides).
+      placeholders: readBooleanEnv('NEXT_PUBLIC_AD_PLACEHOLDERS', process.env.NODE_ENV !== 'production'),
       adsenseClientId: readEnv('NEXT_PUBLIC_ADSENSE_CLIENT_ID'),
       adsensePublisherId: readEnv('NEXT_PUBLIC_ADSENSE_PUBLISHER_ID'),
       googleAdManagerNetworkCode: readEnv('GOOGLE_AD_MANAGER_NETWORK_CODE')

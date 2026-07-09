@@ -1,5 +1,44 @@
+import type { ComponentType } from 'react';
 import { AdSlot } from '@/components/ads/AdSlot';
-import { CategoriesIcon, ForwardIcon, QuizIcon } from '@/lib/design/icons';
+import {
+  AchievementsIcon,
+  CategoriesIcon,
+  CelebrationIcon,
+  EditIcon,
+  FavoritesIcon,
+  ForwardIcon,
+  FriendsIcon,
+  GlobeIcon,
+  HintsIcon,
+  HistoryIcon,
+  PlayIcon,
+  QuizIcon,
+  SettingsIcon,
+  ShareIcon,
+  SubscriptionIcon
+} from '@/lib/design/icons';
+
+/**
+ * Thematic icon per category (canonical Hebrew keys from the question bank);
+ * anything unmapped keeps the generic scroll. Purely presentational.
+ */
+const CATEGORY_ICONS: Record<string, ComponentType<{ size?: number; 'aria-hidden'?: boolean | 'true' }>> = {
+  'ידע כללי': QuizIcon,
+  'היסטוריה': HistoryIcon,
+  'גאוגרפיה': GlobeIcon,
+  'מדע': HintsIcon,
+  'טכנולוגיה': SettingsIcon,
+  'רפואה': FavoritesIcon,
+  'ספורט': AchievementsIcon,
+  'קולנוע': PlayIcon,
+  'נטפליקס': SubscriptionIcon,
+  'מוזיקה': CelebrationIcon,
+  'רכילות': FriendsIcon,
+  'רכילות ותרבות ישראלית': FriendsIcon,
+  'רכילות ותרבות אמריקאית ועולמית': FriendsIcon,
+  'אנגלית - בחינה עצמית': EditIcon,
+  'טיקטוק': ShareIcon
+};
 import { localizeCategory, localizeCategoryDescription } from '@/lib/localization';
 import type { Locale } from '@/lib/types';
 
@@ -18,13 +57,16 @@ export function Categories({ t, locale, categories, startGame }: { t: Record<str
       </button>
       <AdSlot placement="categories-top" className="mt-7" />
       <div className="category-grid mt-8">
-        {categories.map(category => (
+        {categories.map(category => {
+          const CategoryIcon = CATEGORY_ICONS[category] || CategoriesIcon;
+          return (
           <button key={category} className="category-card focus-ring glass" onClick={() => startGame(category)}>
-            <span className="category-icon"><CategoriesIcon size={22} aria-hidden="true" /></span>
+            <span className="category-icon"><CategoryIcon size={22} aria-hidden="true" /></span>
             <h3>{localizeCategory(locale, category)}</h3>
             <p>{localizeCategoryDescription(locale, category)}</p>
           </button>
-        ))}
+          );
+        })}
       </div>
       <AdSlot placement="categories-grid-after" className="mt-8" />
     </section>

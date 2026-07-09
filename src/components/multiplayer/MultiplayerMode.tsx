@@ -578,7 +578,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           <div className="multiplayer-loader" aria-hidden="true" />
           <h2>{copy.waiting}</h2>
           <p>{gameState.lobby.playerCount} / {gameState.lobby.maxPlayers} {copy.players}</p>
-          <div className="multiplayer-roster grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 w-full max-w-4xl mx-auto my-6">
+          <div className="multiplayer-roster grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full max-w-4xl mx-auto my-6">
             {gameState.lobby.players.map(player => {
               const isHost = player.id === gameState.lobby.hostPlayerId;
               const isMe = player.id === gameState.me?.id;

@@ -1412,7 +1412,7 @@ function Admin(props: {
       <section className="glass rounded-[30px] p-6">
         <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
           <div><h2 className="text-3xl font-black">{t.poolTitle}</h2><p className="mt-1 text-white/58">{fmt(t.poolCount, { total: questions.length, shown: filtered.length })}</p></div>
-          <div className="flex flex-col gap-3 sm:flex-row"><input className="form-input py-3 pl-4 pr-10 sm:w-72" value={search} onChange={event => setSearch(event.target.value)} aria-label={t.searchPh} placeholder={t.searchPh} /><select className="form-input" value={category} onChange={event => setCategory(event.target.value)}><option value="הכול">{t.allOpt}</option>{categories.map(item => <option key={item} value={item}>{localizeCategory(locale, item)}</option>)}</select></div>
+          <div className="flex flex-col gap-3 md:flex-row"><input className="form-input py-3 pl-4 pr-10 md:w-72" value={search} onChange={event => setSearch(event.target.value)} aria-label={t.searchPh} placeholder={t.searchPh} /><select className="form-input" value={category} onChange={event => setCategory(event.target.value)}><option value="הכול">{t.allOpt}</option>{categories.map(item => <option key={item} value={item}>{localizeCategory(locale, item)}</option>)}</select></div>
         </div>
         <div className="admin-scroll grid gap-3">
           {filtered.map(item => {

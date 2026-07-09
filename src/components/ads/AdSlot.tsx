@@ -43,6 +43,9 @@ export function AdSlot({ placement, className = '', reserveSpace = true }: AdSlo
   const shouldRenderProvider = config.enabled && config.provider !== 'none' && isVisible;
   const shouldShowPlaceholder = config.showPlaceholders && !shouldRenderProvider;
 
+  // Nothing to show: collapse instead of reserving a blank strip.
+  if (!shouldRenderProvider && !shouldShowPlaceholder) return null;
+
   return (
     <aside
       ref={ref}

@@ -73,7 +73,7 @@ export function Result({ t, authUi, isAuthenticated, state, correctCount, elapse
               </div>
             </div>
           )}
-          <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <div className="mt-8 flex flex-col justify-center gap-4 md:flex-row">
             <button className="premium-button focus-ring" onClick={start}>{t.playAgain}</button>
             <button className="ghost-button focus-ring" onClick={share} aria-live="polite">{copied ? t.shareCopied : t.shareBtn}</button>
             <button className="ghost-button focus-ring" onClick={home}>{t.home}</button>
