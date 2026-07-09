@@ -33,8 +33,5 @@ export const SAFE_STEPS = [4, 9, 14];
  * progress from the same constant the game clock uses. */
 export const SOLO_TIMER_SECONDS = 45;
 
-/** Price of re-using a lifeline: a fixed ceiling capped at 25% of the current pot. */
-export function priceFor(type: Lifeline, pot: number) {
-  const fixed = type === 'fifty' ? 5000 : type === 'swap' ? 8000 : type === 'audience' ? 10000 : 12000;
-  return Math.min(fixed, Math.max(0, Math.floor(pot * 0.25)));
-}
+// Lifeline pricing lives in src/lib/gameplay/economy.ts (lifelinePrice) — the
+// single source of truth for every client. No component prices lifelines.

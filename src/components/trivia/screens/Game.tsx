@@ -4,7 +4,8 @@ import { useEffect, useRef } from 'react';
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
 import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
-import { LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
+import { lifelinePrice } from '@/lib/gameplay/economy';
+import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
 import { money } from '../format';
 import { useCountUp } from '../useCountUp';
 import { getInfoUi } from '../i18n';
@@ -124,7 +125,24 @@ export function Game(props: {
           <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold"><HintsIcon size={16} aria-hidden="true" /></span></div>
           <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
             const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
-            return <button key={type} className={`lifeline-tile focus-ring ${lifelineUses[type] ? 'paid' : ''}`} onClick={() => triggerLifeline(type)} aria-label={t[type]} title={t[type]}><span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span><span className="sr-only">{t[type]}</span><small>{lifelineUses[type] ? money(priceFor(type, currentPrize)) : t.free}</small></button>;
+            const price = lifelinePrice(MONEY, round, lifelineUses[type]);
+            const exhausted = price === null;
+            const stateLabel = exhausted ? t.usedUp : price > 0 ? money(price) : t.free;
+            return (
+              <button
+                key={type}
+                className={`lifeline-tile focus-ring ${exhausted ? 'exhausted' : lifelineUses[type] ? 'paid' : ''}`}
+                onClick={() => triggerLifeline(type)}
+                disabled={exhausted}
+                aria-disabled={exhausted}
+                aria-label={exhausted ? `${t[type]} — ${t.lifelineExhausted}` : `${t[type]} — ${stateLabel}`}
+                title={exhausted ? t.lifelineExhausted : t[type]}
+              >
+                <span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span>
+                <span className="sr-only">{t[type]}</span>
+                <small>{stateLabel}</small>
+              </button>
+            );
           })}</div>
           <p className="mt-4 text-sm leading-6 text-white/55">{t.reuseHint}</p>
         </div>

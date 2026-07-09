@@ -27,7 +27,7 @@ import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
-import { applyPurchase, availablePot, extraLifeCost, guaranteedForRung, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
+import { applyPurchase, availablePot, extraLifeCost, guaranteedForRung, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
 import type { PlayerProgressionState } from '@/lib/progression/types';
 import type { LeaderboardEntry } from '@/lib/domain/models';
@@ -57,7 +57,7 @@ import { ACHIEVEMENT_KEYS } from '@/components/trivia/i18n';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game } from '@/components/trivia/screens/Game';
 import { PremiumProfile } from '@/components/trivia/screens/PremiumProfile';
-import { LANGUAGE_OPTIONS, LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
+import { LANGUAGE_OPTIONS, LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
 
 const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
@@ -777,9 +777,11 @@ export default function TriviaPlatform({
 
   function triggerLifeline(type: Lifeline) {
     if (!current) return;
-    const uses = lifelineUses[type];
-    const price = priceFor(type, currentPrize);
-    if (uses > 0 && price > 0) {
+    // Official rules (economy module): use 1 free, use 2 costs 50% of the
+    // previous completed rung, use 3 never happens.
+    const price = lifelinePrice(MONEY, round, lifelineUses[type]);
+    if (price === null) return; // permanently exhausted (tile is disabled too)
+    if (price > 0) {
       setPendingPaid({ type, price });
       return;
     }

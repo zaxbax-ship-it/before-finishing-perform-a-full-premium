@@ -992,3 +992,5 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .progression-toast.is-achievement .progression-toast-icon{color:rgba(69,194,255,.95)}
 .progression-toast-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:999px;background:hsla(0,0%,100%,.1);flex-shrink:0}
 @keyframes toast-in{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
+.lifeline-tile:disabled,.lifeline-tile.exhausted{opacity:.32;filter:grayscale(.85);cursor:not-allowed;border-color:hsla(0,0%,100%,.08)}
+.lifeline-tile:disabled:hover,.lifeline-tile.exhausted:hover{transform:none;box-shadow:none;border-color:hsla(0,0%,100%,.08)}
