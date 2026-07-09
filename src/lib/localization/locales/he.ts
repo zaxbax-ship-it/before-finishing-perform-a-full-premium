@@ -277,7 +277,7 @@ const resources: LocaleResources = {
     "lifeOfferBody": "אפשר להמשיך לשחק תמורת 50% מהזכייה הנוכחית.",
     "lifeOfferAccept": "קנו חיים והמשיכו",
     "lifeOfferDecline": "סיימו את המשחק",
-    "lifeOfferCost": "המחיר: {price}"
+    "lifeOfferCost": "{price}"
   },
   "authUi": {
     "signIn": "כניסה",

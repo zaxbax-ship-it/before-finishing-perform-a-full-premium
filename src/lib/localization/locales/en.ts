@@ -1754,7 +1754,7 @@ const resources: LocaleResources = {
     "lifeOfferBody": "You may continue by sacrificing 50% of your current winnings.",
     "lifeOfferAccept": "Buy a life and continue",
     "lifeOfferDecline": "End the game",
-    "lifeOfferCost": "Price: {price}"
+    "lifeOfferCost": "{price}"
   },
   "authUi": {
     "signIn": "Sign In",

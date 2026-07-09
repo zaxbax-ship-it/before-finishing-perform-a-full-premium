@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
 import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
@@ -39,6 +39,7 @@ export function Game(props: {
   const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   // Presentation-only: the pot eases between real values; logic sees exact numbers.
   const animatedPot = useCountUp(currentPrize, 650);
+  const [reuseHelpOpen, setReuseHelpOpen] = useState(false);
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
   // Countdown ring: purely presentational — same clock, same 45s duration.
   const RING_CIRCUMFERENCE = 2 * Math.PI * 23;
@@ -59,7 +60,7 @@ export function Game(props: {
       <section className="glass question-priority rounded-[32px] p-5 md:p-8">
         <div className="game-topline">
           <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
-          <span className="game-topline-info">{t.question} {round + 1}/15 · {current.category}</span>
+          <span className="game-topline-info">{round + 1}/15 · {current.category}</span>
           <span className="game-topline-chances">
             <ChanceMeter total={SOLO_INITIAL_LIVES} remaining={chances} label={fmt(t.chancesStatus, { count: chances, total: SOLO_INITIAL_LIVES })} />
           </span>
@@ -149,7 +150,22 @@ export function Game(props: {
               </button>
             );
           })}</div>
-          <p className="mt-4 text-sm leading-6 text-white/55">{t.reuseHint}</p>
+          <div className="lifeline-help">
+            <button
+              type="button"
+              className="lifeline-help-btn focus-ring"
+              aria-label={t.lifelines}
+              aria-describedby="reuse-help-text"
+              aria-expanded={reuseHelpOpen}
+              title={t.reuseHint}
+              onClick={() => setReuseHelpOpen(value => !value)}
+              onKeyDown={event => { if (event.key === 'Escape') setReuseHelpOpen(false); }}
+            >
+              <HintsIcon size={15} aria-hidden="true" />
+            </button>
+            <span id="reuse-help-text" className="sr-only">{t.reuseHint}</span>
+            {reuseHelpOpen && <div className="lifeline-help-pop" role="tooltip">{t.reuseHint}</div>}
+          </div>
         </div>
         <div className="glass rounded-[28px] p-5">
           <h3 className="mb-4 text-xl font-extrabold">{t.ladder}</h3>

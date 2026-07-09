@@ -17,7 +17,11 @@ export function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<stri
         <div className="text-4xl text-gold" aria-hidden="true"><WalletIcon size={34} /></div>
         <h3 id="paid-title">{t.paidTitle}</h3>
         <p>{fmt(t.paidBody, { label: t[pending.type], price: money(pending.price) })}</p>
-        <div className="rounded-2xl bg-white/[0.07] p-4 text-sm text-white/65">{fmt(t.paidPotInfo, { pot: money(pot) })}</div>
+        <div className="paid-delta" dir="ltr" aria-label={fmt(t.paidPotInfo, { pot: money(pot) })}>
+          <span className="paid-delta-from">{money(pot)}</span>
+          <span className="paid-delta-op">−{money(pending.price)}</span>
+          <span className="paid-delta-to">{money(Math.max(0, pot - pending.price))}</span>
+        </div>
         <div className="mt-5 flex gap-3">
           <button className="premium-button focus-ring inline-flex flex-1 items-center justify-center gap-2" onClick={confirm}>
             <PaymentsIcon size={16} />

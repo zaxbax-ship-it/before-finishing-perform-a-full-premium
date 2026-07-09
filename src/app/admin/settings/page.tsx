@@ -116,7 +116,9 @@ export default function AdminSettingsPage() {
               {section.rows.map(row => (
                 <li key={row.label}>
                   <span>{row.label}</span>
-                  <strong>{row.value}</strong>
+                  {row.value === yes || row.value === no
+                    ? <span className={`admin-tag ${row.value === yes ? 'is-ok' : 'is-mut'}`}>{row.value}</span>
+                    : <strong>{row.value}</strong>}
                   {row.note && <small className="admin-muted">{row.note}</small>}
                 </li>
               ))}

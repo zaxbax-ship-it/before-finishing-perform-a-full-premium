@@ -1622,7 +1622,7 @@ const resources: LocaleResources = {
     "lifeOfferBody": "የአሁኑን ትርፍዎን 50% በመክፈል መቀጠል ይችላሉ።",
     "lifeOfferAccept": "ሕይወት ገዝተው ይቀጥሉ",
     "lifeOfferDecline": "ጨዋታውን ጨርሱ",
-    "lifeOfferCost": "ዋጋ: {price}"
+    "lifeOfferCost": "{price}"
   },
   "authUi": {
     "signIn": "ግባ",

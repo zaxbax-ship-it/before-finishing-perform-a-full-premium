@@ -1626,7 +1626,7 @@ const resources: LocaleResources = {
     "lifeOfferBody": "يمكنك المتابعة مقابل 50% من أرباحك الحالية.",
     "lifeOfferAccept": "اشترِ محاولة وتابع",
     "lifeOfferDecline": "إنهاء اللعبة",
-    "lifeOfferCost": "السعر: {price}"
+    "lifeOfferCost": "{price}"
   },
   "authUi": {
     "signIn": "تسجيل الدخول",

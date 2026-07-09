@@ -1046,3 +1046,33 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 @media (hover: none){
   .glass:hover,.category-card:hover,.premium-button:hover,.ghost-button:hover,.lifeline-tile:hover,.answer-button:hover:not(:disabled),.drawer-item:hover,.admin-nav-item:hover{transform:none}
 }
+
+/* ===== Stage 7C — premium visual reduction ===== */
+/* Nickname: single live line with green/red visual state (replaces stacked helper texts). */
+.nickname-live-message{display:flex;align-items:center;gap:6px;margin:.5rem 0 .3rem;font-size:.88rem;font-weight:750;line-height:1.5}
+.nickname-live-message.valid{color:#9ff5cf}
+.nickname-live-message.valid svg{color:#55f0b5}
+.nickname-live-message.invalid{color:#ff9aa8}
+.nickname-live-message.prompt{color:hsla(0,0%,100%,.6);font-weight:600}
+
+/* Lifeline rules: compact ⓘ affordance + on-demand popover (full text kept in aria + title + popover). */
+.lifeline-help{position:relative;margin-top:.75rem;display:flex;justify-content:flex-start}
+.lifeline-help-btn{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:999px;
+  border:1px solid hsla(41,90%,69%,.4);background:hsla(41,90%,69%,.1);color:var(--gold);
+  transition:background var(--duration-normal) var(--ease-default),transform var(--duration-normal) var(--ease-default)}
+.lifeline-help-btn:hover{background:hsla(41,90%,69%,.2)}
+.lifeline-help-btn:active{transform:scale(.94)}
+.lifeline-help-pop{position:absolute;top:calc(100% + 8px);inset-inline-start:0;z-index:40;width:min(280px,80vw);
+  border:1px solid hsla(41,90%,69%,.35);border-radius:16px;padding:12px 14px;color:hsla(0,0%,100%,.86);
+  font-size:.82rem;line-height:1.6;background:linear-gradient(150deg,rgba(10,26,63,.96),rgba(4,10,26,.96));
+  box-shadow:0 20px 50px rgba(0,0,0,.5);animation:surface-pop-in var(--duration-normal) var(--ease-spring)}
+
+/* Paid lifeline: visual deduction delta instead of a sentence. */
+.paid-delta{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:2px;
+  font-weight:900;font-feature-settings:"tnum"}
+.paid-delta-from{color:hsla(0,0%,100%,.55);text-decoration:line-through;font-size:.95rem}
+.paid-delta-op{color:#ff9aa8;font-size:.9rem}
+.paid-delta-to{color:#fff2b4;font-size:1.2rem;text-shadow:0 0 18px hsla(41,90%,69%,.35)}
+
+/* Admin: muted "not configured" status chip. */
+.admin-tag.is-mut{border-color:hsla(0,0%,100%,.2);color:hsla(0,0%,100%,.6)}

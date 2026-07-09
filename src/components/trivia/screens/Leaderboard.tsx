@@ -54,10 +54,11 @@ export function Leaderboard({ t, entries, status, nickname, authUi, setNickname,
               aria-invalid={draft.length > 0 && !validation.ok}
             />
           </Field>
-          <p className={validation.ok ? 'nickname-live-message valid' : 'nickname-live-message invalid'} aria-live="polite">
-            {draft.trim() ? validation.message : authUi.nicknamePrompt}
+          <p className={`nickname-live-message ${draft.trim() ? (validation.ok ? 'valid' : 'invalid') : 'prompt'}`} aria-live="polite">
+            {draft.trim() && validation.ok && <ConfirmIcon size={14} aria-hidden="true" />}
+            <span>{draft.trim() ? validation.message : authUi.nicknamePrompt}</span>
           </p>
-          <p className="leaderboard-hint">{t.lbNicknameHint}</p>
+          {!draft.trim() && <p className="leaderboard-hint">{t.lbNicknameHint}</p>}
           <button
             className="premium-button focus-ring inline-flex w-full items-center justify-center gap-2"
             disabled={status === 'saving' || !validation.ok}
