@@ -17,14 +17,16 @@ import {
 import { playAudioEvent } from '@/lib/audio';
 import type { Screen } from '../types';
 import { useDialogFocus } from '../useDialogFocus';
+import { useDismissable } from '../useDismissable';
 
 export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: Record<string, string>; submitLabel: string; multiplayerLabel: string; open: (screen: Screen) => void; start: () => void }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement | null>(null);
-  useDialogFocus(drawerOpen, drawerRef, () => setDrawerOpen(false));
+  const { closing: drawerClosing, dismiss: dismissDrawer } = useDismissable(() => setDrawerOpen(false));
+  useDialogFocus(drawerOpen, drawerRef, dismissDrawer);
   const handleNav = (screen: Screen) => {
     open(screen);
-    setDrawerOpen(false);
+    dismissDrawer();
   };
   return (
     <header className="public-header app-header relative z-20 mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4 px-5 lg:px-8">
@@ -40,14 +42,14 @@ export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: R
       </button>
 
       {drawerOpen && (
-        <div className="drawer-backdrop" onClick={() => { playAudioEvent('ui.close'); setDrawerOpen(false); }}>
+        <div className={`drawer-backdrop ${drawerClosing ? 'is-closing' : ''}`} onClick={() => { playAudioEvent('ui.close'); dismissDrawer(); }}>
           <div className="drawer-panel glass" ref={drawerRef} role="dialog" aria-modal="true" aria-label={t.headline} onClick={e => e.stopPropagation()}>
             <div className="drawer-head">
               <strong>{t.headline}</strong>
-              <button className="icon-button focus-ring" onClick={() => { playAudioEvent('ui.close'); setDrawerOpen(false); }} aria-label={t.close || 'Close'} title={t.close || 'Close'}><CloseIcon size={18} /></button>
+              <button className="icon-button focus-ring" onClick={() => { playAudioEvent('ui.close'); dismissDrawer(); }} aria-label={t.close || 'Close'} title={t.close || 'Close'}><CloseIcon size={18} /></button>
             </div>
             <div className="drawer-nav" role="navigation" aria-label={t.headline}>
-              <button className="drawer-item focus-ring" onClick={() => { setDrawerOpen(false); start(); }}><PlayIcon size={18} />{t.start}</button>
+              <button className="drawer-item focus-ring" onClick={() => { dismissDrawer(); start(); }}><PlayIcon size={18} />{t.start}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('rules')}><QuestionIcon size={18} />{t.rules}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('multiplayer')}><MultiplayerIcon size={18} />{multiplayerLabel}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('leaderboard')}><LeaderboardIcon size={18} />{t.lbNav}</button>

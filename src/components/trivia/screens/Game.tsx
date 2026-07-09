@@ -6,6 +6,7 @@ import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, 
 import type { Locale } from '@/lib/types';
 import { LETTERS, MONEY, OPTION_LETTERS, priceFor, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
 import { money } from '../format';
+import { useCountUp } from '../useCountUp';
 import { getInfoUi } from '../i18n';
 import type { GameQuestion, Lifeline } from '../types';
 
@@ -34,6 +35,8 @@ export function Game(props: {
   requestExit: () => void;
 }) {
   const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
+  // Presentation-only: the pot eases between real values; logic sees exact numbers.
+  const animatedPot = useCountUp(currentPrize, 650);
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
   // Countdown ring: purely presentational — same clock, same 45s duration.
   const RING_CIRCUMFERENCE = 2 * Math.PI * 23;
@@ -70,7 +73,7 @@ export function Game(props: {
             </svg>
             <strong>{timer}</strong>
           </span>
-          <span className="game-topline-pot">{money(currentPrize)}</span>
+          <span className="game-topline-pot">{money(animatedPot)}</span>
         </div>
         {current.imageUrl && (
           <div className="relative mb-6 overflow-hidden rounded-3xl bg-white/[0.04] w-full" style={{ aspectRatio: '16/9', maxHeight: '18rem' }}>

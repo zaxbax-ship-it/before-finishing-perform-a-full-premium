@@ -52,6 +52,8 @@ import { Particles } from '@/components/trivia/chrome/Particles';
 import { PublicAuthArea } from '@/components/trivia/chrome/PublicAuthArea';
 import { GameExitModal } from '@/components/trivia/modals/GameExitModal';
 import { LifeOfferModal } from '@/components/trivia/modals/LifeOfferModal';
+import { ProgressionToasts, type ProgressionToast } from '@/components/trivia/ProgressionToasts';
+import { ACHIEVEMENT_KEYS } from '@/components/trivia/i18n';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game } from '@/components/trivia/screens/Game';
 import { PremiumProfile } from '@/components/trivia/screens/PremiumProfile';
@@ -170,6 +172,7 @@ export default function TriviaPlatform({
   const [deductions, setDeductions] = useState(0);
   const [extraLifeUsed, setExtraLifeUsed] = useState(false);
   const [lifeOffer, setLifeOffer] = useState<{ cost: number; reason: EndState } | null>(null);
+  const [progressionToasts, setProgressionToasts] = useState<ProgressionToast[]>([]);
   const [lifelineUses, setLifelineUses] = useState<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
   const [advice, setAdvice] = useState('');
   const [notice, setNotice] = useState('');
@@ -738,12 +741,32 @@ export default function TriviaPlatform({
       lifelinesUsed: lifelines
     });
     // Reward chimes are staggered behind the end-of-game cue so the fanfare,
-    // level-up and achievement sounds never stack on top of each other.
+    // level-up and achievement sounds never stack on top of each other. Each
+    // sound gets a matching toast on the same timeline so sight and sound land
+    // together.
     if (progressionUpdate.state.level > progression.level) {
-      window.setTimeout(() => playAudioEvent('progression.levelUp'), 900);
+      const newLevel = progressionUpdate.state.level;
+      window.setTimeout(() => {
+        playAudioEvent('progression.levelUp');
+        setProgressionToasts(previous => [...previous, { id: `level-${Date.now()}`, kind: 'level', text: fmt(t.levelUpToast, { level: newLevel }) }]);
+      }, 900);
     }
     if (progressionUpdate.unlocked.length > 0) {
-      window.setTimeout(() => playAudioEvent('progression.achievement'), 1500);
+      const unlocked = progressionUpdate.unlocked;
+      window.setTimeout(() => {
+        playAudioEvent('progression.achievement');
+        setProgressionToasts(previous => [
+          ...previous,
+          ...unlocked.map((achievement, index) => {
+            const achievementId = typeof achievement === 'string' ? achievement : achievement.id;
+            return {
+              id: `ach-${Date.now()}-${index}`,
+              kind: 'achievement' as const,
+              text: fmt(t.achievementToast, { name: ACHIEVEMENT_KEYS[achievementId] ? t[ACHIEVEMENT_KEYS[achievementId]] : achievementId })
+            };
+          })
+        ]);
+      }, 1500);
     }
     setProgression(progressionUpdate.state);
     const publicNickname = nickname || readLocal(NICKNAME_KEY, '');
@@ -1089,6 +1112,7 @@ export default function TriviaPlatform({
       </div>
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => setPendingPaid(null)} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
       {lifeOffer && <LifeOfferModal t={t} cost={lifeOffer.cost} accept={acceptLifeOffer} decline={declineLifeOffer} />}
+      <ProgressionToasts toasts={progressionToasts} remove={id => setProgressionToasts(previous => previous.filter(toast => toast.id !== id))} />
       {exitPrompt && (
         <GameExitModal
           t={t}

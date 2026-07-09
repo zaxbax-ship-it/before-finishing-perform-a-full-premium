@@ -971,3 +971,24 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .victory-burst span:nth-child(16){left:70%;animation-delay:.68s}
 @keyframes confetti-fall{0%{opacity:0;transform:translateY(-10%) rotate(0)}8%{opacity:1}100%{opacity:0;transform:translateY(118vh) rotate(660deg)}}
 @media (max-width:640px){.result-prize-hero{font-size:clamp(2.2rem,11vw,3rem)}.result-halo{inset:-40px -12px}}
+/* ===== Exit transitions + progression toasts ===== */
+/* Dialog/drawer exits mirror their entrances; the is-closing class is driven
+   by useDismissable, which unmounts after the animation completes. */
+.modal-backdrop.is-closing{animation:overlay-fade-out var(--duration-normal) var(--ease-default) forwards}
+.modal-backdrop.is-closing .modal-card{animation:surface-pop-out var(--duration-normal) var(--ease-default) forwards}
+.drawer-backdrop.is-closing{animation:overlay-fade-out var(--duration-normal) var(--ease-default) forwards}
+.drawer-backdrop.is-closing .drawer-panel{animation:drawer-slide-out var(--duration-normal) var(--ease-default) forwards}
+@keyframes overlay-fade-out{to{opacity:0}}
+@keyframes surface-pop-out{to{opacity:0;transform:scale(.955) translateY(8px)}}
+@keyframes drawer-slide-out{to{transform:translateX(100%)}}
+
+/* Progression toasts: fixed under the app bar, never intercept input. */
+.progression-toasts{position:fixed;top:calc(max(10px,env(safe-area-inset-top)) + 66px);left:50%;transform:translateX(-50%);z-index:210;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;width:min(92vw,420px)}
+.progression-toast{display:flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;font-weight:900;font-size:.95rem;color:#fff;box-shadow:0 18px 48px rgba(0,0,0,.4),inset 0 1px 0 hsla(0,0%,100%,.2);animation:toast-in var(--duration-slow) var(--ease-spring) both;max-width:100%}
+.progression-toast span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.progression-toast.is-level{border-color:hsla(41,90%,69%,.65);box-shadow:0 18px 48px hsla(41,90%,69%,.22),inset 0 1px 0 hsla(0,0%,100%,.22)}
+.progression-toast.is-level .progression-toast-icon{color:var(--gold)}
+.progression-toast.is-achievement{border-color:rgba(69,194,255,.55)}
+.progression-toast.is-achievement .progression-toast-icon{color:rgba(69,194,255,.95)}
+.progression-toast-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:999px;background:hsla(0,0%,100%,.1);flex-shrink:0}
+@keyframes toast-in{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}

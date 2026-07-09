@@ -33,10 +33,19 @@ export function getMarketingQuestions(locale: Locale) {
   return getLocaleResources(locale).marketingQuestions;
 }
 
-/** Maps stored Hebrew achievement ids to their localized UI keys. */
+/** Maps stored achievement ids (legacy Hebrew + progression) to localized UI keys. */
 export const ACHIEVEMENT_KEYS: Record<string, string> = {
   'כניסה לאולפן': 'achStudio',
   'מיליון דולר': 'achMillion',
   'שחקן בכיר': 'achSenior',
-  'משחק הושלם': 'achDone'
+  'משחק הושלם': 'achDone',
+  first_game: 'achFirstGame',
+  first_win: 'achFirstWin',
+  ten_games: 'achTenGames',
+  fifty_games: 'achFiftyGames',
+  perfect_game: 'achPerfectGame',
+  millionaire: 'achMillionaire',
+  multiplayer_debut: 'achMultiplayerDebut',
+  level_5: 'achLevel5',
+  level_10: 'achLevel10'
 };

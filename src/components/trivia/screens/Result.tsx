@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useCountUp } from '../useCountUp';
 import { AchievementsIcon } from '@/lib/design/icons';
 import { playAudioEvent } from '@/lib/audio';
 import { fmt, money } from '../format';
@@ -18,6 +19,7 @@ export function Result({ t, authUi, isAuthenticated, state, correctCount, elapse
   const time = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
   const tone = state === 'win' ? 'is-win' : prize > 0 ? 'is-cashout' : 'is-neutral';
   const [copied, setCopied] = useState(false);
+  const animatedPrize = useCountUp(prize, 1100);
   const copiedTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
@@ -58,7 +60,7 @@ export function Result({ t, authUi, isAuthenticated, state, correctCount, elapse
             <AchievementsIcon size={56} aria-hidden="true" />
           </div>
           <h2 className="text-5xl font-black">{title}</h2>
-          {prize > 0 && <div className="result-prize-hero" dir="ltr">{money(prize)}</div>}
+          {prize > 0 && <div className="result-prize-hero" dir="ltr">{money(animatedPrize)}</div>}
           <p className="mx-auto mt-4 max-w-2xl text-xl leading-8 text-white/70">{fmt(t.resultSummary, { correct: correctCount, time, prize: money(prize) })}</p>
           <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
           {!isAuthenticated && (
