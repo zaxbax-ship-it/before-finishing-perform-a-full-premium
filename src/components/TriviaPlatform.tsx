@@ -28,6 +28,7 @@ import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
 import { applyPurchase, availablePot, extraLifeCost, guaranteedForRung, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
+import { pushScreen, replaceTop, sanitizeTarget } from '@/lib/navigation/screenStack';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
 import type { PlayerProgressionState } from '@/lib/progression/types';
 import type { LeaderboardEntry } from '@/lib/domain/models';
@@ -73,6 +74,8 @@ const SCREEN_MEMORY_KEY = 'premium-trivia-screen-v1';
 // Screens that can be restored after back/forward navigation. Live-state
 // screens (game, result) cannot be resurrected after a reload.
 const RESTORABLE_SCREENS: Screen[] = ['home', 'categories', 'rules', 'leaderboard', 'profile', 'settings', 'submit', 'contact', 'multiplayer'];
+/** History-entry payload key for the in-app navigation stack. */
+type ScreenHistoryState = { tqsScreen?: Screen; tqsIndex?: number } | null;
 function normalize(question: Question): GameQuestion {
   const answers = question.options || (question as unknown as { answers?: string[] }).answers || [];
   return {
@@ -179,6 +182,9 @@ export default function TriviaPlatform({
   const [pendingPaid, setPendingPaid] = useState<{ type: Lifeline; price: number } | null>(null);
   const [exitPrompt, setExitPrompt] = useState(false);
   const screenSectionRef = useRef<HTMLDivElement | null>(null);
+  // In-app navigation stack (mirrors browser history; see commitScreen).
+  const stackRef = useRef<Screen[]>([initialScreen === 'admin' ? 'admin' : initialScreen]);
+  const liveGameRef = useRef(false);
   const [endState, setEndState] = useState<EndState>('lost');
   const [finalPrize, setFinalPrize] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -243,17 +249,28 @@ export default function TriviaPlatform({
     setAuditLogs(readLocal(AUDIT_KEY, []));
     // Invitation deep-links (/?join=...) land directly on the multiplayer screen.
     if (new URLSearchParams(window.location.search).get('join')) {
-      setScreen('multiplayer');
+      commitScreen('multiplayer', 'replace');
     } else {
-      // Browser back/forward (e.g. returning from /login) restores the screen
-      // the user actually left instead of resetting to home. Runs before the
-      // screen-memory effect below writes its first value.
+      // Returning to the app (back/forward from /login etc.): the history
+      // entry's own state is the source of truth; the session-scoped screen
+      // memory remains as a fallback for browsers that drop history state.
+      const historyScreen = (window.history.state as ScreenHistoryState)?.tqsScreen;
       const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-      if (navigationEntry?.type === 'back_forward') {
+      let restored: Screen | null = null;
+      if (historyScreen && RESTORABLE_SCREENS.includes(historyScreen)) {
+        restored = historyScreen;
+      } else if (navigationEntry?.type === 'back_forward') {
         try {
           const storedScreen = sessionStorage.getItem(SCREEN_MEMORY_KEY) as Screen | null;
-          if (storedScreen && RESTORABLE_SCREENS.includes(storedScreen)) setScreen(storedScreen);
+          if (storedScreen && RESTORABLE_SCREENS.includes(storedScreen)) restored = storedScreen;
         } catch { /* sessionStorage unavailable */ }
+      }
+      if (restored) {
+        stackRef.current = restored === 'home' ? ['home'] : ['home', restored];
+        commitScreen(restored, 'replace');
+      } else {
+        // Seed the first entry so popstate always has app state to return to.
+        commitScreen(initialScreen === 'admin' ? 'admin' : initialScreen, 'replace');
       }
     }
     setSettings(readLocal(SETTINGS_KEY, { sound: true, effects: true, timer: 'דרמטית' }));
@@ -267,6 +284,32 @@ export default function TriviaPlatform({
   useEffect(() => {
     try { sessionStorage.setItem(SCREEN_MEMORY_KEY, screen); } catch { /* unavailable */ }
   }, [screen]);
+
+  // Browser/hardware Back inside the app: walk the in-app stack. Entries
+  // without app state (the page before the site) are left to the browser —
+  // that is the only way Back leaves the site.
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const state = event.state as ScreenHistoryState;
+      const target = state?.tqsScreen;
+      if (!target) return;
+      // A live game may be resumed within the session; anything else that is
+      // not restorable (game after reload, admin) falls back safely.
+      const restorable: Screen[] = liveGameRef.current
+        ? [...RESTORABLE_SCREENS, 'game', 'result']
+        : [...RESTORABLE_SCREENS, 'result'];
+      const safe = sanitizeTarget<Screen>(target, restorable, 'categories');
+      const index = typeof state?.tqsIndex === 'number' ? state.tqsIndex : 0;
+      stackRef.current = stackRef.current.slice(0, index).concat(safe);
+      clearAdvanceTimer();
+      setScreen(safe);
+      if (safe !== target) {
+        try { window.history.replaceState({ ...window.history.state, tqsScreen: safe, tqsIndex: index }, ''); } catch { /* ignore */ }
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // The audio engine follows the sound setting; components then emit
   // semantic events without threading the flag around.
@@ -508,13 +551,37 @@ export default function TriviaPlatform({
     }
   }
 
+  /**
+   * The single navigation entry point (native-app model: one screen stack,
+   * mirrored into browser history). Every user navigation pushes a history
+   * entry carrying the target screen, so the browser/hardware Back button
+   * walks the app's own screens before it can ever leave the site.
+   */
   function open(next: Screen) {
     // The admin dashboard is only reachable through the protected /admin route;
     // the public app never navigates to it (server-side guards protect the data).
     if (next === 'admin' && initialScreen !== 'admin') return;
     clearAdvanceTimer();
-    setScreen(next);
+    commitScreen(next, 'push');
     playAudioEvent('ui.tap');
+  }
+
+  /** Applies a screen change and keeps stack + browser history in sync. */
+  function commitScreen(next: Screen, mode: 'push' | 'replace' | 'restore') {
+    setScreen(next);
+    if (typeof window === 'undefined') return;
+    try {
+      // Merge into the existing entry state: Next.js stores its own router
+      // internals in history.state, and clobbering them breaks soft navigation.
+      if (mode === 'push') {
+        stackRef.current = pushScreen(stackRef.current, next);
+        window.history.pushState({ ...window.history.state, tqsScreen: next, tqsIndex: stackRef.current.length - 1 }, '');
+      } else if (mode === 'replace') {
+        stackRef.current = replaceTop(stackRef.current, next);
+        window.history.replaceState({ ...window.history.state, tqsScreen: next, tqsIndex: stackRef.current.length - 1 }, '');
+      }
+      // 'restore' (popstate): the browser already moved; stackRef is synced by the handler.
+    } catch { /* history unavailable (very old browsers) — screen still changes */ }
   }
 
   function rememberSeenQuestions(items: Pick<Question, 'id'>[]) {
@@ -597,7 +664,8 @@ export default function TriviaPlatform({
     setAdvice('');
     setNotice('');
     setElapsed(0);
-    setScreen('game');
+    liveGameRef.current = true;
+    commitScreen('game', 'push');
     playAudioEvent('game.start');
   }
 
@@ -722,7 +790,8 @@ export default function TriviaPlatform({
     clearAdvanceTimer();
     setEndState(state);
     setFinalPrize(prize);
-    setScreen('result');
+    liveGameRef.current = false;
+    commitScreen('result', 'replace');
     playAudioEvent(state === 'win' ? 'game.victory' : state === 'quit' ? 'game.cashout' : state === 'timeout' ? 'timer.expired' : 'game.defeat');
     const lifelines = Object.values(lifelineUses).reduce((sum, value) => sum + value, 0);
     setStats(previous => ({

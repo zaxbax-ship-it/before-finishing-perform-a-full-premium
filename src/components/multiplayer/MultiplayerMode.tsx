@@ -184,7 +184,8 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     if (joinTarget) {
       // Always strip the invite param so a stale ?join= can never hijack a
       // later load of / (e.g. pressing Back from the login page).
-      window.history.replaceState(null, '', window.location.pathname);
+      // Preserve the in-app navigation state; only the query string is stripped.
+      window.history.replaceState(window.history.state, '', window.location.pathname);
       if (!(storedSession?.lobbyId === joinTarget)) setPendingJoin(joinTarget);
     }
   }, []);
