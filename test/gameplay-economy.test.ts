@@ -82,44 +82,37 @@ describe('solo gameplay economy', () => {
 });
 
 describe('Official lifeline usage rules', () => {
-  const ladder = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 250000, 400000, 550000, 700000, 850000, 1000000, 1000000];
-
-  it('first use of any lifeline is completely free', () => {
-    expect(lifelinePrice(ladder, 0, 0)).toBe(0);
-    expect(lifelinePrice(ladder, 7, 0)).toBe(0);
-    expect(lifelinePrice(ladder, 14, 0)).toBe(0);
+  it('first use of any lifeline is completely free (at any pot)', () => {
+    expect(lifelinePrice(0, 0)).toBe(0);
+    expect(lifelinePrice(10000, 0)).toBe(0);
+    expect(lifelinePrice(1000000, 0)).toBe(0);
   });
 
-  it('second use costs exactly 50% of the previous completed rung value', () => {
-    // 4 completed rungs -> previous rung value $10,000 -> price $5,000
-    expect(lifelinePrice(ladder, 4, 1)).toBe(5000);
-    // 1 completed rung -> $1,000 -> $500
-    expect(lifelinePrice(ladder, 1, 1)).toBe(500);
-    // the documented example shape: rung worth $8,000 -> $4,000
-    expect(lifelinePrice([8000], 1, 1)).toBe(4000);
-    // nothing completed yet -> 50% of nothing
-    expect(lifelinePrice(ladder, 0, 1)).toBe(0);
-  });
-
-  it('never prices from the current pot after deductions (rung value only)', () => {
-    // Deductions do not exist in this signature by design: the price depends
-    // only on the ladder and the completed rung.
-    expect(lifelinePrice(ladder, 4, 1)).toBe(ladder[3] / 2);
+  it('second use costs exactly 25% of the current pot, floored', () => {
+    expect(lifelinePrice(10000, 1)).toBe(2500);
+    expect(lifelinePrice(1000, 1)).toBe(250);
+    expect(lifelinePrice(8000, 1)).toBe(2000);
+    // floor, never negative
+    expect(lifelinePrice(1234, 1)).toBe(308);
+    expect(lifelinePrice(-500, 1)).toBe(0);
+    // an empty pot yields a $0 price (the game still confirms the second use)
+    expect(lifelinePrice(0, 1)).toBe(0);
   });
 
   it('a third use is never allowed', () => {
-    expect(lifelinePrice(ladder, 4, 2)).toBeNull();
-    expect(lifelinePrice(ladder, 14, 5)).toBeNull();
+    expect(lifelinePrice(10000, 2)).toBeNull();
+    expect(lifelinePrice(1000000, 5)).toBeNull();
     expect(isLifelineExhausted(2)).toBe(true);
     expect(isLifelineExhausted(1)).toBe(false);
     expect(LIFELINE_MAX_USES).toBe(2);
   });
 
   it('usage counters are independent per lifeline (pricing is per counter)', () => {
+    const pot = 10000;
     const uses = { fifty: 2, swap: 1, phone: 0, audience: 0 };
-    expect(lifelinePrice(ladder, 4, uses.fifty)).toBeNull();       // exhausted
-    expect(lifelinePrice(ladder, 4, uses.swap)).toBe(5000);        // paid second use
-    expect(lifelinePrice(ladder, 4, uses.phone)).toBe(0);          // still free
-    expect(lifelinePrice(ladder, 4, uses.audience)).toBe(0);       // still free
+    expect(lifelinePrice(pot, uses.fifty)).toBeNull();     // exhausted
+    expect(lifelinePrice(pot, uses.swap)).toBe(2500);      // paid second use (25%)
+    expect(lifelinePrice(pot, uses.phone)).toBe(0);        // still free
+    expect(lifelinePrice(pot, uses.audience)).toBe(0);     // still free
   });
 });

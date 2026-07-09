@@ -60,21 +60,21 @@ export function applyPurchase(deductions: number, price: number): number {
 
 /** Official rule: every lifeline can be used at most twice per game. */
 export const LIFELINE_MAX_USES = 2;
-/** The second use costs this fraction of the previous completed rung's value. */
-export const LIFELINE_SECOND_USE_RUNG_FRACTION = 0.5;
+/** The second use costs this fraction of the player's CURRENT pot. */
+export const LIFELINE_SECOND_USE_POT_FRACTION = 0.25;
 
 /**
  * Official lifeline pricing — the single source of truth for every client.
  * Given how many times THIS lifeline was already used:
  *   0 → first use, completely free ($0)
- *   1 → second use, 50% of the value of the previous successfully completed
- *       ladder rung (NOT the current pot, total winnings or guaranteed amount)
+ *   1 → second use, 25% of the player's CURRENT pot (floored). Always
+ *       confirmed via the purchase dialog, even when the pot is 0.
  *   2+ → permanently exhausted for the rest of the game; returns null
  */
-export function lifelinePrice(ladder: number[], rung: number, timesUsed: number): number | null {
+export function lifelinePrice(currentPot: number, timesUsed: number): number | null {
   if (timesUsed >= LIFELINE_MAX_USES) return null;
   if (timesUsed <= 0) return 0;
-  return Math.floor(potForRung(ladder, rung) * LIFELINE_SECOND_USE_RUNG_FRACTION);
+  return Math.floor(Math.max(0, currentPot) * LIFELINE_SECOND_USE_POT_FRACTION);
 }
 
 /** True once a lifeline has consumed both of its allowed uses. */

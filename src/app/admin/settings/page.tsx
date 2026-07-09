@@ -49,7 +49,7 @@ export default function AdminSettingsPage() {
       rows: [
         { label: 'פרס מרבי', value: `$${MONEY[MONEY.length - 1].toLocaleString('en-US')}` },
         { label: 'מחיר חיים נוספים', value: `${EXTRA_LIFE_POT_FRACTION * 100}% מהקופה הנוכחית` },
-        { label: 'מחיר שימוש חוזר בעזר', value: '50% משווי המדרגה האחרונה שהושלמה; עד 2 שימושים לעזר' }
+        { label: 'מחיר שימוש חוזר בעזר', value: '25% מהקופה הנוכחית; עד 2 שימושים לעזר' }
       ]
     },
     {

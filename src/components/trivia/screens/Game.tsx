@@ -128,9 +128,11 @@ export function Game(props: {
           <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold"><HintsIcon size={16} aria-hidden="true" /></span></div>
           <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
             const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
-            const price = lifelinePrice(MONEY, round, lifelineUses[type]);
+            const price = lifelinePrice(currentPrize, lifelineUses[type]);
             const exhausted = price === null;
-            const stateLabel = exhausted ? t.usedUp : price > 0 ? money(price) : t.free;
+            // A second use always shows its price (even $0 at an empty pot) so
+            // the tile never looks "free" when a confirm dialog will appear.
+            const stateLabel = exhausted ? t.usedUp : lifelineUses[type] >= 1 ? money(price as number) : t.free;
             return (
               <button
                 key={type}

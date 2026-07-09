@@ -857,11 +857,15 @@ export default function TriviaPlatform({
     const tappedAt = Date.now();
     if (tappedAt - lifelineTapAtRef.current < 350) return;
     lifelineTapAtRef.current = tappedAt;
-    // Official rules (economy module): use 1 free, use 2 costs 50% of the
-    // previous completed rung, use 3 never happens.
-    const price = lifelinePrice(MONEY, round, lifelineUsesRef.current[type]);
+    // Official rules (economy module): use 1 is free, use 2 ALWAYS opens the
+    // purchase dialog (even when the current pot — and therefore the price —
+    // is 0), use 3 never happens. Gating the dialog on the use count, not on
+    // price>0, is what makes a second use at rung 0 still confirm instead of
+    // silently applying for free.
+    const timesUsed = lifelineUsesRef.current[type];
+    const price = lifelinePrice(currentPrize, timesUsed);
     if (price === null) return; // permanently exhausted (tile is disabled too)
-    if (price > 0) {
+    if (timesUsed >= 1) {
       setPendingPaid({ type, price });
       return;
     }
@@ -877,6 +881,12 @@ export default function TriviaPlatform({
     lifelineUsesRef.current = { ...lifelineUsesRef.current, [type]: lifelineUsesRef.current[type] + 1 };
     setPendingPaid(null);
     setLifelineUses(previous => ({ ...previous, [type]: previous[type] + 1 }));
+    // Deduct the price BEFORE the effect is applied (official rule). A 0 price
+    // (second use at rung 0) is a no-op purchase but the use is still consumed.
+    if (price > 0) {
+      setDeductions(value => applyPurchase(value, price));
+      setNotice(fmt(t.paidDeducted, { amount: money(price) }));
+    }
     playAudioEvent('lifeline.used');
     if (type === 'fifty') {
       setHiddenAnswers(order.filter(index => index !== current.correctIndex).slice(0, 2));
@@ -899,10 +909,6 @@ export default function TriviaPlatform({
     if (type === 'audience') {
       const optionLetters = OPTION_LETTERS[locale] || LETTERS;
       setAdvice(fmt(t.audienceAdvice, { letter: optionLetters[order.indexOf(current.correctIndex)] }));
-    }
-    if (price > 0) {
-      setDeductions(value => applyPurchase(value, price));
-      setNotice(fmt(t.paidDeducted, { amount: money(price) }));
     }
   }
 
