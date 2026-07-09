@@ -27,7 +27,7 @@ import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
-import { applyPurchase, availablePot, extraLifeCost, guaranteedForRung, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
+import { applyPurchase, availablePot, extraLifeCost, guaranteedForRung, isLifelineExhausted, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { pushScreen, replaceTop, sanitizeTarget } from '@/lib/navigation/screenStack';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
 import type { PlayerProgressionState } from '@/lib/progression/types';
@@ -185,6 +185,11 @@ export default function TriviaPlatform({
   // In-app navigation stack (mirrors browser history; see commitScreen).
   const stackRef = useRef<Screen[]>([initialScreen === 'admin' ? 'admin' : initialScreen]);
   const liveGameRef = useRef(false);
+  // Synchronous mirror of lifelineUses: two taps landing in the same event
+  // batch must not both read the pre-update count (that would grant a free
+  // second use, bypassing the official 50% price and the confirm dialog).
+  const lifelineUsesRef = useRef<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
+  const lifelineTapAtRef = useRef(0);
   const [endState, setEndState] = useState<EndState>('lost');
   const [finalPrize, setFinalPrize] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -660,6 +665,7 @@ export default function TriviaPlatform({
     setHiddenAnswers([]);
     setTimer(SOLO_TIMER_SECONDS);
     setChances(SOLO_INITIAL_LIVES);
+    lifelineUsesRef.current = { fifty: 0, swap: 0, phone: 0, audience: 0 };
     setLifelineUses({ fifty: 0, swap: 0, phone: 0, audience: 0 });
     setAdvice('');
     setNotice('');
@@ -846,9 +852,14 @@ export default function TriviaPlatform({
 
   function triggerLifeline(type: Lifeline) {
     if (!current) return;
+    // Accidental double-taps must never consume two activations (at rung 0
+    // both uses are legitimately free, so the price check alone can't stop it).
+    const tappedAt = Date.now();
+    if (tappedAt - lifelineTapAtRef.current < 350) return;
+    lifelineTapAtRef.current = tappedAt;
     // Official rules (economy module): use 1 free, use 2 costs 50% of the
     // previous completed rung, use 3 never happens.
-    const price = lifelinePrice(MONEY, round, lifelineUses[type]);
+    const price = lifelinePrice(MONEY, round, lifelineUsesRef.current[type]);
     if (price === null) return; // permanently exhausted (tile is disabled too)
     if (price > 0) {
       setPendingPaid({ type, price });
@@ -859,6 +870,11 @@ export default function TriviaPlatform({
 
   function applyLifeline(type: Lifeline, price: number) {
     if (!current) return;
+    // Synchronous allowance check: a double-tap (tile or confirm button) in
+    // one batch must apply exactly once — never a second free use, never a
+    // double charge.
+    if (isLifelineExhausted(lifelineUsesRef.current[type])) return;
+    lifelineUsesRef.current = { ...lifelineUsesRef.current, [type]: lifelineUsesRef.current[type] + 1 };
     setPendingPaid(null);
     setLifelineUses(previous => ({ ...previous, [type]: previous[type] + 1 }));
     playAudioEvent('lifeline.used');
