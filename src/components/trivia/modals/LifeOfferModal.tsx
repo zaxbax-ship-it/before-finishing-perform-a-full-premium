@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef } from 'react';
-import { CloseIcon, FavoritesIcon, PlayIcon } from '@/lib/design/icons';
+import { CloseIcon, PlayIcon } from '@/lib/design/icons';
+import { ChanceMeter } from '../ChanceMeter';
 import { fmt, money } from '../format';
 import { useDialogFocus } from '../useDialogFocus';
 import { useDismissable } from '../useDismissable';
@@ -18,7 +19,7 @@ export function LifeOfferModal({ t, cost, accept, decline }: { t: Record<string,
   return (
     <div className={`modal-backdrop ${closing ? 'is-closing' : ''}`} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="life-offer-title">
       <div className="glass modal-card">
-        <div className="text-4xl text-ember" aria-hidden="true"><FavoritesIcon size={34} fill="currentColor" /></div>
+        <div className="life-offer-meter" aria-hidden="true"><ChanceMeter total={3} remaining={0} /></div>
         <h3 id="life-offer-title">{t.lifeOfferTitle}</h3>
         <p>{t.lifeOfferBody}</p>
         <div className="life-offer-cost">{fmt(t.lifeOfferCost, { price: money(cost) })}</div>

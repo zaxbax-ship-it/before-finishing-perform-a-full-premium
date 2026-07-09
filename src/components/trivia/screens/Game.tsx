@@ -2,11 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
-import { AudienceIcon, ConfirmIcon, FavoritesIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon } from '@/lib/design/icons';
+import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
-import { lifelinePrice } from '@/lib/gameplay/economy';
+import { lifelinePrice, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
+import { ChanceMeter } from '../ChanceMeter';
 import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
-import { money } from '../format';
+import { fmt, money } from '../format';
 import { useCountUp } from '../useCountUp';
 import { getInfoUi } from '../i18n';
 import type { GameQuestion, Lifeline } from '../types';
@@ -59,7 +60,9 @@ export function Game(props: {
         <div className="game-topline">
           <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
           <span className="game-topline-info">{t.question} {round + 1}/15 · {current.category}</span>
-          <span className="game-topline-chances" aria-label={t.chancesLabel}>{[0, 1, 2].map(index => <span key={index} className={index < chances ? 'text-ember' : 'text-white/22'}><FavoritesIcon size={13} fill="currentColor" aria-hidden="true" /></span>)}</span>
+          <span className="game-topline-chances">
+            <ChanceMeter total={SOLO_INITIAL_LIVES} remaining={chances} label={fmt(t.chancesStatus, { count: chances, total: SOLO_INITIAL_LIVES })} />
+          </span>
           <span className={`game-timer-ring ${timerUrgency}`} role="timer">
             <svg viewBox="0 0 52 52" aria-hidden="true">
               <circle className="ring-track" cx="26" cy="26" r="23" />
@@ -74,7 +77,7 @@ export function Game(props: {
             </svg>
             <strong>{timer}</strong>
           </span>
-          <span className="game-topline-pot">{money(animatedPot)}</span>
+          <span className="game-topline-pot" title={money(currentPrize)} aria-label={`${t.currentPot}: ${money(currentPrize)}`}>{money(animatedPot)}</span>
         </div>
         {current.imageUrl && (
           <div className="relative mb-6 overflow-hidden rounded-3xl bg-white/[0.04] w-full" style={{ aspectRatio: '16/9', maxHeight: '18rem' }}>

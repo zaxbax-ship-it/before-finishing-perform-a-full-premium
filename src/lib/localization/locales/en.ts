@@ -1626,6 +1626,7 @@ const resources: LocaleResources = {
     "currentPot": "Current Bank",
     "seconds": "seconds",
     "chancesLabel": "Chances",
+    "chancesStatus": "{count} of {total} chances left",
     "reuseHint": "First use is free. The second use costs 50% of the previous completed rung. A third use is not possible.",
     "lifelineExhausted": "This lifeline is fully used for this game",
     "usedUp": "Used up",

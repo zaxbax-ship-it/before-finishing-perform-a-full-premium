@@ -149,6 +149,7 @@ const resources: LocaleResources = {
     "currentPot": "קופה נוכחית",
     "seconds": "שניות",
     "chancesLabel": "הזדמנויות",
+    "chancesStatus": "נותרו {count} מתוך {total} הזדמנויות",
     "reuseHint": "שימוש ראשון חינם. שימוש שני עולה 50% משווי המדרגה האחרונה שהושלמה. שימוש שלישי אינו אפשרי.",
     "lifelineExhausted": "העזר הזה נוצל במלואו למשחק הנוכחי",
     "usedUp": "נוצל",

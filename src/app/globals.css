@@ -994,3 +994,35 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 @keyframes toast-in{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
 .lifeline-tile:disabled,.lifeline-tile.exhausted{opacity:.32;filter:grayscale(.85);cursor:not-allowed;border-color:hsla(0,0%,100%,.08)}
 .lifeline-tile:disabled:hover,.lifeline-tile.exhausted:hover{transform:none;box-shadow:none;border-color:hsla(0,0%,100%,.08)}
+
+/* ===== Mobile gameplay layout integrity ===== */
+/* ChanceMeter: game-show mistake allowance — slanted gold segments that dim
+   when spent. Replaces the generic hearts; direction-aware slant. */
+.chance-meter{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;border:1px solid hsla(41,90%,69%,.28);background:linear-gradient(145deg,hsla(0,0%,100%,.08),hsla(0,0%,100%,.02));box-shadow:inset 0 1px 0 hsla(0,0%,100%,.1)}
+.chance-pip{display:inline-block;width:13px;height:9px;border-radius:3px;transform:skewX(14deg);background:linear-gradient(135deg,#fff7c9,#f7ca67 55%,#d99b38);box-shadow:0 0 10px hsla(41,90%,69%,.45),inset 0 1px 0 hsla(0,0%,100%,.55);transition:opacity var(--duration-normal) var(--ease-default),box-shadow var(--duration-normal) var(--ease-default),background var(--duration-normal) var(--ease-default)}
+[dir="ltr"] .chance-pip{transform:skewX(-14deg)}
+.chance-pip.is-spent{background:hsla(0,0%,100%,.1);box-shadow:inset 0 1px 2px rgba(0,0,0,.4);opacity:.5}
+.life-offer-meter{display:flex;justify-content:center;margin-bottom:4px}
+.life-offer-meter .chance-meter{padding:8px 14px}
+.life-offer-meter .chance-pip{width:18px;height:12px}
+
+/* Overflow integrity: flexible topline texts may shrink and ellipsize instead
+   of pushing the bar (and themselves) off-screen. Exact values stay available
+   via title/aria-label. */
+.game-topline-info{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.game-topline-pot{min-width:0;overflow:hidden;text-overflow:ellipsis;font-feature-settings:"tnum"}
+.answer-button>span:last-child{min-width:0;overflow-wrap:break-word}
+.modal-card h3,.modal-card p,.modal-card div{overflow-wrap:break-word}
+.ladder-item strong{min-width:0;overflow:hidden;text-overflow:ellipsis}
+
+/* Phone top bar: two compact rows anchored by the timer ring spanning both.
+   Row 1: exit + question/category. Row 2: chances + prize. Nothing can
+   overflow — the middle column is minmax(0,1fr). */
+@media (max-width:640px){
+  .game-active .game-topline{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"home info timer" "chances pot timer";align-items:center;row-gap:6px;border-radius:22px;padding:8px 12px}
+  .game-active .game-topline-home{grid-area:home}
+  .game-active .game-topline-info{grid-area:info}
+  .game-active .game-timer-ring{grid-area:timer;justify-self:end}
+  .game-active .game-topline-chances{grid-area:chances;justify-self:start}
+  .game-active .game-topline-pot{grid-area:pot;justify-self:start;font-size:.95rem}
+}

@@ -1494,6 +1494,7 @@ const resources: LocaleResources = {
     "currentPot": "አሁን ያለ ሽልማት",
     "seconds": "ሰከንዶች",
     "chancesLabel": "እድሎች",
+    "chancesStatus": "{count} ከ{total} እድሎች ቀርተዋል",
     "reuseHint": "የመጀመሪያው አጠቃቀም ነፃ ነው። ሁለተኛው ካለፈው የተጠናቀቀ ደረጃ ዋጋ 50% ያስከፍላል። ሦስተኛ አጠቃቀም አይቻልም።",
     "lifelineExhausted": "ይህ እርዳታ ለዚህ ጨዋታ ሙሉ በሙሉ ተጠቅሟል",
     "usedUp": "አልቋል",

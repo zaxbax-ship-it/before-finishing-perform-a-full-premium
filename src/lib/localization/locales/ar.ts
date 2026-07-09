@@ -1498,6 +1498,7 @@ const resources: LocaleResources = {
     "currentPot": "الرصيد الحالي",
     "seconds": "ثوان",
     "chancesLabel": "الفرص",
+    "chancesStatus": "تبقى {count} من {total} فرص",
     "reuseHint": "الاستخدام الأول مجاني. الاستخدام الثاني يكلف 50% من قيمة الدرجة المكتملة السابقة. لا يمكن استخدام ثالث.",
     "lifelineExhausted": "استُنفدت وسيلة المساعدة هذه في هذه المباراة",
     "usedUp": "مستنفد",

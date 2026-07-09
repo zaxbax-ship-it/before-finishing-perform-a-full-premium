@@ -1498,6 +1498,7 @@ const resources: LocaleResources = {
     "currentPot": "Текущий банк",
     "seconds": "секунд",
     "chancesLabel": "Попытки",
+    "chancesStatus": "Осталось {count} из {total} попыток",
     "reuseHint": "Первое использование бесплатно. Второе стоит 50% от предыдущей завершённой ступени. Третье невозможно.",
     "lifelineExhausted": "Эта подсказка полностью использована в этой игре",
     "usedUp": "Исчерпана",
