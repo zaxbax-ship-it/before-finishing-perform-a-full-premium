@@ -6,22 +6,23 @@ import type {
   AntiSpamEvent,
   ApprovedQuestion,
   AuditLog,
+  ContactTicket,
   ContributorReputation,
   EntityId,
+  ISODateTime,
   LeaderboardEntry,
   ModerationResultEntity,
   Notification,
+  PaymentTransaction,
   Permission,
   PermissionSlug,
+  PlayerProgression,
   ReputationEvent,
   ReviewQueueItem,
   Role,
   User,
-  UserSubscription,
   UserEntitlement,
-  PaymentTransaction,
-  PlayerProgression,
-  ISODateTime
+  UserSubscription
 } from '@/lib/domain/models';
 import type {
   ApproveSubmissionDto,
@@ -162,9 +163,13 @@ export interface LeaderboardRepository {
   submitScore(input: SubmitScoreInput): Promise<SubmitScoreResult>;
   /** Admin moderation hook: hide or restore a nickname on the public board. */
   setHidden(nickname: string, hidden: boolean): Promise<LeaderboardEntry | undefined>;
+  /** Admin console: every entry including hidden ones, best prize first. */
+  listAll(options?: ListOptions): Promise<LeaderboardEntry[]>;
 }
 
 export interface NotificationsRepository {
+  /** Admin console: all notifications regardless of addressee, newest first. */
+  list(options?: ListOptions): Promise<Notification[]>;
   listForUser(userId: EntityId, options?: ListOptions): Promise<Notification[]>;
   listForAdmin(adminId: EntityId, options?: ListOptions): Promise<Notification[]>;
   create(input: CreateNotificationDto): Promise<Notification>;
@@ -173,6 +178,10 @@ export interface NotificationsRepository {
 
 export interface MultiplayerRepository {
   listOpenLobbies(options?: ListOptions): Promise<MultiplayerLobby[]>;
+  /** Admin console: every lobby regardless of status/visibility, newest first. */
+  listLobbies(options?: ListOptions): Promise<MultiplayerLobby[]>;
+  /** Admin console: every game, newest first. */
+  listGames(options?: ListOptions): Promise<MultiplayerGame[]>;
   findLobby(id: EntityId): Promise<MultiplayerLobby | undefined>;
   createLobby(lobby: MultiplayerLobby): Promise<MultiplayerLobby>;
   updateLobby(id: EntityId, input: Partial<MultiplayerLobby>): Promise<MultiplayerLobby | undefined>;
@@ -180,6 +189,8 @@ export interface MultiplayerRepository {
   listPlayers(lobbyId: EntityId): Promise<MultiplayerPlayer[]>;
   findPlayer(id: EntityId): Promise<MultiplayerPlayer | undefined>;
   findPlayerByIdentity(lobbyId: EntityId, identity: { authUserId?: EntityId; anonymousId?: EntityId }): Promise<MultiplayerPlayer | undefined>;
+  /** Admin console: every appearance of an identity across lobbies/games. */
+  listPlayersForIdentity(identity: { authUserId?: EntityId; anonymousId?: EntityId }): Promise<MultiplayerPlayer[]>;
   updatePlayer(id: EntityId, input: Partial<MultiplayerPlayer>): Promise<MultiplayerPlayer | undefined>;
   createGame(game: MultiplayerGame): Promise<MultiplayerGame>;
   findGame(id: EntityId): Promise<MultiplayerGame | undefined>;
@@ -208,9 +219,23 @@ export interface PaymentsRepository {
   
   createTransaction(transaction: Omit<PaymentTransaction, 'id' | 'createdAt'>): Promise<PaymentTransaction>;
   listTransactionsByUserId(userId: EntityId): Promise<PaymentTransaction[]>;
+  /** Admin console: all transactions, newest first. */
+  listTransactions(options?: ListOptions): Promise<PaymentTransaction[]>;
+  /** Admin console: all subscriptions, newest first. */
+  listSubscriptions(options?: ListOptions): Promise<UserSubscription[]>;
+}
+
+export interface ContactTicketsRepository {
+  list(filters?: { status?: ContactTicket['status']; priority?: ContactTicket['priority']; search?: string; limit?: number }): Promise<ContactTicket[]>;
+  findById(id: EntityId): Promise<ContactTicket | undefined>;
+  create(input: Omit<ContactTicket, 'id' | 'notes' | 'createdAt' | 'updatedAt'> & { id?: EntityId }): Promise<ContactTicket>;
+  update(id: EntityId, input: Partial<Pick<ContactTicket, 'status' | 'priority' | 'assigneeEmail'>>): Promise<ContactTicket | undefined>;
+  addNote(id: EntityId, note: { authorEmail: string; body: string }): Promise<ContactTicket | undefined>;
 }
 
 export interface ProgressionRepository {
+  /** Admin console: every progression record, most recently active first. */
+  list(options?: ListOptions): Promise<PlayerProgression[]>;
   find(playerKey: string): Promise<PlayerProgression | undefined>;
   save(progression: Omit<PlayerProgression, 'id' | 'createdAt' | 'updatedAt'> & { id?: EntityId; createdAt?: ISODateTime; updatedAt?: ISODateTime }): Promise<PlayerProgression>;
 }
@@ -235,4 +260,5 @@ export type RepositoryProvider = {
   multiplayer: MultiplayerRepository;
   payments: PaymentsRepository;
   progression: ProgressionRepository;
+  contactTickets: ContactTicketsRepository;
 };

@@ -333,6 +333,9 @@ export default function TriviaPlatform({
   }, [locale, dir]);
 
   useEffect(() => {
+    // The moderation feed exists only for the (legacy) in-platform admin
+    // screen; public visitors must never call the admin-guarded endpoint.
+    if (initialScreen !== 'admin') return;
     let active = true;
     fetch('/api/community/submissions', { cache: 'no-store' })
       .then(response => response.ok ? response.json() : undefined)

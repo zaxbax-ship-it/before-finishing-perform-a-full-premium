@@ -1,49 +1,62 @@
-import { redirect } from 'next/navigation';
-import TriviaPlatform from '@/components/TriviaPlatform';
-import { createTriviaDataService } from '@/lib/services/triviaDataService';
-import { API_QUESTION_SAMPLE_SIZE } from '@/lib/services/questionSampling';
-import { adminAccessMode, requirePermission, warnLockedAdminAccess, warnOpenAdminAccess } from '@/lib/auth/guards';
-import { AuthorizationError, type AdminContext } from '@/lib/auth/types';
-import AdminAuthBar from './AdminAuthBar';
+import { buildAdminOverview } from '@/lib/admin/metricsService';
+import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
+import type { AdminMetricValue } from '@/lib/api/contracts/admin';
+import { AdminCharts } from './_components/AdminCharts';
 
-// The admin dashboard must never be statically cached — the authorization guard
-// has to run on every request so enforcement cannot be bypassed by a prerender.
+// Authorization is enforced by the admin layout; data must be fresh per request.
 export const dynamic = 'force-dynamic';
 
-export default async function Admin() {
-  let context: AdminContext | undefined;
-  const mode = adminAccessMode();
+const CARD_LABELS: Array<{ key: keyof Awaited<ReturnType<typeof buildAdminOverview>>['cards']; label: string; hint?: string }> = [
+  { key: 'users', label: 'משתמשים רשומים' },
+  { key: 'onlineUsers', label: 'מחוברים עכשיו', hint: 'שחקני מרובה משתתפים פעילים' },
+  { key: 'dailyActiveUsers', label: 'שחקנים פעילים היום' },
+  { key: 'monthlyActiveUsers', label: 'שחקנים פעילים החודש' },
+  { key: 'gamesToday', label: 'משחקי מרובה היום' },
+  { key: 'multiplayerGames', label: 'סה״כ משחקי מרובה' },
+  { key: 'totalQuestionsAnswered', label: 'תשובות שנענו' },
+  { key: 'averageScore', label: 'זכייה ממוצעת (לוח תוצאות)' },
+  { key: 'contactRequests', label: 'פניות צור קשר' },
+  { key: 'revenue', label: 'הכנסות' },
+  { key: 'premiumUsers', label: 'מנויי פרימיום' },
+  { key: 'xpEarnedToday', label: 'XP שנצבר היום' }
+];
 
-  // Production without enforced auth fails closed: nobody can be authorized
-  // when there is no auth backend, so everyone is denied.
-  if (mode === 'locked') {
-    warnLockedAdminAccess('page:/admin');
-    redirect('/forbidden');
-  }
+function metricText(metric: AdminMetricValue): string {
+  if (!metric.available) return '—';
+  if (metric.unit === 'usd') return `$${metric.value.toLocaleString('en-US')}`;
+  return metric.value.toLocaleString('en-US');
+}
 
-  if (mode === 'open-dev') {
-    warnOpenAdminAccess('page:/admin');
-  }
-
-  if (mode === 'enforced') {
-    try {
-      context = await requirePermission('submissions.read');
-    } catch (error) {
-      if (error instanceof AuthorizationError) {
-        redirect(error.status === 401 ? '/login?redirect=/admin' : '/forbidden');
-      }
-      throw error;
-    }
-  }
-
-  const data = await createTriviaDataService().getPageData({ sampleSize: API_QUESTION_SAMPLE_SIZE });
+export default async function AdminDashboard() {
+  const overview = await buildAdminOverview(getRepositoryProvider());
 
   return (
-    <TriviaPlatform
-      questions={data.questions}
-      totalAvailableQuestions={data.totalAvailableQuestions}
-      initialScreen="admin"
-      adminHeader={context ? <AdminAuthBar context={context} /> : null}
-    />
+    <section className="admin-page">
+      <header className="admin-page-header">
+        <h1>דשבורד</h1>
+        <div className="admin-status-row">
+          <span className={`admin-status-pill ${overview.serverStatus === 'ok' ? 'is-ok' : 'is-warn'}`}>
+            שרת: {overview.serverStatus === 'ok' ? 'תקין' : 'ירידה בשירות'}
+          </span>
+          <span className="admin-status-pill">ספק נתונים: {overview.provider === 'database' ? 'Supabase' : 'מקומי'}</span>
+        </div>
+      </header>
+
+      <div className="admin-cards">
+        {CARD_LABELS.map(({ key, label, hint }) => {
+          const metric = overview.cards[key];
+          return (
+            <div className="admin-card glass" key={key}>
+              <small>{label}</small>
+              <strong>{metricText(metric)}</strong>
+              {!metric.available && <em className="admin-card-note">לא נמדד עדיין — {metric.reason}</em>}
+              {metric.available && hint && <em className="admin-card-note">{hint}</em>}
+            </div>
+          );
+        })}
+      </div>
+
+      <AdminCharts charts={overview.charts} />
+    </section>
   );
 }

@@ -65,6 +65,8 @@ export type ApprovedQuestion = Question & {
   sourceSubmissionId?: EntityId;
   locale: Locale;
   isActive: boolean;
+  /** Editorial lifecycle; absent on legacy rows (derive: active=published, inactive=archived). */
+  status?: 'draft' | 'published' | 'archived';
   publishedAt: ISODateTime;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
@@ -196,6 +198,32 @@ export type PaymentTransaction = {
  * the authenticated user id when signed in, or the anonymous device id — the
  * same identity model the leaderboard and multiplayer already use.
  */
+export type ContactTicketStatus = 'open' | 'pending' | 'closed';
+export type ContactTicketPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export type ContactTicketNote = {
+  id: EntityId;
+  authorEmail: string;
+  body: string;
+  createdAt: ISODateTime;
+};
+
+/** A contact-form message managed as a support ticket in the admin console. */
+export type ContactTicket = {
+  id: EntityId;
+  status: ContactTicketStatus;
+  priority: ContactTicketPriority;
+  assigneeEmail?: string;
+  requesterName: string;
+  requesterEmail: string;
+  subject: string;
+  body: string;
+  notes: ContactTicketNote[];
+  sourceNotificationId?: EntityId;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+};
+
 export type PlayerProgression = {
   id: EntityId;
   playerKey: string;

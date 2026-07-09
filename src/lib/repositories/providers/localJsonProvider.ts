@@ -8,21 +8,22 @@ import type {
   AntiSpamEvent,
   ApprovedQuestion,
   AuditLog,
+  ContactTicket,
   ContributorReputation,
   EntityId,
   LeaderboardEntry,
   ModerationResultEntity,
   Notification,
+  PaymentTransaction,
   Permission,
   PermissionSlug,
+  PlayerProgression,
   ReputationEvent,
   ReviewQueueItem,
   Role,
   User,
-  UserSubscription,
   UserEntitlement,
-  PaymentTransaction,
-  PlayerProgression
+  UserSubscription
 } from '@/lib/domain/models';
 import type {
   MultiplayerAnswer,
@@ -95,6 +96,7 @@ type LocalState = {
   playerProgression: PlayerProgression[];
   entitlements: UserEntitlement[];
   transactions: PaymentTransaction[];
+  contactTickets: ContactTicket[];
 };
 
 function toApprovedQuestion(question: Question): ApprovedQuestion {
@@ -139,7 +141,8 @@ function createInitialState(): LocalState {
     subscriptions: [],
     playerProgression: [],
     entitlements: [],
-    transactions: []
+    transactions: [],
+    contactTickets: []
   };
 }
 
@@ -149,8 +152,12 @@ const localState = getSharedLocalState();
 
 function getSharedLocalState(): LocalState {
   const globalScope = globalThis as typeof globalThis & { [LOCAL_STATE_KEY]?: LocalState };
-  globalScope[LOCAL_STATE_KEY] = globalScope[LOCAL_STATE_KEY] || createInitialState();
-  return globalScope[LOCAL_STATE_KEY];
+  const state = globalScope[LOCAL_STATE_KEY] = globalScope[LOCAL_STATE_KEY] || createInitialState();
+  // The global survives dev HMR module reloads, so a state object created by
+  // an older module version may predate collections added since — heal
+  // additive keys instead of crashing their repositories.
+  state.contactTickets = state.contactTickets || [];
+  return state;
 }
 
 function limit<T>(items: T[], size?: number) {
@@ -535,6 +542,11 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
     },
 
     notifications: {
+      async list(options) {
+        const all = [...state.notifications]
+          .sort((first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime());
+        return limit(all, options?.limit ?? 200);
+      },
       async listForUser(userId, options) {
         return limit(state.notifications.filter(notification => notification.userId === userId), options?.limit);
       },
@@ -558,6 +570,11 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
     },
 
     leaderboard: {
+      async listAll(options) {
+        const all = [...state.leaderboard]
+          .sort((first, second) => second.bestPrize - first.bestPrize);
+        return limit(all, options?.limit ?? 200);
+      },
       async listTop(options) {
         return limit(sortLeaderboard(state.leaderboard.filter(entry => !entry.isHidden)), options?.limit ?? 25);
       },
@@ -577,6 +594,22 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
     },
 
     multiplayer: {
+      async listPlayersForIdentity(identity) {
+        return state.multiplayerPlayers.filter(player =>
+          (identity.authUserId && player.authUserId === identity.authUserId) ||
+          (identity.anonymousId && player.anonymousId === identity.anonymousId)
+        );
+      },
+      async listLobbies(options) {
+        const all = [...state.multiplayerLobbies]
+          .sort((first, second) => new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime());
+        return limit(all, options?.limit ?? 100);
+      },
+      async listGames(options) {
+        const all = [...state.multiplayerGames]
+          .sort((first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime());
+        return limit(all, options?.limit ?? 100);
+      },
       async listOpenLobbies(options) {
         const open = state.multiplayerLobbies
           .filter(lobby => lobby.visibility === 'public' && (lobby.status === 'waiting' || lobby.status === 'ready'))
@@ -699,6 +732,11 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
       }
     },
     progression: {
+      async list(options) {
+        const all = [...state.playerProgression]
+          .sort((first, second) => new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime());
+        return limit(all, options?.limit ?? 500);
+      },
       async find(playerKey) {
         return state.playerProgression.find(item => item.playerKey === playerKey);
       },
@@ -715,7 +753,73 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
         return record;
       }
     },
+    contactTickets: {
+      async list(filters) {
+        let tickets = [...state.contactTickets];
+        if (filters?.status) tickets = tickets.filter(ticket => ticket.status === filters.status);
+        if (filters?.priority) tickets = tickets.filter(ticket => ticket.priority === filters.priority);
+        if (filters?.search) {
+          const search = filters.search.toLowerCase();
+          tickets = tickets.filter(ticket =>
+            ticket.subject.toLowerCase().includes(search) ||
+            ticket.body.toLowerCase().includes(search) ||
+            ticket.requesterName.toLowerCase().includes(search) ||
+            ticket.requesterEmail.toLowerCase().includes(search)
+          );
+        }
+        tickets.sort((first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime());
+        return limit(tickets, filters?.limit ?? 200);
+      },
+      async findById(ticketId) {
+        return state.contactTickets.find(ticket => ticket.id === ticketId);
+      },
+      async create(input) {
+        const timestamp = now();
+        const ticket: ContactTicket = {
+          ...input,
+          id: input.id || `ticket-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          notes: [],
+          createdAt: timestamp,
+          updatedAt: timestamp
+        };
+        state.contactTickets = [ticket, ...state.contactTickets];
+        return ticket;
+      },
+      async update(ticketId, input) {
+        let updated: ContactTicket | undefined;
+        state.contactTickets = state.contactTickets.map(ticket => {
+          if (ticket.id !== ticketId) return ticket;
+          updated = { ...ticket, ...input, updatedAt: now() };
+          return updated;
+        });
+        return updated;
+      },
+      async addNote(ticketId, note) {
+        let updated: ContactTicket | undefined;
+        state.contactTickets = state.contactTickets.map(ticket => {
+          if (ticket.id !== ticketId) return ticket;
+          updated = {
+            ...ticket,
+            notes: [...ticket.notes, { id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, authorEmail: note.authorEmail, body: note.body, createdAt: now() }],
+            updatedAt: now()
+          };
+          return updated;
+        });
+        return updated;
+      }
+    },
+
     payments: {
+      async listTransactions(options) {
+        const all = [...state.transactions]
+          .sort((first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime());
+        return limit(all, options?.limit ?? 200);
+      },
+      async listSubscriptions(options) {
+        const all = [...state.subscriptions]
+          .sort((first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime());
+        return limit(all, options?.limit ?? 200);
+      },
       async findSubscription(id) {
         return state.subscriptions.find(sub => sub.id === id);
       },

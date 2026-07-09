@@ -8,22 +8,23 @@ import type {
   AntiSpamEvent,
   ApprovedQuestion,
   AuditLog,
+  ContactTicket,
   ContributorReputation,
   EntityId,
+  ISODateTime,
   LeaderboardEntry,
   ModerationResultEntity,
   Notification,
+  PaymentTransaction,
   Permission,
   PermissionSlug,
+  PlayerProgression,
   ReputationEvent,
   ReviewQueueItem,
   Role,
   User,
-  UserSubscription,
   UserEntitlement,
-  PaymentTransaction,
-  PlayerProgression,
-  ISODateTime
+  UserSubscription
 } from '@/lib/domain/models';
 import type {
   ApproveSubmissionDto,
@@ -385,6 +386,7 @@ function mapApprovedQuestion(row: SupabaseRow): ApprovedQuestion {
     correctIndex: numberValue(row.correct_index),
     correctAnswer: stringValue(row.correct_answer) || undefined,
     explanation: stringValue(row.explanation) || undefined,
+    status: (stringValue(row.status) || undefined) as ApprovedQuestion['status'],
     tags: textArray(row.tags),
     translations: recordValue(row.translations) as Partial<Record<Locale, QuestionTranslation>>,
     isActive: boolValue(row.is_active, true),
@@ -409,6 +411,7 @@ function approvedQuestionPayload(question: ApprovedQuestion): JsonRecord {
     tags: question.tags || [],
     translations: question.translations || {},
     is_active: question.isActive,
+    status: question.status,
     published_at: question.publishedAt,
     created_at: question.createdAt,
     updated_at: question.updatedAt
@@ -429,6 +432,7 @@ function partialApprovedQuestionPayload(question: Partial<ApprovedQuestion>): Js
     tags: question.tags,
     translations: question.translations,
     is_active: question.isActive,
+    status: question.status,
     published_at: question.publishedAt,
     updated_at: now()
   };
@@ -597,6 +601,29 @@ function mapLeaderboardEntry(row: SupabaseRow): LeaderboardEntry {
     bestCorrectCount: numberValue(row.best_correct_count),
     gamesCount: numberValue(row.games_count),
     isHidden: boolValue(row.is_hidden),
+    createdAt: stringValue(row.created_at),
+    updatedAt: stringValue(row.updated_at)
+  };
+}
+
+function mapContactTicket(row: SupabaseRow): ContactTicket {
+  const notes = Array.isArray(row.notes) ? row.notes as Array<Record<string, unknown>> : [];
+  return {
+    id: stringValue(row.id),
+    status: stringValue(row.status, 'open') as ContactTicket['status'],
+    priority: stringValue(row.priority, 'normal') as ContactTicket['priority'],
+    assigneeEmail: stringValue(row.assignee_email) || undefined,
+    requesterName: stringValue(row.requester_name),
+    requesterEmail: stringValue(row.requester_email),
+    subject: stringValue(row.subject),
+    body: stringValue(row.body),
+    notes: notes.map(note => ({
+      id: String(note.id || ''),
+      authorEmail: String(note.authorEmail || ''),
+      body: String(note.body || ''),
+      createdAt: String(note.createdAt || '')
+    })),
+    sourceNotificationId: stringValue(row.source_notification_id) || undefined,
     createdAt: stringValue(row.created_at),
     updatedAt: stringValue(row.updated_at)
   };
@@ -1191,6 +1218,10 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       }
     },
     notifications: {
+      async list(options) {
+        const rows = await client.list<SupabaseRow>('notifications', `select=*&order=created_at.desc${limitQuery({ limit: options?.limit ?? 200 })}`);
+        return rows.map(mapNotification);
+      },
       async listForUser(userId, options) {
         const rows = await client.list<SupabaseRow>('notifications', `select=*&${eq('user_id', userId)}&order=created_at.desc${limitQuery(options)}`);
         return rows.map(mapNotification);
@@ -1220,6 +1251,10 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       }
     },
     leaderboard: {
+      async listAll(options) {
+        const rows = await client.list<SupabaseRow>('leaderboard_entries', `select=*&order=best_prize.desc,updated_at.desc${limitQuery({ limit: options?.limit ?? 200 })}`);
+        return rows.map(mapLeaderboardEntry);
+      },
       async listTop(options) {
         try {
           const query = `select=*&is_hidden=eq.false&order=best_prize.desc,best_correct_count.desc,updated_at.desc${limitQuery({ limit: options?.limit ?? 25 })}`;
@@ -1295,6 +1330,22 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       }
     },
     multiplayer: {
+      async listPlayersForIdentity(identity) {
+        const filters: string[] = [];
+        if (identity.authUserId) filters.push(`auth_user_id.eq.${encodeURIComponent(identity.authUserId)}`);
+        if (identity.anonymousId) filters.push(`anonymous_id.eq.${encodeURIComponent(identity.anonymousId)}`);
+        if (filters.length === 0) return [];
+        const rows = await client.list<SupabaseRow>('multiplayer_players', `select=*&or=(${filters.join(',')})&order=joined_at.desc&limit=200`);
+        return rows.map(mapMultiplayerPlayer);
+      },
+      async listLobbies(options) {
+        const rows = await client.list<SupabaseRow>('multiplayer_lobbies', `select=*&order=updated_at.desc${limitQuery({ limit: options?.limit ?? 100 })}`);
+        return rows.map(mapMultiplayerLobby);
+      },
+      async listGames(options) {
+        const rows = await client.list<SupabaseRow>('multiplayer_games', `select=*&order=created_at.desc${limitQuery({ limit: options?.limit ?? 100 })}`);
+        return rows.map(mapMultiplayerGame);
+      },
       async listOpenLobbies(options) {
         const query = `select=*&visibility=eq.public&status=in.(waiting,ready)&order=updated_at.desc${limitQuery({ limit: options?.limit ?? 20 })}`;
         const rows = await client.list<SupabaseRow>('multiplayer_lobbies', query);
@@ -1398,6 +1449,10 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       }
     },
     progression: {
+      async list(options) {
+        const rows = await client.list<SupabaseRow>('player_progression', `select=*&order=updated_at.desc${limitQuery({ limit: options?.limit ?? 500 })}`);
+        return rows.map(mapProgression);
+      },
       async find(playerKey) {
         const rows = await client.list<SupabaseRow>('player_progression', `select=*&${eq('player_key', playerKey)}&limit=1`);
         return rows[0] ? mapProgression(rows[0]) : undefined;
@@ -1421,7 +1476,68 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
         return mapProgression(row);
       }
     },
+    contactTickets: {
+      async list(filters) {
+        const parts = ['select=*'];
+        if (filters?.status) parts.push(`status=eq.${encodeURIComponent(filters.status)}`);
+        if (filters?.priority) parts.push(`priority=eq.${encodeURIComponent(filters.priority)}`);
+        if (filters?.search) {
+          const term = encodeURIComponent(`%${filters.search}%`);
+          parts.push(`or=(subject.ilike.${term},body.ilike.${term},requester_name.ilike.${term},requester_email.ilike.${term})`);
+        }
+        parts.push('order=created_at.desc');
+        const rows = await client.list<SupabaseRow>('contact_tickets', `${parts.join('&')}${limitQuery({ limit: filters?.limit ?? 200 })}`);
+        return rows.map(mapContactTicket);
+      },
+      async findById(ticketId) {
+        const rows = await client.list<SupabaseRow>('contact_tickets', `select=*&${eq('id', ticketId)}&limit=1`);
+        return rows[0] ? mapContactTicket(rows[0]) : undefined;
+      },
+      async create(input) {
+        const row = await client.insert<SupabaseRow>('contact_tickets', {
+          id: input.id,
+          status: input.status,
+          priority: input.priority,
+          assignee_email: input.assigneeEmail,
+          requester_name: input.requesterName,
+          requester_email: input.requesterEmail,
+          subject: input.subject,
+          body: input.body,
+          notes: [],
+          source_notification_id: input.sourceNotificationId
+        });
+        return mapContactTicket(row);
+      },
+      async update(ticketId, input) {
+        const row = await client.update<SupabaseRow>('contact_tickets', eq('id', ticketId), {
+          status: input.status,
+          priority: input.priority,
+          assignee_email: input.assigneeEmail,
+          updated_at: now()
+        });
+        return row ? mapContactTicket(row) : undefined;
+      },
+      async addNote(ticketId, note) {
+        const existing = await client.list<SupabaseRow>('contact_tickets', `select=*&${eq('id', ticketId)}&limit=1`);
+        if (!existing[0]) return undefined;
+        const notes = Array.isArray(existing[0].notes) ? existing[0].notes as unknown[] : [];
+        const row = await client.update<SupabaseRow>('contact_tickets', eq('id', ticketId), {
+          notes: [...notes, { id: `note-${Date.now()}`, authorEmail: note.authorEmail, body: note.body, createdAt: now() }],
+          updated_at: now()
+        });
+        return row ? mapContactTicket(row) : undefined;
+      }
+    },
+
     payments: {
+      async listTransactions(options) {
+        const rows = await client.list<SupabaseRow>('payment_transactions', `select=*&order=created_at.desc${limitQuery({ limit: options?.limit ?? 200 })}`);
+        return rows.map(mapTransaction);
+      },
+      async listSubscriptions(options) {
+        const rows = await client.list<SupabaseRow>('user_subscriptions', `select=*&order=created_at.desc${limitQuery({ limit: options?.limit ?? 200 })}`);
+        return rows.map(mapSubscription);
+      },
       async findSubscription(id) {
         const rows = await client.list<SupabaseRow>('user_subscriptions', `select=*&${eq('id', id)}&limit=1`);
         return rows[0] ? mapSubscription(rows[0]) : undefined;

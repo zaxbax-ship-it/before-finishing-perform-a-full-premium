@@ -67,6 +67,25 @@ export async function POST(request: Request) {
       preview: message.slice(0, 160)
     });
 
+    // Admin contact center: the same message also becomes a support ticket.
+    // Best-effort — the primary persistence above already succeeded.
+    try {
+      await repositories.contactTickets.create({
+        status: 'open',
+        priority: 'normal',
+        requesterName: name,
+        requesterEmail: email,
+        subject: `Contact from ${name}`,
+        body: message,
+        sourceNotificationId: notification.id
+      });
+    } catch (ticketError) {
+      contactLogger.warn('Contact ticket creation failed; message is still persisted.', {
+        notificationId: notification.id,
+        error: ticketError instanceof Error ? ticketError.message : 'Unknown error'
+      });
+    }
+
     // Best-effort email notification: the message is already persisted above,
     // so delivery failures (or a missing provider) never affect the response.
     // The config snapshot is presence-only (booleans + provider kind) — safe
