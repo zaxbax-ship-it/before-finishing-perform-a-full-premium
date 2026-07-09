@@ -59,7 +59,7 @@ export default function LoginForm({
     }
     setBusy(true);
     setError('');
-    const result = await createAuthService().signInWithGoogle();
+    const result = await createAuthService().signInWithGoogle(redirectTarget());
     if (result.status !== 'ok') {
       setError(result.message || 'התחברות עם Google נכשלה.');
       setBusy(false);

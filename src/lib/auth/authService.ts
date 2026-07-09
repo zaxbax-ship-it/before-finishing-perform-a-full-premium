@@ -56,11 +56,16 @@ export class AuthService {
     };
   }
 
-  async signInWithGoogle(): Promise<AuthResult> {
+  async signInWithGoogle(redirectPath?: string): Promise<AuthResult> {
     if (!this.client) return NOT_CONFIGURED;
+    // Carry the intended destination through the OAuth round trip; the
+    // callback route validates it as a same-site path before redirecting.
+    const callback = redirectPath && redirectPath.startsWith('/')
+      ? `${getAuthCallbackUrl()}?redirect=${encodeURIComponent(redirectPath)}`
+      : getAuthCallbackUrl();
     const { error } = await this.client.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: getAuthCallbackUrl() }
+      options: { redirectTo: callback }
     });
     if (error) return { status: 'error', message: authErrorMessage(error.message) };
     // On success the browser is redirected to Google; nothing else to do here.

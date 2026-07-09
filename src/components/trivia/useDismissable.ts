@@ -34,13 +34,23 @@ export function useDismissable(onClosed: () => void) {
     if (closingRef.current) return;
     closingRef.current = true;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    // The guard and the closing class must reset once the close completes:
+    // hosts that never unmount (the nav drawer lives in the always-mounted
+    // header) reuse this hook across open/close cycles, and a sticky guard
+    // would leave the next open stuck in its exit state.
+    const finishClose = () => {
+      closingRef.current = false;
+      setClosing(false);
       onClosedRef.current();
+    };
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finishClose();
       return;
     }
 
     setClosing(true);
-    timerRef.current = window.setTimeout(() => onClosedRef.current(), EXIT_MS);
+    timerRef.current = window.setTimeout(finishClose, EXIT_MS);
   }, []);
 
   return { closing, dismiss };
