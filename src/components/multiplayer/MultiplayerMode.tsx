@@ -120,7 +120,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   async function refreshLobbies() {
     setStatus('loading');
     try {
-      const response = await fetch('/api/multiplayer/lobbies', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+      const response = await fetch('/api/multiplayer/lobbies', { cache: 'no-store', signal: fetchTimeout(10000) });
       const data = await response.json();
       if (response.ok && Array.isArray(data?.lobbies)) {
         setLobbies(data.lobbies);
@@ -147,7 +147,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           cache: 'no-store',
-          signal: AbortSignal.timeout(10000),
+          signal: fetchTimeout(10000),
           body: JSON.stringify({ action: 'state', playerId: session.playerId, playerToken: session.playerToken })
         }
       );
@@ -171,7 +171,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
   }
 
   useEffect(() => {
-    const storedAnonymousId = readLocal(ANON_KEY, `anon-${crypto.randomUUID()}`);
+    const storedAnonymousId = readLocal(ANON_KEY, `anon-${randomId()}`);
     localStorage.setItem(ANON_KEY, JSON.stringify(storedAnonymousId));
     setAnonymousId(storedAnonymousId);
     if (!nickname.trim()) setNickname(defaultNickname(storedAnonymousId));
@@ -255,7 +255,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const response = await fetch('/api/multiplayer/lobbies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: fetchTimeout(15000),
         body: JSON.stringify({ action, nickname: cleaned, anonymousId, maxPlayers, locale })
       });
       const data = await response.json() as MultiplayerActionResult;
@@ -290,7 +290,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const response = await fetch(`/api/multiplayer/lobbies/${encodeURIComponent(lobbyId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: fetchTimeout(15000),
         body: JSON.stringify({ action: 'join', nickname: cleaned, anonymousId })
       });
       const data = await response.json() as MultiplayerActionResult;
@@ -316,7 +316,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const response = await fetch(`/api/multiplayer/lobbies/${encodeURIComponent(gameState.lobby.id)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: fetchTimeout(15000),
         body: JSON.stringify({ action: 'start', ...credentials })
       });
       const data = await response.json() as MultiplayerActionResult;
@@ -342,7 +342,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/answers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: fetchTimeout(15000),
         body: JSON.stringify({ ...credentials, roundId: currentRound.id, answerIndex })
       });
       const data = await response.json() as MultiplayerActionResult;
@@ -368,7 +368,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/lifelines`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: fetchTimeout(15000),
         body: JSON.stringify({ ...credentials, roundId: currentRound.id, lifeline })
       });
       const data = await response.json() as MultiplayerActionResult;
@@ -390,7 +390,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     actionInFlightRef.current = true;
     // Stable key per logical purchase: a retry after a lost response reuses
     // it, so the server acknowledges once and never charges twice.
-    const idempotencyKey = purchaseKeysRef.current[lifeline] || crypto.randomUUID();
+    const idempotencyKey = purchaseKeysRef.current[lifeline] || randomId();
     purchaseKeysRef.current[lifeline] = idempotencyKey;
     setStatus('loading');
     const seq = ++requestSeqRef.current;
@@ -398,7 +398,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       const response = await fetch(`/api/multiplayer/games/${encodeURIComponent(activeGameId)}/lifelines`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(15000),
+        signal: fetchTimeout(15000),
         body: JSON.stringify({ action: 'buy', ...credentials, lifeline, idempotencyKey })
       });
       const data = await response.json() as MultiplayerActionResult;
@@ -962,6 +962,23 @@ function localizeKnownError(value: string, copy: ReturnType<typeof getMultiplaye
   ];
   const match = known.find(([pattern]) => pattern.test(value));
   return match ? copy[match[1]] || copy.error : copy.error;
+}
+
+/** AbortSignal.timeout is Safari 15.4+; older browsers just skip the timeout
+ *  instead of crashing the whole multiplayer hub. */
+function fetchTimeout(ms: number): AbortSignal | undefined {
+  return typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+    ? AbortSignal.timeout(ms)
+    : undefined;
+}
+
+/** crypto.randomUUID is Safari 15.4+/secure-context-only; fall back to a
+ *  collision-resistant-enough id for anonymous identity + idempotency keys. */
+function randomId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function readLocal<T>(key: string, fallback: T): T {
