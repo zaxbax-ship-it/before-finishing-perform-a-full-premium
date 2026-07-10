@@ -48,3 +48,38 @@ export type {
   AdminOverviewResponse,
   AdminSeriesPoint
 } from './admin';
+
+export {
+  REWARDS_CONTRACT_VERSION,
+  isCareerLedgerPageDto,
+  isCareerSummaryDto,
+  isClaimRewardRequest,
+  isClaimRewardResponse,
+  isIdentitySummaryDto,
+  isResultProgressionUpdateDto,
+  isRewardsSummaryDto
+} from './rewards';
+export type {
+  BadgeCatalogueDto,
+  CareerLedgerPageDto,
+  CareerSummaryDto,
+  ClaimRewardRequest,
+  ClaimRewardResponse,
+  CollectionSummaryDto,
+  CollectionsDto,
+  CosmeticCatalogueDto,
+  DailyChallengeDto,
+  EquipCosmeticRequest,
+  EquipCosmeticResponse,
+  EquipTitleRequest,
+  FullProfileDto,
+  IdentitySummaryDto,
+  MasteryDto,
+  Page,
+  PinBadgeRequest,
+  ResultProgressionUpdateDto,
+  RewardsErrorCode,
+  RewardsSummaryDto,
+  TitleCatalogueDto,
+  WeeklyObjectivesDto
+} from './rewards';
