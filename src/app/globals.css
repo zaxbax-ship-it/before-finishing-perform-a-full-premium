@@ -1536,3 +1536,32 @@ html,body{overscroll-behavior-y:none}
 .app-shell:not(.admin-active):not(.game-active) .reward-reveal-hero.reveal-legendary-badge {
   box-shadow: 0 18px 46px hsla(41, 90%, 69%, 0.22), inset 0 1px 0 hsla(0, 0%, 100%, 0.18);
 }
+
+
+/* ==========================================================================
+   STAGE 16B — The reference "lit-from-below" azure edge-light.
+   Extracted from the attached reference (our own gameplay screen): every
+   primary tappable surface rests on a calm dark shadow with a soft AZURE glow
+   at its lower edge — the cinematic, premium, lit-from-below signature that
+   makes the composition feel expensive without noise. Gold stays reserved for
+   letters / prize / achievement.
+
+   Applied to (1) the gameplay answers — NEUTRAL state only, so the green/red
+   verdict feedback is untouched — to match the reference exactly, and (2) the
+   public category tiles (the closest public analog to the answer rows) so the
+   whole site reads as one composition. Admin is excluded by scope.
+   Presentation only; one dark depth + one azure edge = not a stacked pile.
+   ========================================================================== */
+
+/* Gameplay answers — restore the reference's azure edge-light (neutral only). */
+.game-active .answer-button:not(.correct):not(.wrong) {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.30), 0 3px 12px -4px hsla(203, 92%, 60%, 0.42);
+}
+
+/* Public category tiles — the same lit-from-below signature. */
+.app-shell:not(.admin-active):not(.game-active) .category-card {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.30), 0 3px 12px -4px hsla(203, 92%, 60%, 0.34);
+}
+.app-shell:not(.admin-active):not(.game-active) .category-card:hover {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), 0 5px 16px -4px hsla(203, 92%, 62%, 0.50);
+}
