@@ -67,8 +67,15 @@ export type FullProfileDto = {
   identity: PlayerIdentity;
   career: CareerSummaryDto;
   titles: PlayerTitle[];
+  /** Full badge catalogue projected with progress (hidden+locked filtered client-side). */
+  badges: AchievementBadge[];
   pinnedBadges: AchievementBadge[];
   trophyCabinet: TrophyCabinet;
+  /** Showcase-eligible item ids the player owns (cabinet + pin candidates). */
+  showcaseItemIds: string[];
+  mastery: CategoryMastery[];
+  collections: CollectionSummaryDto[];
+  cosmetics: CosmeticEntitlement[];
   disclosure: DisclosureState;
 };
 

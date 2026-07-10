@@ -61,7 +61,7 @@ import { ProgressionToasts, type ProgressionToast } from '@/components/trivia/Pr
 import { ACHIEVEMENT_KEYS } from '@/components/trivia/i18n';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game } from '@/components/trivia/screens/Game';
-import { PremiumProfile } from '@/components/trivia/screens/PremiumProfile';
+import { RewardsProfile } from '@/components/trivia/screens/RewardsProfile';
 import { LANGUAGE_OPTIONS, LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
 
 const AUTO_ADVANCE_MS = 2200;
@@ -1266,7 +1266,7 @@ export default function TriviaPlatform({
           bestPrize={stats.bestPrize}
         />
       )}
-      {screen === 'profile' && <PremiumProfile t={t} authUi={authT} user={authUser} nickname={nickname} stats={stats} progression={progression} />}
+      {screen === 'profile' && <RewardsProfile t={t} locale={locale} displayName={nickname || authUser?.displayName || ''} />}
       {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
       </div>
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => { pendingPaidRef.current = null; setPendingPaid(null); }} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}

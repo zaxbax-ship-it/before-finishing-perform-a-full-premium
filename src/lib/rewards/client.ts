@@ -1,7 +1,7 @@
 'use client';
 
 import type { RevealItem } from '@/lib/rewards/types';
-import type { DailyChallengeDto, RewardsSummaryDto, WeeklyObjectivesDto } from '@/lib/api/contracts/rewards';
+import type { DailyChallengeDto, FullProfileDto, RewardsSummaryDto, WeeklyObjectivesDto } from '@/lib/api/contracts/rewards';
 
 /**
  * Browser rewards client. Submits a finished game to `/api/rewards/result` and
@@ -121,4 +121,37 @@ export async function claimWeeklyObjectiveClient(objectiveId: string): Promise<{
     if (response.ok && data?.ok) return { granted: Number(data.granted) || 0, alreadyClaimed: Boolean(data.alreadyClaimed) };
   } catch { /* rewards are optional */ }
   return null;
+}
+
+/* ---------------- Profile reads + actions (Increment 5) ---------------- */
+
+export async function fetchProfile(): Promise<FullProfileDto | null> {
+  try {
+    const response = await fetch('/api/rewards/profile?' + playerQuery(), { cache: 'no-store' });
+    const data = await response.json();
+    if (response.ok && data && data.ok) return data as FullProfileDto;
+  } catch { /* rewards are optional */ }
+  return null;
+}
+
+async function postJson(url: string, extra: Record<string, unknown>): Promise<void> {
+  try {
+    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerKey: getAnonPlayerKey(), ...extra }) });
+  } catch { /* rewards are optional */ }
+}
+
+export function equipTitleClient(titleId: string | null): Promise<void> {
+  return postJson('/api/rewards/title', { titleId });
+}
+
+export function pinBadgeClient(badgeId: string, pinned: boolean): Promise<void> {
+  return postJson('/api/rewards/pin', { badgeId, pinned });
+}
+
+export function setTrophyClient(slotIndex: number, itemId: string | null): Promise<void> {
+  return postJson('/api/rewards/trophy', { slotIndex, itemId });
+}
+
+export function equipCosmeticClient(cosmeticId: string): Promise<void> {
+  return postJson('/api/rewards/cosmetics', { cosmeticId });
 }

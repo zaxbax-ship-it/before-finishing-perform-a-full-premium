@@ -177,6 +177,9 @@ export function medallionItemId(categoryId: string): string {
   return `medallion:${categoryId}`;
 }
 
+/** Display size of the category-medallion collection (canonical categories). */
+export const MEDALLION_COLLECTION_SIZE = 15;
+
 /* ============================ Cosmetics ============================ */
 
 export type CosmeticDefinition = {

@@ -32,7 +32,9 @@ import {
   grantCosmetic,
   hasEarnedMedallion,
   medallionItemId,
+  clearTrophySlot,
   pinBadge,
+  pinTrophy,
   resetWeeklyIfNeeded,
   startDailyQuestion,
   tierRank,
@@ -41,6 +43,7 @@ import {
   COLLECTIONS,
   COSMETICS,
   DAILY_QUESTION_REWARD,
+  MEDALLION_COLLECTION_SIZE,
   titleById
 } from '@/lib/rewards';
 import type {
@@ -332,14 +335,25 @@ export async function getRewardsSummary(repo: RewardsRepository, playerKey: stri
 export async function getFullProfile(repo: RewardsRepository, playerKey: string): Promise<FullProfileDto> {
   const snapshot = await repo.load(playerKey);
   const context = buildContext(snapshot);
-  const pinnedBadges = badgeCatalogueFor(context, context.unlockedBadgeIds).filter(b => snapshot.identity.pinnedBadgeIds.includes(b.id));
+  const badges = badgeCatalogueFor(context, context.unlockedBadgeIds);
+  const pinnedBadges = badges.filter(b => snapshot.identity.pinnedBadgeIds.includes(b.id));
   const unclaimed = snapshot.weekly.some(o => !o.claimed && o.progress >= o.target);
+  const collections = snapshot.collections.map(c => ({
+    ...c,
+    totalItems: MEDALLION_COLLECTION_SIZE,
+    completion: Math.min(1, c.earnedItemIds.length / MEDALLION_COLLECTION_SIZE)
+  }));
   return {
     identity: snapshot.identity,
     career: careerSummary(snapshot),
     titles: snapshot.titles,
+    badges,
     pinnedBadges,
     trophyCabinet: snapshot.trophyCabinet,
+    showcaseItemIds: ownedShowcaseIds(snapshot),
+    mastery: snapshot.mastery,
+    collections,
+    cosmetics: snapshot.cosmetics,
     disclosure: computeDisclosure(context, snapshot.streak, unclaimed)
   };
 }
@@ -422,6 +436,16 @@ export async function equipTitleForPlayer(repo: RewardsRepository, playerKey: st
   const identity = equipTitle(snapshot.identity, titleId, snapshot.titles.map(t => t.id));
   await repo.save({ ...snapshot, identity });
   return identity.activeTitleId;
+}
+
+export async function setTrophySlot(repo: RewardsRepository, playerKey: string, slotIndex: number, itemId: string | null) {
+  const snapshot = await repo.load(playerKey);
+  const eligible = ownedShowcaseIds(snapshot);
+  const trophyCabinet = itemId
+    ? pinTrophy(snapshot.trophyCabinet, slotIndex, itemId, eligible)
+    : clearTrophySlot(snapshot.trophyCabinet, slotIndex);
+  await repo.save({ ...snapshot, trophyCabinet });
+  return trophyCabinet;
 }
 
 /** Completion ratio for the category-medallion collection. */
