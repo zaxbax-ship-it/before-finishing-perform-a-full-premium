@@ -17,6 +17,7 @@ import {
   defaultIdentity,
   emptyCabinet,
   emptyCareer,
+  emptyRewardStats,
   emptyStreak,
   starterEntitlements
 } from '@/lib/rewards';
@@ -31,6 +32,7 @@ import type {
   DailyStreak,
   PlayerIdentity,
   PlayerKey,
+  PlayerRewardStats,
   PlayerTitle,
   TimelineEvent,
   TrophyCabinet,
@@ -51,6 +53,7 @@ export type RewardsProfileSnapshot = {
   weekly: WeeklyObjectiveProgress[];
   cosmetics: CosmeticEntitlement[];
   timeline: TimelineEvent[];
+  stats: PlayerRewardStats;
 };
 
 /** A complete, quiet default snapshot for a player who has never earned anything. */
@@ -67,7 +70,8 @@ export function emptyRewardsSnapshot(playerKey: PlayerKey, displayName: string, 
     daily: null,
     weekly: [],
     cosmetics: starterEntitlements(nowIso),
-    timeline: []
+    timeline: [],
+    stats: emptyRewardStats()
   };
 }
 

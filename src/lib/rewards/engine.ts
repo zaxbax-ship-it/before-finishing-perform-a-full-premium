@@ -40,6 +40,7 @@ import type {
   MasteryTier,
   PlayerIdentity,
   PlayerRewardContext,
+  PlayerRewardStats,
   PlayerTitle,
   RevealItem,
   RewardGameResult,
@@ -175,6 +176,10 @@ export function crossedCareerMilestones(before: number, after: number): number[]
 
 export function emptyStreak(): DailyStreak {
   return { current: 0, longest: 0, lastQualifyingDay: null, repairUsedWeek: null };
+}
+
+export function emptyRewardStats(): PlayerRewardStats {
+  return { lifelineFreeWins: 0, comebackWins: 0, fastAnswerTotal: 0, multiplayerWins: 0, distinctCategories: [] };
 }
 
 /**

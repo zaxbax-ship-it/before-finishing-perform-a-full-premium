@@ -335,3 +335,15 @@ export type PlayerRewardContext = {
   ownedShowcaseItemIds: string[];
   ownedNonStarterCosmetics: number;
 };
+
+/**
+ * Counters that don't fall out of the money/mastery aggregates but the badge and
+ * context evaluators need. Persisted alongside the other per-system state.
+ */
+export type PlayerRewardStats = {
+  lifelineFreeWins: number;
+  comebackWins: number;
+  fastAnswerTotal: number;
+  multiplayerWins: number;
+  distinctCategories: string[];
+};
