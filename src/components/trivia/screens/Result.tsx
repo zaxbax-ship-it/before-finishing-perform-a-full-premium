@@ -4,6 +4,8 @@ import { AchievementsIcon } from '@/lib/design/icons';
 import { playAudioEvent } from '@/lib/audio';
 import { fmt, money } from '../format';
 import { Metric } from '../primitives';
+import { RewardReveals } from '../RewardReveals';
+import type { RevealItem } from '@/lib/rewards/types';
 import type { EndState } from '../types';
 
 /**
@@ -14,7 +16,7 @@ import type { EndState } from '../types';
  * Confetti is decorative (aria-hidden) and disabled by the global
  * prefers-reduced-motion rule.
  */
-export function Result({ t, authUi, isAuthenticated, state, correctCount, elapsed, prize, start, home }: { t: Record<string, string>; authUi: Record<string, string>; isAuthenticated: boolean; state: EndState; correctCount: number; elapsed: number; prize: number; start: () => void; home: () => void }) {
+export function Result({ t, authUi, isAuthenticated, state, correctCount, elapsed, prize, reveals, start, home }: { t: Record<string, string>; authUi: Record<string, string>; isAuthenticated: boolean; state: EndState; correctCount: number; elapsed: number; prize: number; reveals?: RevealItem[]; start: () => void; home: () => void }) {
   const title = state === 'win' ? t.winTitle : state === 'quit' ? t.quitTitle : state === 'timeout' ? t.timeoutTitle : t.lostTitle;
   const tone = state === 'win' ? 'is-win' : prize > 0 ? 'is-cashout' : 'is-neutral';
   const [copied, setCopied] = useState(false);
@@ -61,6 +63,7 @@ export function Result({ t, authUi, isAuthenticated, state, correctCount, elapse
           <h2 className="text-5xl font-black">{title}</h2>
           {prize > 0 && <div className="result-prize-hero" dir="ltr">{money(animatedPrize)}</div>}
           <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
+          {reveals && reveals.length > 0 && <RewardReveals t={t} reveals={reveals} />}
           {!isAuthenticated && (
             <div className="guest-progress-cta" role="note">
               <strong>{authUi.guestCtaTitle}</strong>

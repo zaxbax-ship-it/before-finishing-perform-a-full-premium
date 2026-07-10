@@ -1116,3 +1116,25 @@ html,body{overscroll-behavior-y:none}
 @media (prefers-reduced-motion:reduce){
   .category-launch-spinner{animation-duration:1.4s}
 }
+
+/* ==========================================================================
+   Stage 10B — post-game reward ceremony (Result screen only, never the HUD).
+   One reveal at a time; a calm static list under reduced motion.
+   ========================================================================== */
+.reward-reveals{margin-top:1.75rem;display:flex;flex-direction:column;align-items:center;gap:.75rem}
+.reward-reveals-eyebrow{margin:0;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:hsla(0,0%,100%,.5)}
+.reward-reveal-hero{display:inline-flex;align-items:center;gap:14px;min-width:min(360px,88%);padding:14px 22px;border-radius:999px;border:1px solid hsla(41,90%,69%,.4);background:linear-gradient(145deg,hsla(41,90%,69%,.14),hsla(0,0%,100%,.03));box-shadow:0 18px 46px rgba(0,0,0,.34),inset 0 1px 0 hsla(0,0%,100%,.14);color:#fff;cursor:pointer;animation:reward-pop var(--duration-slow) var(--ease-spring) both}
+.reward-reveal-hero.reveal-first-millionaire,.reward-reveal-hero.reveal-legendary-badge{border-color:hsla(41,90%,69%,.72);box-shadow:0 20px 54px hsla(41,90%,69%,.28),inset 0 1px 0 hsla(0,0%,100%,.2)}
+.reward-reveal-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:999px;background:radial-gradient(circle at 30% 20%,hsla(41,90%,69%,.3),transparent 66%),hsla(0,0%,100%,.06);color:var(--gold);flex:0 0 auto}
+.reward-reveal-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:0;line-height:1.15}
+.reward-reveal-copy strong{font-size:1rem;font-weight:900}
+.reward-reveal-value{font-size:1.15rem;font-weight:950;color:#fff2b4;font-feature-settings:"tnum"}
+.reward-reveal-dots{display:flex;gap:6px}
+.reward-reveal-dots span{width:7px;height:7px;border-radius:999px;background:hsla(0,0%,100%,.2);transition:background var(--duration-normal) var(--ease-default)}
+.reward-reveal-dots span.on{background:var(--gold);box-shadow:0 0 10px hsla(41,90%,69%,.6)}
+.reward-reveal-dots span.seen{background:hsla(41,90%,69%,.45)}
+.reward-reveals.is-static{gap:.5rem}
+.reward-reveal-row{display:flex;align-items:center;gap:12px;width:min(420px,92%);padding:10px 16px;border-radius:16px;border:1px solid hsla(0,0%,100%,.1);background:hsla(0,0%,100%,.04)}
+.reward-reveal-row strong{flex:1;text-align:start;font-size:.95rem;font-weight:800}
+@keyframes reward-pop{from{opacity:0;transform:translateY(10px) scale(.96)}}
+@media (prefers-reduced-motion:reduce){.reward-reveal-hero{animation:none}}

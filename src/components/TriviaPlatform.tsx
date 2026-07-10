@@ -28,6 +28,8 @@ import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
 import { setHapticsEnabled } from '@/lib/haptics';
+import { submitGameResult } from '@/lib/rewards/client';
+import type { RevealItem } from '@/lib/rewards/types';
 import { applyPurchase, availablePot, canActivateLifeline, extraLifeCost, guaranteedForRung, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { pushScreen, replaceTop, sanitizeTarget } from '@/lib/navigation/screenStack';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
@@ -177,6 +179,8 @@ export default function TriviaPlatform({
   const [extraLifeUsed, setExtraLifeUsed] = useState(false);
   const [lifeOffer, setLifeOffer] = useState<{ cost: number; reason: EndState } | null>(null);
   const [progressionToasts, setProgressionToasts] = useState<ProgressionToast[]>([]);
+  // Server-computed post-game reward ceremony (Result screen only; never the HUD).
+  const [rewardReveals, setRewardReveals] = useState<RevealItem[]>([]);
   const [lifelineUses, setLifelineUses] = useState<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
   // One-lifeline-per-question lock: which lifeline (if any) was already used on
   // the current question. Non-null locks EVERY tile until the next question.
@@ -815,6 +819,7 @@ export default function TriviaPlatform({
 
   function finish(state: EndState, prize: number) {
     clearAdvanceTimer();
+    setRewardReveals([]);
     setEndState(state);
     setFinalPrize(prize);
     liveGameRef.current = false;
@@ -869,6 +874,23 @@ export default function TriviaPlatform({
     if (publicNickname) {
       void submitLeaderboardScore(publicNickname, prize, Math.min(15, state === 'win' ? 15 : round));
     }
+    // Record the game against the server rewards engine and surface the ordered
+    // reward ceremony on the Result screen. Fire-and-forget: it can never affect
+    // gameplay, and a failure simply yields no reveals.
+    void submitGameResult({
+      gameId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      mode: 'solo',
+      won: state === 'win',
+      cashedOut: state === 'quit',
+      correctAnswers: round,
+      questionsFaced: round + (state === 'win' ? 0 : 1),
+      prize,
+      lifelinesUsed: lifelines,
+      category,
+      livesLostBeforeWin: Math.max(0, SOLO_INITIAL_LIVES - chances),
+      leveledUp: progressionUpdate.state.level > progression.level,
+      newLevel: progressionUpdate.state.level
+    }).then(setRewardReveals);
   }
 
   function triggerLifeline(type: Lifeline) {
@@ -1191,7 +1213,7 @@ export default function TriviaPlatform({
           requestExit={() => setExitPrompt(true)}
         />
       )}
-      {screen === 'result' && <Result t={t} authUi={authT} isAuthenticated={Boolean(authUser)} state={endState} correctCount={round} elapsed={elapsed} prize={finalPrize} start={() => open('categories')} home={() => open('home')} />}
+      {screen === 'result' && <Result t={t} authUi={authT} isAuthenticated={Boolean(authUser)} state={endState} correctCount={round} elapsed={elapsed} prize={finalPrize} reveals={rewardReveals} start={() => open('categories')} home={() => open('home')} />}
       {screen === 'admin' && (
         <Admin
           t={t}
