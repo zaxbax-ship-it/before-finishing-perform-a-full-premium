@@ -478,50 +478,32 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 /* Competitive countdown ring: the game clock rendered as a shrinking gold
    halo. Urgency escalates through the existing breathe/panic keyframes; the
    ring maps 1:1 to a native progress ring in SwiftUI / Compose. */
-.game-timer-ring {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-full);
-  background: radial-gradient(circle at 50% 30%, hsla(41, 90%, 69%, 0.14), transparent 70%), rgba(4, 10, 26, 0.55);
-  box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.12), 0 6px 20px rgba(0, 0, 0, 0.3);
+/* ===== Countdown, embedded in the Next button ===== */
+/* The standalone timer ring is gone. The same 45s clock now drains a progress
+   layer behind the Next-button label: full at question start, empty at expiry,
+   calm -> warning -> danger. The label sits above it and stays fully readable;
+   the bar is a background layer and never changes the button's hit area. Width
+   is set inline from the normalized 1 -> 0 progress and eased over one tick, so
+   the drain is smooth rather than a per-second jump. Keyed per question in the
+   markup, so a new question resets to full with no animated rewind. */
+.game-next-button { position: relative; overflow: hidden; isolation: isolate; }
+.game-next-label { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 10px; }
+.game-next-progress {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(69, 194, 255, 0.30), hsla(41, 90%, 69%, 0.30));
+  transition: width var(--duration-clock-tick, 1s) linear, background var(--duration-normal) var(--ease-default);
 }
-.game-timer-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.game-timer-ring .ring-track { fill: none; stroke: hsla(0, 0%, 100%, 0.12); stroke-width: 4; }
-.game-timer-ring .ring-progress {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 4;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 6px hsla(41, 90%, 69%, 0.5));
-  transition: stroke-dashoffset var(--duration-clock-tick) linear, stroke var(--duration-normal) var(--ease-default), filter var(--duration-normal) var(--ease-default);
-}
-.game-timer-ring strong {
-  position: relative;
-  color: #fff;
-  font-size: 1.14rem;
-  font-weight: 950;
-  line-height: 1;
-  font-feature-settings: "tnum";
-}
-.game-timer-ring.warn { animation: timer-breathe var(--duration-pulse) ease-in-out infinite; }
-.game-timer-ring.warn .ring-progress { filter: drop-shadow(0 0 10px hsla(41, 90%, 69%, 0.85)); }
-.game-timer-ring.warn strong { color: var(--gold); }
-.game-timer-ring.danger { animation: timer-panic var(--duration-emphasis) ease-in-out infinite; box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.12), 0 0 24px rgba(255, 97, 114, 0.35); }
-.game-timer-ring.danger .ring-progress { stroke: var(--danger); filter: drop-shadow(0 0 12px rgba(255, 97, 114, 0.85)); }
-.game-timer-ring.danger strong { color: var(--danger); }
-.game-active .game-timer-ring { width: 48px; height: 48px; }
-.game-active .game-timer-ring strong { font-size: 1rem; }
-
-/* Short landscape viewports: compact ring (must out-rank the game-active sizing). */
-@media (max-height: 560px) and (orientation: landscape) {
-  .game-timer-ring,
-  .game-active .game-timer-ring { width: 42px; height: 42px; }
-  .game-timer-ring strong,
-  .game-active .game-timer-ring strong { font-size: 0.92rem; }
+.game-next-button.next-warning .game-next-progress { background: linear-gradient(90deg, hsla(41, 90%, 62%, 0.42), hsla(38, 92%, 55%, 0.48)); }
+.game-next-button.next-danger .game-next-progress { background: linear-gradient(90deg, rgba(255, 138, 120, 0.5), rgba(255, 97, 114, 0.64)); }
+/* The disabled (pre-answer) button must NOT hide the countdown. */
+.game-next-button:disabled .game-next-progress { opacity: 0.92; }
+@media (prefers-reduced-motion: reduce) {
+  .game-next-progress { transition: none; }
 }
 
 /* ==========================================================================
@@ -1017,6 +999,13 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .lifeline-tile.locked .lifeline-icon-shell{opacity:.92}
 .lifeline-tile.locked .lifeline-status{color:var(--gold)}
 .lifeline-status{display:inline-grid;place-items:center;min-height:1.1em}
+/* Insufficient-pot: a paid second use is due but the pot is $0 — visually
+   distinct from the gold "used this question" lock and the grey "exhausted"
+   look. A cool azure "earn prize money first" state with a wallet hint. */
+.lifeline-tile.needs-pot:disabled{opacity:.62;filter:none;cursor:not-allowed;border-color:rgba(69,194,255,.34);background:linear-gradient(145deg,rgba(69,194,255,.12),hsla(0,0%,100%,.02))}
+.lifeline-tile.needs-pot:disabled:hover{transform:none;box-shadow:none}
+.lifeline-tile.needs-pot .lifeline-icon-shell{opacity:.9}
+.lifeline-tile.needs-pot .lifeline-status{color:rgba(120,205,255,.95)}
 
 /* ===== Mobile gameplay layout integrity ===== */
 /* ChanceMeter: game-show mistake allowance — slanted gold segments that dim
@@ -1042,12 +1031,11 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
    Row 1: exit + question/category. Row 2: chances + prize. Nothing can
    overflow — the middle column is minmax(0,1fr). */
 @media (max-width:767.98px) and (orientation:portrait){
-  .game-active .game-topline{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"home info timer" "chances pot timer";align-items:center;row-gap:6px;border-radius:22px;padding:8px 12px}
+  .game-active .game-topline{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"home info chances pot";align-items:center;column-gap:8px;border-radius:22px;padding:8px 12px}
   .game-active .game-topline-home{grid-area:home}
-  .game-active .game-topline-info{grid-area:info}
-  .game-active .game-timer-ring{grid-area:timer;justify-self:end}
-  .game-active .game-topline-chances{grid-area:chances;justify-self:start}
-  .game-active .game-topline-pot{grid-area:pot;justify-self:start;font-size:.95rem}
+  .game-active .game-topline-info{grid-area:info;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .game-active .game-topline-chances{grid-area:chances;justify-self:end}
+  .game-active .game-topline-pot{grid-area:pot;justify-self:end;font-size:.95rem}
 }
 
 /* ===== Touch polish: hover lifts are pointer-hover only ===== */

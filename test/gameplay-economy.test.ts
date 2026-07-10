@@ -119,39 +119,58 @@ describe('Official lifeline usage rules', () => {
   });
 });
 
-describe('Per-question lifeline challenge lock', () => {
-  it('classifies availability from game-level uses + the per-question lock', () => {
-    // Not yet used on this question:
-    expect(lifelineAvailability(0, false)).toBe('free');   // first game use, free
-    expect(lifelineAvailability(1, false)).toBe('paid');   // second game use, 25%
-    expect(lifelineAvailability(2, false)).toBe('exhausted');
-    // Already used on this question (game-level uses still remain):
-    expect(lifelineAvailability(0, true)).toBe('locked-question');
-    expect(lifelineAvailability(1, true)).toBe('locked-question');
-    // Exhausted always wins over the per-question lock (stays permanent).
-    expect(lifelineAvailability(2, true)).toBe('exhausted');
+describe('Lifeline availability: pot eligibility + one-lifeline-per-question lock', () => {
+  const POT = 10000; // a positive pot -> a paid second use costs 25% = 2500
+
+  it('1) first use is always free (any pot, no lifeline used this question)', () => {
+    expect(lifelineAvailability(0, false, 0)).toBe('free');
+    expect(lifelineAvailability(0, false, POT)).toBe('free');
+    expect(canActivateLifeline(0, false, 0)).toBe(true);
   });
 
-  it('allows activation only when free or paid, never when locked or exhausted', () => {
-    expect(canActivateLifeline(0, false)).toBe(true);  // free
-    expect(canActivateLifeline(1, false)).toBe(true);  // paid second use
-    expect(canActivateLifeline(0, true)).toBe(false);  // used this question
-    expect(canActivateLifeline(1, true)).toBe(false);  // used this question
-    expect(canActivateLifeline(2, false)).toBe(false); // exhausted
-    expect(canActivateLifeline(2, true)).toBe(false);  // exhausted
+  it('2/3) a second use at pot $0 is insufficient-pot and never activatable (no $0 dialog)', () => {
+    expect(lifelineAvailability(1, false, 0)).toBe('insufficient-pot');
+    expect(canActivateLifeline(1, false, 0)).toBe(false);
+    // a pot too small to yield a positive 25% price is treated the same way
+    expect(lifelineAvailability(1, false, 3)).toBe('insufficient-pot');
+    expect(canActivateLifeline(1, false, 3)).toBe(false);
   });
 
-  it('models the official flow: 50:50 free on Q4, locked on Q4, paid on Q5, gone on Q6', () => {
-    // Q4: first use — free and allowed.
-    expect(canActivateLifeline(0, false)).toBe(true);
-    // Still on Q4 after using it — locked for the rest of the question.
-    expect(canActivateLifeline(1, true)).toBe(false);
-    expect(lifelineAvailability(1, true)).toBe('locked-question');
-    // Q5 (per-question lock reset): second game use is a paid 25% activation.
-    expect(canActivateLifeline(1, false)).toBe(true);
-    expect(lifelineAvailability(1, false)).toBe('paid');
-    // Q6: both game uses spent — permanently exhausted regardless of the lock.
-    expect(canActivateLifeline(2, false)).toBe(false);
-    expect(lifelineAvailability(2, false)).toBe('exhausted');
+  it('4/5) a second use becomes paid once the pot is positive, at exactly 25%', () => {
+    expect(lifelineAvailability(1, false, POT)).toBe('paid');
+    expect(canActivateLifeline(1, false, POT)).toBe(true);
+    expect(lifelinePrice(POT, 1)).toBe(2500);
+  });
+
+  it('6) a third use is impossible regardless of pot or lock', () => {
+    expect(lifelineAvailability(2, false, POT)).toBe('exhausted');
+    expect(lifelineAvailability(2, true, POT)).toBe('exhausted');
+    expect(canActivateLifeline(2, false, POT)).toBe(false);
+  });
+
+  it('7) once ANY lifeline is used this question, others report locked-question', () => {
+    // A different, still-free lifeline (uses 0) with the global lock set:
+    expect(lifelineAvailability(0, true, POT)).toBe('locked-question');
+    expect(canActivateLifeline(0, true, POT)).toBe(false);
+    // A paid-eligible lifeline is equally locked while another was used:
+    expect(lifelineAvailability(1, true, POT)).toBe('locked-question');
+    expect(canActivateLifeline(1, true, POT)).toBe(false);
+  });
+
+  it('precedence is exhausted > locked-question > insufficient-pot > paid > free', () => {
+    expect(lifelineAvailability(2, true, 0)).toBe('exhausted');        // exhausted wins over everything
+    expect(lifelineAvailability(1, true, 0)).toBe('locked-question');  // per-question lock over the pot reason
+    expect(lifelineAvailability(1, false, 0)).toBe('insufficient-pot');
+    expect(lifelineAvailability(1, false, POT)).toBe('paid');
+    expect(lifelineAvailability(0, false, POT)).toBe('free');
+  });
+
+  it('official flow: free at $0, no repurchase at $0, paid once earned, gone after two', () => {
+    expect(canActivateLifeline(0, false, 0)).toBe(true);                 // Q1 pot $0: first use free
+    expect(lifelineAvailability(1, false, 0)).toBe('insufficient-pot');  // Q2 pot still $0: not purchasable
+    expect(canActivateLifeline(1, false, 0)).toBe(false);
+    expect(lifelineAvailability(1, false, POT)).toBe('paid');            // later, pot earned: paid unlocks
+    expect(canActivateLifeline(1, false, POT)).toBe(true);
+    expect(canActivateLifeline(2, false, POT)).toBe(false);             // after the paid use: exhausted
   });
 });

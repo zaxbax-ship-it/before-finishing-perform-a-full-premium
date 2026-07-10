@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
-import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon } from '@/lib/design/icons';
+import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WalletIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { lifelineAvailability, lifelinePrice, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
+import { timerProgress } from '@/lib/gameplay/timer';
 import { ChanceMeter } from '../ChanceMeter';
 import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
 import { fmt, money } from '../format';
@@ -21,13 +22,12 @@ export function Game(props: {
   selected: number | null;
   hiddenAnswers: number[];
   timer: number;
-  timerUrgency: string;
   progress: number;
   currentPrize: number;
   guaranteedPrize: number;
   chances: number;
   lifelineUses: Record<Lifeline, number>;
-  lifelineQuestionLock: Record<Lifeline, boolean>;
+  lifelineUsedThisQuestion: Lifeline | null;
   advice: string;
   notice: string;
   chooseAnswer: (index: number) => void;
@@ -36,14 +36,14 @@ export function Game(props: {
   quit: () => void;
   requestExit: () => void;
 }) {
-  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, guaranteedPrize, chances, lifelineUses, lifelineQuestionLock, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
+  const { t, locale, current, round, order, selected, hiddenAnswers, timer, progress, currentPrize, guaranteedPrize, chances, lifelineUses, lifelineUsedThisQuestion, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   // Presentation-only: the pot eases between real values; logic sees exact numbers.
   const animatedPot = useCountUp(currentPrize, 650);
   const [reuseHelpOpen, setReuseHelpOpen] = useState(false);
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
-  // Countdown ring: purely presentational — same clock, same 45s duration.
-  const RING_CIRCUMFERENCE = 2 * Math.PI * 23;
-  const timerRatio = Math.max(0, Math.min(1, timer / SOLO_TIMER_SECONDS));
+  // Countdown presentation — the standalone ring is gone; the same clock now
+  // drains a progress layer behind the Next button (see timerProgress).
+  const timerModel = timerProgress(SOLO_TIMER_SECONDS, timer);
   const infoUi = getInfoUi(locale);
   const nextButtonRef = useRef<HTMLButtonElement | null>(null);
   // Keyboard flow: focus moves to the continue button once an answer locks in.
@@ -64,20 +64,11 @@ export function Game(props: {
           <span className="game-topline-chances">
             <ChanceMeter total={SOLO_INITIAL_LIVES} remaining={chances} label={fmt(t.chancesStatus, { count: chances, total: SOLO_INITIAL_LIVES })} />
           </span>
-          <span className={`game-timer-ring ${timerUrgency}`} role="timer">
-            <svg viewBox="0 0 52 52" aria-hidden="true">
-              <circle className="ring-track" cx="26" cy="26" r="23" />
-              <circle
-                className="ring-progress"
-                cx="26"
-                cy="26"
-                r="23"
-                transform="rotate(-90 26 26)"
-                style={{ strokeDasharray: RING_CIRCUMFERENCE, strokeDashoffset: RING_CIRCUMFERENCE * (1 - timerRatio) }}
-              />
-            </svg>
-            <strong>{timer}</strong>
-          </span>
+          {/* Standalone visible timer removed — the countdown now drains behind
+              the Next button. Keep an accessible timer status: remaining seconds
+              are exposed (role="timer") but not announced every second
+              (aria-live off), so screen readers can query without being spammed. */}
+          <span className="sr-only" role="timer" aria-live="off">{fmt(t.timerRemaining, { seconds: timerModel.remaining })}</span>
           <span className="game-topline-pot" title={money(currentPrize)} aria-label={`${t.currentPot}: ${money(currentPrize)}`}>{money(animatedPot)}</span>
         </div>
         {current.imageUrl && (
@@ -104,12 +95,24 @@ export function Game(props: {
           <button
             ref={nextButtonRef}
             type="button"
-            className={`game-next-button focus-ring ${answerInfo ? 'ready' : ''}`}
+            className={`game-next-button focus-ring next-${timerModel.urgency} ${answerInfo ? 'ready' : ''}`}
             disabled={!answerInfo}
             onClick={advanceAfterAnswer}
           >
-            {infoUi.action}
-            <ForwardIcon size={18} aria-hidden="true" />
+            {/* Countdown drains behind the label: full at question start, empty
+                exactly at expiry; calm -> warning -> danger. Keyed per question so
+                it resets without an animated rewind. aria-hidden — the role="timer"
+                status carries the value for assistive tech. */}
+            <span
+              key={`timer-${current.id}`}
+              className="game-next-progress"
+              aria-hidden="true"
+              style={{ width: `${timerModel.progress * 100}%` }}
+            />
+            <span className="game-next-label">
+              {infoUi.action}
+              <ForwardIcon size={18} aria-hidden="true" />
+            </span>
           </button>
         </div>
         <span className="sr-only" role="status" aria-live="assertive">
@@ -127,21 +130,28 @@ export function Game(props: {
           <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
             const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
             const price = lifelinePrice(currentPrize, lifelineUses[type]);
-            const availability = lifelineAvailability(lifelineUses[type], Boolean(lifelineQuestionLock[type]));
-            const disabled = availability === 'exhausted' || availability === 'locked-question';
-            // Minimum text: a free first use shows no label (the bright tile is
-            // enough), a paid second use shows its price, a lifeline already used
-            // on THIS question shows a check, and an exhausted one just dims. The
-            // full state stays in aria-label/title for assistive tech.
+            const availability = lifelineAvailability(lifelineUses[type], lifelineUsedThisQuestion !== null, currentPrize);
+            const disabled = availability !== 'free' && availability !== 'paid';
+            const usedHere = availability === 'locked-question' && lifelineUsedThisQuestion === type;
+            // Five distinct states, never one generic disabled look: free shows no
+            // label; paid shows its price; insufficient-pot shows a wallet hint;
+            // the question-lock shows a check on the tile that was used and a plain
+            // dim on the others; exhausted greys out. aria/title carry the words.
             const statusLabel =
               availability === 'exhausted' ? t.lifelineExhausted
-              : availability === 'locked-question' ? t.lifelineUsedThisQuestion
+              : availability === 'insufficient-pot' ? t.lifelineNeedsPot
+              : availability === 'locked-question' ? (usedHere ? t.lifelineUsedThisQuestion : t.lifelineLockedThisQuestion)
               : availability === 'paid' ? money(price as number)
               : t.free;
+            const stateClass =
+              availability === 'exhausted' ? 'exhausted'
+              : availability === 'insufficient-pot' ? 'needs-pot'
+              : availability === 'locked-question' ? 'locked'
+              : availability === 'paid' ? 'paid' : '';
             return (
               <button
                 key={type}
-                className={`lifeline-tile focus-ring ${availability === 'exhausted' ? 'exhausted' : availability === 'locked-question' ? 'locked' : availability === 'paid' ? 'paid' : ''}`}
+                className={`lifeline-tile focus-ring ${stateClass}`}
                 onClick={() => triggerLifeline(type)}
                 disabled={disabled}
                 aria-disabled={disabled}
@@ -151,7 +161,13 @@ export function Game(props: {
                 <span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span>
                 <span className="sr-only">{t[type]}</span>
                 <small className="lifeline-status" aria-hidden="true">
-                  {availability === 'paid' ? money(price as number) : availability === 'locked-question' ? <ConfirmIcon size={12} /> : ''}
+                  {availability === 'paid'
+                    ? money(price as number)
+                    : availability === 'insufficient-pot'
+                      ? <WalletIcon size={12} />
+                      : usedHere
+                        ? <ConfirmIcon size={12} />
+                        : ''}
                 </small>
               </button>
             );
