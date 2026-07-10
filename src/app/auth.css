@@ -492,3 +492,46 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* Stage 11B — icon-only back control */
+.auth-back {
+  position: absolute; inset-inline-start: 14px; top: 14px;
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border-radius: 999px; border: 1px solid hsla(0,0%,100%,0.16);
+  background: hsla(0,0%,100%,0.06); color: #fff; cursor: pointer;
+}
+.auth-back svg { transform: scaleX(1); }
+.auth-back:hover { background: hsla(0,0%,100%,0.1); }
+.auth-card { position: relative; }
+.auth-link-muted { opacity: 0.62; font-weight: 700; }
+.auth-link-muted:hover { opacity: 0.9; }
+
+/* Stage 11B — Google sign-in control (official mark, clean high-contrast surface) */
+.google-button {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; min-height: 48px; padding: 0 18px;
+  border-radius: 14px; border: 1px solid #dadce0;
+  background: #ffffff; color: #3c4043;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.16);
+  transition: box-shadow var(--duration-normal) var(--ease-default), background var(--duration-normal) var(--ease-default), transform var(--duration-normal) var(--ease-default);
+}
+.google-button:hover:not(:disabled) { background: #f8faff; box-shadow: 0 2px 8px rgba(60,64,67,0.24); }
+.google-button:active:not(:disabled) { transform: translateY(1px); background: #f1f3f4; }
+.google-button:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+.google-button-icon { display: grid; place-items: center; width: 18px; height: 18px; }
+.google-button-label { line-height: 1; }
+.google-spinner {
+  width: 16px; height: 16px; border-radius: 999px;
+  border: 2px solid rgba(60,64,67,0.25); border-top-color: #4285F4;
+  animation: google-spin 0.7s linear infinite;
+}
+@keyframes google-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .google-spinner { animation-duration: 2.4s; } }
+
+/* Stage 11B — account icon matches the header control family touch target on mobile */
+@media (max-width: 640px) {
+  .public-auth-corner .auth-link-button.icon-only {
+    min-height: 44px; min-width: 44px; width: 44px; height: 44px;
+  }
+}

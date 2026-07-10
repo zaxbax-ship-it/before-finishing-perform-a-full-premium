@@ -1771,6 +1771,8 @@ const resources: LocaleResources = {
   "communityUi": {
     "submitNav": "ጥያቄ ላክ",
     "questionPlaceholder": "ጥያቄዎን እዚህ ይጻፉ…",
+    "minChars": "ቢያንስ 35 ቁምፊዎች ያስፈልጋሉ",
+    "submitHint": "ለመላክ ቢያንስ 35 ቁምፊ ያለው ጥያቄና ትክክለኛ መልስ ይጻፉ።",
     "answerPlaceholder": "ትክክለኛው መልስ",
     "answerLabel": "ትክክለኛው መልስ",
     "received": "ጥያቄዎ በተሳካ ሁኔታ ተቀብሏል። አሁን በግምገማ ላይ ነው። ከጸደቀ የጨዋታው አካል ይሆናል።",

@@ -84,7 +84,7 @@ export default function SignupForm({
   }
 
   return (
-    <AuthShell title="יצירת חשבון" subtitle="שמרו התקדמות, כינוי, סטטיסטיקות ודירוגים">
+    <AuthShell title="יצירת חשבון" onBack={handleBack}>
       {!supabaseConfigured && (
         <AuthMessage tone="warn">
           הרשמה אינה מופעלת בסביבה זו. יש לחבר את Supabase Auth כדי ליצור חשבון.
@@ -118,9 +118,8 @@ export default function SignupForm({
       )}
 
       <div className="auth-links">
-        <button type="button" className="focus-ring" onClick={handleBack}>חזרה</button>
         <Link className="focus-ring" href="/login">כבר יש לי חשבון</Link>
-        <Link className="focus-ring" href="/reset-password">שכחתי סיסמה</Link>
+        <Link className="auth-link-muted focus-ring" href="/reset-password">שכחתי סיסמה?</Link>
       </div>
     </AuthShell>
   );

@@ -426,6 +426,8 @@ const resources: LocaleResources = {
   "communityUi": {
     "submitNav": "שליחת שאלה",
     "questionPlaceholder": "כתבו כאן את השאלה שלכם…",
+    "minChars": "נדרשים לפחות 35 תווים",
+    "submitHint": "כדי לשלוח, כתבו שאלה בת 35 תווים לפחות ותשובה נכונה.",
     "answerPlaceholder": "התשובה הנכונה",
     "answerLabel": "תשובה נכונה",
     "received": "השאלה התקבלה בהצלחה. היא נמצאת בבדיקה. אם תאושר, היא תיכנס למשחק.",

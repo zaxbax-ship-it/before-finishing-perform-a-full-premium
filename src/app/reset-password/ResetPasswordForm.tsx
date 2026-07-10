@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createAuthService } from '@/lib/auth/authService';
 import { AuthShell, AuthField, AuthMessage } from '../auth-ui/AuthShell';
@@ -10,6 +9,15 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export default function ResetPasswordForm({ supabaseConfigured }: { supabaseConfigured: boolean }) {
   const router = useRouter();
+
+  function handleBack() {
+    if (typeof window !== 'undefined' && document.referrer.startsWith(window.location.origin) && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/login');
+  }
+
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState('');
@@ -73,7 +81,7 @@ export default function ResetPasswordForm({ supabaseConfigured }: { supabaseConf
   }
 
   return (
-    <AuthShell title="איפוס סיסמה" subtitle={recoveryMode ? 'בחרו סיסמה חדשה' : 'נשלח אליכם קישור לאיפוס'}>
+    <AuthShell title="איפוס סיסמה" subtitle={recoveryMode ? 'בחרו סיסמה חדשה' : 'נשלח אליכם קישור לאיפוס'} onBack={handleBack}>
       {!supabaseConfigured && (
         <AuthMessage tone="warn">איפוס סיסמה אינו מופעל בסביבה זו. יש לחבר את Supabase Auth.</AuthMessage>
       )}
@@ -105,9 +113,6 @@ export default function ResetPasswordForm({ supabaseConfigured }: { supabaseConf
         </form>
       )}
 
-      <div className="auth-links">
-        <Link className="focus-ring" href="/login">חזרה להתחברות</Link>
-      </div>
     </AuthShell>
   );
 }

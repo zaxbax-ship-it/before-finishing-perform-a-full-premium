@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AchievementsIcon, LeaderboardIcon, LoginIcon, LogoutIcon, ProfileIcon, SettingsIcon, StatisticsIcon } from '@/lib/design/icons';
+import { AchievementsIcon, LeaderboardIcon, LogoutIcon, ProfileIcon, SettingsIcon, StatisticsIcon } from '@/lib/design/icons';
 import { initialsFor, validateNickname } from '../format';
 import type { LeaderboardStatus, PublicAuthUser, Screen } from '../types';
 import { Avatar } from './Avatar';
@@ -49,9 +49,9 @@ export function PublicAuthArea({
 
   if (!configured || !user) {
     return (
-      <nav className="public-auth-corner public-auth-actions" aria-label={ui.account}>
-        <a className="auth-link-button secondary icon-only focus-ring" href="/login" aria-label={ui.signIn} title={ui.signIn}><LoginIcon size={20} aria-hidden="true" /></a>
-        <a className="auth-link-button primary icon-only focus-ring" href="/signup" aria-label={ui.createAccount} title={ui.createAccount}><ProfileIcon size={20} aria-hidden="true" /></a>
+      <nav className="public-auth-corner" aria-label={ui.account}>
+        {/* One account entry point — leads to the unified login/create-account screen. */}
+        <a className="auth-link-button primary icon-only focus-ring" href="/login" aria-label={ui.signIn} title={ui.signIn}><ProfileIcon size={20} aria-hidden="true" /></a>
       </nav>
     );
   }

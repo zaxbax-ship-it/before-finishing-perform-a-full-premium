@@ -15,6 +15,46 @@ export type ContributorSubmissionInput = {
   contributorId?: string;
 };
 
+/**
+ * Stage 11B — platform-neutral community submission validation. The contributor
+ * screen (and future SwiftUI / Jetpack Compose clients) must all enforce the same
+ * rule, so it lives here, not inside a React component. A question needs at least
+ * 35 MEANINGFUL characters: leading/trailing whitespace is ignored and repeated
+ * whitespace is collapsed before counting. The correct answer only needs to be
+ * non-empty (a name, year, number, city or "כן" is valid).
+ */
+export const COMMUNITY_QUESTION_MIN_LENGTH = 35;
+
+/** Meaningful length: trimmed, with runs of whitespace collapsed to one space. */
+export function meaningfulLength(value: string): number {
+  return value.trim().replace(/\s+/g, ' ').length;
+}
+
+export type CommunityQuestionValidation = {
+  meaningfulLength: number;
+  minLength: number;
+  questionValid: boolean;
+  answerValid: boolean;
+  canSubmit: boolean;
+};
+
+export function validateCommunityQuestion(question: string, correctAnswer: string): CommunityQuestionValidation {
+  const length = meaningfulLength(question);
+  const questionValid = length >= COMMUNITY_QUESTION_MIN_LENGTH;
+  const answerValid = correctAnswer.trim().length > 0;
+  return { meaningfulLength: length, minLength: COMMUNITY_QUESTION_MIN_LENGTH, questionValid, answerValid, canSubmit: questionValid && answerValid };
+}
+
+/**
+ * Disclosure rule for the compact "too short" hint: it appears only after the
+ * question field has been touched (blurred) AND the user has typed something AND
+ * the meaningful length is still below the minimum. It disappears the moment the
+ * requirement is met. Kept pure so web and native clients share one behaviour.
+ */
+export function shouldShowQuestionHint(question: string, touched: boolean): boolean {
+  return touched && question.trim().length > 0 && meaningfulLength(question) < COMMUNITY_QUESTION_MIN_LENGTH;
+}
+
 export type CommunityDraft = {
   question: string;
   options: string[];

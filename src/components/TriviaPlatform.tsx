@@ -17,7 +17,9 @@ import {
   type AuditLogEntry,
   type CommunitySubmission,
   createAudit,
-  submissionToQuestion
+  submissionToQuestion,
+  shouldShowQuestionHint,
+  validateCommunityQuestion
 } from '@/lib/community';
 import { ensureLocaleResources, localizeCategory, localizeQuestion } from '@/lib/localization';
 import { revealSection } from '@/lib/ui/revealSection';
@@ -1240,20 +1242,33 @@ function CommunitySubmit(props: {
   message: string;
 }) {
   const { ui, input, setInput, submit, message } = props;
-  const ready = input.question.trim().length > 0 && input.answer.trim().length > 0;
+  const [touched, setTouched] = useState(false);
+  const validation = validateCommunityQuestion(input.question, input.answer);
+  const showQuestionError = shouldShowQuestionHint(input.question, touched);
 
   return (
     <section className="community-submit">
       <div className="community-submit-card glass">
         <h1 className="community-submit-title">{ui.submitTitle}</h1>
-        <textarea
-          className="community-question-input"
-          placeholder={ui.questionPlaceholder}
-          value={input.question}
-          onChange={event => setInput({ ...input, question: event.target.value })}
-          rows={4}
-          aria-label={ui.question}
-        />
+        <div className="community-field">
+          <textarea
+            className="community-question-input"
+            placeholder={ui.questionPlaceholder}
+            value={input.question}
+            onChange={event => setInput({ ...input, question: event.target.value })}
+            onBlur={() => setTouched(true)}
+            rows={4}
+            aria-label={ui.question}
+            aria-invalid={showQuestionError || undefined}
+            aria-describedby={showQuestionError ? 'community-q-hint' : undefined}
+          />
+          {showQuestionError && (
+            <p id="community-q-hint" className="community-validate" role="status">
+              <span>{ui.minChars}</span>
+              <span className="community-counter" aria-hidden="true">{validation.meaningfulLength} / {validation.minLength}</span>
+            </p>
+          )}
+        </div>
         <input
           className="community-answer-input"
           placeholder={ui.answerPlaceholder}
@@ -1261,7 +1276,15 @@ function CommunitySubmit(props: {
           onChange={event => setInput({ ...input, answer: event.target.value })}
           aria-label={ui.answerLabel}
         />
-        <button className="community-submit-button focus-ring" onClick={submit} disabled={!ready}>{ui.send}</button>
+        <button
+          className="community-submit-button focus-ring"
+          onClick={submit}
+          disabled={!validation.canSubmit}
+          aria-describedby="community-submit-hint"
+        >
+          {ui.send}
+        </button>
+        <span id="community-submit-hint" className="sr-only">{ui.submitHint}</span>
         {message && <p className="community-submit-note" role="status">{message}</p>}
       </div>
     </section>

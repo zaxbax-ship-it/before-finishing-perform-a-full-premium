@@ -1903,6 +1903,8 @@ const resources: LocaleResources = {
   "communityUi": {
     "submitNav": "Submit Question",
     "questionPlaceholder": "Write your question here…",
+    "minChars": "At least 35 characters needed",
+    "submitHint": "To submit, write a question of at least 35 characters and a correct answer.",
     "answerPlaceholder": "The correct answer",
     "answerLabel": "Correct answer",
     "received": "Your question has been received successfully. It is now being reviewed. If approved, it will become part of the game.",

@@ -1267,3 +1267,32 @@ html,body{overscroll-behavior-y:none}
 .community-submit-button:disabled { opacity: 0.45; cursor: not-allowed; }
 .community-submit-note { text-align: center; font-size: 1rem; opacity: 0.85; line-height: 1.6; }
 @media (prefers-reduced-motion: reduce) { .community-question-input, .community-answer-input { transition: none; } }
+
+/* Stage 11B — community question validation (compact, integrated with the field) */
+.community-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.community-validate {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  font-size: 0.85rem; color: #f0aa3c; padding-inline: 0.4rem;
+}
+.community-counter { font-variant-numeric: tabular-nums; opacity: 0.8; font-weight: 700; }
+
+/* Stage 11B Part 4 — language selector joins the header control family (glass circle) */
+.language-icon-trigger,
+.language-corner .language-trigger.language-icon-trigger {
+  min-height: 48px; min-width: 48px; width: 48px; height: 48px;
+  padding: 0; border-radius: var(--radius-full);
+  display: grid; place-items: center; gap: 0;
+}
+@media (max-width: 560px) {
+  .language-icon-trigger,
+  .language-corner .language-trigger.language-icon-trigger {
+    min-height: 44px; min-width: 44px; width: 44px; height: 44px;
+  }
+}
+
+/* Stage 11B Part 3 — icon-control primitive: line-height-safe centering + gold tone */
+.icon-button-glyph { display: grid; place-items: center; line-height: 0; }
+.icon-button.is-gold {
+  border-color: hsla(41, 90%, 69%, 0.65); color: #08101f;
+  background: linear-gradient(135deg, #fff7c9, #f8d36f 42%, #b97724);
+}

@@ -67,7 +67,7 @@ export default function LoginForm({
   }
 
   return (
-    <AuthShell title="כניסה לחשבון" subtitle="חזרו למשחק, לסטטיסטיקות וללוח השיאים שלכם">
+    <AuthShell title="כניסה לחשבון" onBack={handleBack}>
       {!supabaseConfigured && (
         <AuthMessage tone="warn">
           התחברות אינה מופעלת בסביבה זו. יש לחבר את Supabase Auth כדי להתחבר.
@@ -113,9 +113,8 @@ export default function LoginForm({
       )}
 
       <div className="auth-links">
-        <button type="button" className="focus-ring" onClick={handleBack}>חזרה</button>
-        <Link className="focus-ring" href="/reset-password">שכחתי סיסמה</Link>
         <Link className="focus-ring" href="/signup">יצירת חשבון</Link>
+        <Link className="auth-link-muted focus-ring" href="/reset-password">שכחתי סיסמה?</Link>
       </div>
     </AuthShell>
   );

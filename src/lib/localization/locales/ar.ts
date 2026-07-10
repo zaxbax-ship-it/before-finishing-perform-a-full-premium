@@ -1775,6 +1775,8 @@ const resources: LocaleResources = {
   "communityUi": {
     "submitNav": "إرسال سؤال",
     "questionPlaceholder": "اكتب سؤالك هنا…",
+    "minChars": "مطلوب 35 حرفًا على الأقل",
+    "submitHint": "للإرسال، اكتب سؤالًا من 35 حرفًا على الأقل وإجابة صحيحة.",
     "answerPlaceholder": "الإجابة الصحيحة",
     "answerLabel": "الإجابة الصحيحة",
     "received": "تم استلام سؤالك بنجاح. تتم مراجعته الآن. إذا تمت الموافقة عليه، فسيصبح جزءًا من اللعبة.",

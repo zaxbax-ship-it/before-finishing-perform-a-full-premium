@@ -20,3 +20,20 @@ export function Metric({ value, label, gold }: { value: string; label: string; g
 export function Success({ text }: { text: string }) {
   return <div className="rounded-2xl border border-emerald-300/35 bg-emerald-300/10 p-4 font-bold text-emerald-100">{text}</div>;
 }
+
+/**
+ * Stage 11B — the shared icon-control primitive. Every functional icon-only
+ * button should route through here so it always has (1) a consistent, aligned
+ * box (the .icon-button family: 48px desktop / 44px touch), (2) a required
+ * localized aria-label, and (3) a line-height-safe, optically centered glyph
+ * that never drifts. Decorative glyphs are aria-hidden. Native equivalents:
+ * SwiftUI Button+Label(systemImage) with .accessibilityLabel; Compose
+ * IconButton with contentDescription.
+ */
+export function IconButton({ label, onClick, children, tone = 'glass' }: { label: string; onClick?: () => void; children: ReactNode; tone?: 'glass' | 'gold' }) {
+  return (
+    <button type="button" className={`icon-button focus-ring${tone === 'gold' ? ' is-gold' : ''}`} aria-label={label} title={label} onClick={onClick}>
+      <span className="icon-button-glyph" aria-hidden="true">{children}</span>
+    </button>
+  );
+}
