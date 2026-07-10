@@ -60,7 +60,7 @@ export function Game(props: {
       <section className="glass question-priority rounded-[32px] p-5 md:p-8">
         <div className="game-topline">
           <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
-          <span className="game-topline-info">{round + 1}/15 · {current.category}</span>
+          <span className="game-topline-info">{round + 1}/15 · <span key={current.id} className="game-topline-category">{current.category}</span></span>
           <span className="game-topline-chances">
             <ChanceMeter total={SOLO_INITIAL_LIVES} remaining={chances} label={fmt(t.chancesStatus, { count: chances, total: SOLO_INITIAL_LIVES })} />
           </span>
@@ -124,19 +124,35 @@ export function Game(props: {
             so no duplicate prize labels compete with the timer here. */}
         <div className="mt-6 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-l from-gold to-azure transition-all duration-500" style={{ width: `${progress}%` }} /></div>
       </section>
-      <aside className="space-y-5">
-        <div className="glass rounded-[28px] p-5">
-          <h3 className="mb-4 text-xl font-extrabold">{t.lifelines}</h3>
-          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
+      <aside className="game-support glass">
+        {/* One coherent support system: lifelines, prize spine and guaranteed prize
+            share a single surface separated by spacing, not three glass boxes. */}
+        <section className="support-section support-lifelines" aria-label={t.lifelines}>
+          <div className="support-head">
+            <h3>{t.lifelines}</h3>
+            <div className="lifeline-help">
+              <button
+                type="button"
+                className="lifeline-help-btn focus-ring"
+                aria-label={t.lifelines}
+                aria-describedby="reuse-help-text"
+                aria-expanded={reuseHelpOpen}
+                title={t.reuseHint}
+                onClick={() => setReuseHelpOpen(value => !value)}
+                onKeyDown={event => { if (event.key === 'Escape') setReuseHelpOpen(false); }}
+              >
+                <HintsIcon size={15} aria-hidden="true" />
+              </button>
+              <span id="reuse-help-text" className="sr-only">{t.reuseHint}</span>
+              {reuseHelpOpen && <div className="lifeline-help-pop" role="tooltip">{t.reuseHint}</div>}
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-2">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
             const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
             const price = lifelinePrice(currentPrize, lifelineUses[type]);
             const availability = lifelineAvailability(lifelineUses[type], lifelineUsedThisQuestion !== null, currentPrize);
             const disabled = availability !== 'free' && availability !== 'paid';
             const usedHere = availability === 'locked-question' && lifelineUsedThisQuestion === type;
-            // Five distinct states, never one generic disabled look: free shows no
-            // label; paid shows its price; insufficient-pot shows a wallet hint;
-            // the question-lock shows a check on the tile that was used and a plain
-            // dim on the others; exhausted greys out. aria/title carry the words.
             const statusLabel =
               availability === 'exhausted' ? t.lifelineExhausted
               : availability === 'insufficient-pot' ? t.lifelineNeedsPot
@@ -172,26 +188,16 @@ export function Game(props: {
               </button>
             );
           })}</div>
-          <div className="lifeline-help">
-            <button
-              type="button"
-              className="lifeline-help-btn focus-ring"
-              aria-label={t.lifelines}
-              aria-describedby="reuse-help-text"
-              aria-expanded={reuseHelpOpen}
-              title={t.reuseHint}
-              onClick={() => setReuseHelpOpen(value => !value)}
-              onKeyDown={event => { if (event.key === 'Escape') setReuseHelpOpen(false); }}
-            >
-              <HintsIcon size={15} aria-hidden="true" />
-            </button>
-            <span id="reuse-help-text" className="sr-only">{t.reuseHint}</span>
-            {reuseHelpOpen && <div className="lifeline-help-pop" role="tooltip">{t.reuseHint}</div>}
+        </section>
+
+        <div className="support-divider" aria-hidden="true" />
+
+        <section className="support-section support-ladder" aria-label={t.ladder}>
+          <div className="support-head">
+            <h3>{t.ladder}</h3>
+            <span className="support-guaranteed" aria-label={`${t.guaranteed}: ${money(guaranteedPrize)}`}>{t.guaranteed} · <strong>{money(guaranteedPrize)}</strong></span>
           </div>
-        </div>
-        <div className="glass rounded-[28px] p-5">
-          <h3 className="mb-4 text-xl font-extrabold">{t.ladder}</h3>
-          <div className="prize-ladder">{MONEY.map((amount, index) => {
+          <div className="prize-ladder prize-ladder-compact">{MONEY.map((amount, index) => {
             const isTop = index === MONEY.length - 1;
             const isSafe = SAFE_STEPS.includes(index);
             const state = index === round ? 'current' : index < round ? 'passed' : '';
@@ -205,11 +211,10 @@ export function Game(props: {
               </div>
             );
           }).reverse()}</div>
-        </div>
-        <div className="glass rounded-[28px] p-5">
-          <div className="text-sm text-white/55">{t.guaranteed}</div>
-          <div className="text-2xl font-black text-gold">{money(guaranteedPrize)}</div>
-          <button className="ghost-button focus-ring mt-4 w-full" onClick={quit}>{t.quit}</button>
+        </section>
+
+        <div className="support-foot">
+          <button className="ghost-button focus-ring support-quit" onClick={quit}>{t.quit}</button>
         </div>
         <GameplayAdSlot placement="gameplay-sidebar" className="hidden xl:grid" />
       </aside>
