@@ -1606,6 +1606,7 @@ const resources: LocaleResources = {
     "manage": "Manage Questions",
     "live": "Live Broadcast",
     "choose": "Choose a Category and Start a Focused Game",
+    "startNoQuestions": "No questions available right now. Try another category.",
     "chooseText": "Every topic includes a rich balanced question bank with the same prize ladder and studio feeling.",
     "all": "All Categories",
     "question": "Question",

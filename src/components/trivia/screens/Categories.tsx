@@ -42,13 +42,14 @@ const CATEGORY_ICONS: Record<string, ComponentType<{ size?: number; 'aria-hidden
 import { localizeCategory, localizeCategoryDescription } from '@/lib/localization';
 import type { Locale } from '@/lib/types';
 
-export function Categories({ t, locale, categories, startGame }: { t: Record<string, string>; locale: Locale; categories: string[]; startGame: (category: string) => void | Promise<void> }) {
+export function Categories({ t, locale, categories, startGame, startError, clearStartError }: { t: Record<string, string>; locale: Locale; categories: string[]; startGame: (category: string) => void | Promise<void>; startError?: string; clearStartError?: () => void }) {
   const [pending, setPending] = useState<string | null>(null);
   // Instant acknowledgement: the tapped card shows a quiet busy state while the
   // round is dealt (a network round-trip in Hebrew) instead of a dead pause.
   // The screen changes when startGame resolves; finally covers early returns.
   const launch = async (category: string) => {
     if (pending) return;
+    clearStartError?.();
     setPending(category);
     try {
       await startGame(category);
@@ -59,6 +60,7 @@ export function Categories({ t, locale, categories, startGame }: { t: Record<str
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
       <h1 className="mx-auto max-w-5xl text-center text-6xl font-black md:text-[86px]">{t.choose}</h1>
+      {startError && <p className="category-start-error" role="alert">{startError}</p>}
       {/* Primary path: one prominent option that plays the full bank, above
           every specific category. */}
       <button className={`play-all-banner focus-ring ${pending === 'הכול' ? 'is-loading' : ''}`} onClick={() => launch('הכול')} disabled={pending !== null} aria-busy={pending === 'הכול'}>

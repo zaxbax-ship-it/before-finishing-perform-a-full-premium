@@ -1474,6 +1474,7 @@ const resources: LocaleResources = {
     "manage": "የጥያቄዎች ባንክ አስተዳድር",
     "live": "ቀጥታ ስርጭት",
     "choose": "ምድብ ይምረጡና ጨዋታ ይጀምሩ",
+    "startNoQuestions": "አሁን ጥያቄዎች የሉም። ሌላ ምድብ ይሞክሩ።",
     "chooseText": "እያንዳንዱ ርዕስ የተመጣጠነ የጥያቄዎች ባንክ፣ የሽልማት መደብ እና የስቱዲዮ ስሜት አለው።",
     "all": "ሁሉም ምድቦች",
     "question": "ጥያቄ",

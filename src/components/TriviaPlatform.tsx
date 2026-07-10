@@ -25,6 +25,7 @@ import { ensureLocaleResources, localizeCategory, localizeQuestion } from '@/lib
 import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
+import { isPlayableQuestion } from '@/lib/services/questionValidation';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
 import { setHapticsEnabled } from '@/lib/haptics';
 import { fetchRewardsSummary, submitGameResult } from '@/lib/rewards/client';
@@ -189,6 +190,7 @@ export default function TriviaPlatform({
   const [lifelineUsedThisQuestion, setLifelineUsedThisQuestion] = useState<Lifeline | null>(null);
   const [advice, setAdvice] = useState('');
   const [notice, setNotice] = useState('');
+  const [startError, setStartError] = useState('');
   const [pendingPaid, setPendingPaid] = useState<{ type: Lifeline; price: number } | null>(null);
   const [exitPrompt, setExitPrompt] = useState(false);
   const screenSectionRef = useRef<HTMLDivElement | null>(null);
@@ -229,6 +231,7 @@ export default function TriviaPlatform({
   const [authConfigured, setAuthConfigured] = useState(false);
   const advanceTimeoutRef = useRef<number | null>(null);
   const advancingRef = useRef(false);
+  const startingRef = useRef(false);
 
   const t = getTriviaUi(locale);
   const authT = getAuthUi(locale);
@@ -641,6 +644,9 @@ export default function TriviaPlatform({
   }
 
   async function startGame(nextCategory = category) {
+    if (startingRef.current) return; // guard against duplicate starts
+    startingRef.current = true;
+    setStartError('');
     clearAdvanceTimer();
     advancingRef.current = false;
     const seenSet = new Set(seenQuestionIds);
@@ -669,7 +675,15 @@ export default function TriviaPlatform({
         available = [...freshAdditions, ...available, ...fallbackAdditions];
       }
     }
-    if (available.length < 4) return;
+    // Strict boundary: only fully playable questions may reach gameplay.
+    available = available.filter(isPlayableQuestion);
+    if (available.length < 4) {
+      // Never a silent no-op: surface a recoverable error and stay on Categories.
+      startingRef.current = false;
+      setStartError(t.startNoQuestions || 'No questions are available right now. Please try another category.');
+      playAudioEvent('ui.error');
+      return;
+    }
     let pool = available.slice(0, 15);
     if (pool.length < 15) {
       const filled: GameQuestion[] = [];
@@ -700,6 +714,7 @@ export default function TriviaPlatform({
     liveGameRef.current = true;
     commitScreen('game', 'push');
     playAudioEvent('game.start');
+    startingRef.current = false;
   }
 
   /** Puts the next question on stage without touching the ladder. */
@@ -713,7 +728,7 @@ export default function TriviaPlatform({
       // past its initial 15 — extend it from the playable pool.
       const usedIds = new Set(previous.map(item => item.id));
       const seenSet = new Set(seenQuestionIds);
-      const pool = shuffle(playableQuestions.filter(question => !usedIds.has(question.id)));
+      const pool = shuffle(playableQuestions.filter(question => !usedIds.has(question.id) && isPlayableQuestion(question)));
       const fresh = pool.find(question => !seenSet.has(questionId(question))) || pool[0];
       if (fresh) {
         rememberSeenQuestions([fresh]);
@@ -956,7 +971,7 @@ export default function TriviaPlatform({
     if (type === 'swap') {
       const usedIds = new Set(gameSet.map(item => item.id));
       const seenSet = new Set(seenQuestionIds);
-      const replacements = shuffle(playableQuestions.filter(question => question.category === gameSet[questionIndex].category && !usedIds.has(question.id)));
+      const replacements = shuffle(playableQuestions.filter(question => question.category === gameSet[questionIndex].category && !usedIds.has(question.id) && isPlayableQuestion(question)));
       const replacement = replacements.find(question => !seenSet.has(questionId(question))) || replacements[0];
       if (replacement) {
         setGameSet(previous => previous.map((item, index) => index === questionIndex ? replacement : item));
@@ -1134,7 +1149,7 @@ export default function TriviaPlatform({
       {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} journeyVisible={journeyVisible} start={() => open('categories')} open={open} />}
-      {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} />}
+      {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} startError={startError} clearStartError={() => setStartError('')} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
       {screen === 'journey' && <Journey t={t} locale={locale} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
