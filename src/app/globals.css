@@ -1320,3 +1320,17 @@ html,body{overscroll-behavior-y:none}
 .setting-reset-actions { display: flex; gap: 0.5rem; margin-top: 0.85rem; }
 .setting-reset-actions button { flex: 1; }
 @media (prefers-reduced-motion: reduce) { .setting-row { transition: none; } }
+
+/* Stage 12C — compact leaderboard entry on Home (relocated from the drawer) */
+.home-leaderboard-card {
+  display: flex; align-items: center; gap: 0.7rem;
+  width: fit-content; max-width: 100%; margin: 1.5rem auto 0;
+  padding: 0.7rem 1.25rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(247,202,103,0.32); background: rgba(247,202,103,0.09);
+  color: #f7ca67; font-weight: 800; font-size: 1.02rem;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.home-leaderboard-card:hover { border-color: rgba(247,202,103,0.55); background: rgba(247,202,103,0.14); transform: translateY(-1px); }
+.home-leaderboard-icon { display: grid; place-items: center; }
+.home-leaderboard-label { line-height: 1; }
+@media (prefers-reduced-motion: reduce) { .home-leaderboard-card { transition: none; } }

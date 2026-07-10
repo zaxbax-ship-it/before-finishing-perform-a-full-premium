@@ -2,13 +2,9 @@
 
 import { useRef, useState } from 'react';
 import {
-  CelebrationIcon,
   CloseIcon,
   EditIcon,
-  LeaderboardIcon,
   MenuIcon,
-  MultiplayerIcon,
-  PlayIcon,
   PremiumIcon,
   ProfileIcon,
   QuestionIcon,
@@ -20,7 +16,7 @@ import type { Screen } from '../types';
 import { useDialogFocus } from '../useDialogFocus';
 import { useDismissable } from '../useDismissable';
 
-export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: Record<string, string>; submitLabel: string; multiplayerLabel: string; open: (screen: Screen) => void; start: () => void }) {
+export function Header({ t, submitLabel, open }: { t: Record<string, string>; submitLabel: string; multiplayerLabel?: string; open: (screen: Screen) => void; start?: () => void }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const { closing: drawerClosing, dismiss: dismissDrawer } = useDismissable(() => setDrawerOpen(false));
@@ -50,15 +46,11 @@ export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: R
               <button className="icon-button focus-ring" onClick={() => { playAudioEvent('ui.close'); dismissDrawer(); }} aria-label={t.close || 'Close'} title={t.close || 'Close'}><CloseIcon size={18} /></button>
             </div>
             <div className="drawer-nav" role="navigation" aria-label={t.headline}>
-              <button className="drawer-item focus-ring" onClick={() => { dismissDrawer(); start(); }}><PlayIcon size={18} />{t.start}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('rules')}><QuestionIcon size={18} />{t.rules}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('multiplayer')}><MultiplayerIcon size={18} />{multiplayerLabel}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('leaderboard')}><LeaderboardIcon size={18} />{t.lbNav}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('journey')}><CelebrationIcon size={18} />{t['rewards.journey.nav']}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('submit')}><EditIcon size={18} />{submitLabel}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('profile')}><ProfileIcon size={18} />{t.profile}</button>
-              <button className="drawer-item focus-ring" onClick={() => handleNav('contact')}><SupportIcon size={18} />{t.contact}</button>
+              <button className="drawer-item focus-ring" onClick={() => handleNav('rules')}><QuestionIcon size={18} />{t.rules}</button>
+              <button className="drawer-item focus-ring" onClick={() => handleNav('submit')}><EditIcon size={18} />{submitLabel}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('settings')}><SettingsIcon size={18} />{t.settings}</button>
+              <button className="drawer-item focus-ring" onClick={() => handleNav('contact')}><SupportIcon size={18} />{t.contact}</button>
             </div>
           </div>
         </div>
