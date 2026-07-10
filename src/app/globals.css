@@ -1473,3 +1473,66 @@ html,body{overscroll-behavior-y:none}
 
 /* --- REDUCED MOTION ------------------------------------------------------
    No new motion introduced; text-wrap:balance and static styles are safe. */
+
+
+/* ==========================================================================
+   STAGE 16 — Extend the Stage 15 visual language across the public product.
+   Scoped to .app-shell:not(.admin-active):not(.game-active) so it applies to
+   every PUBLIC screen (and the auth shell) but PROVABLY never the Admin Console
+   (.admin-active) and never re-touches the already-Stage-15 gameplay screen
+   (.game-active). Presentation only — no markup / logic / copy / a11y changes.
+
+   The public cards were already lightened to Stage-15 weight in Stage 12
+   (global .glass = 0.07 border + single 0 18px 46px shadow), so this layer
+   closes the REMAINING Stage-15 gaps consistently across the site:
+     • stronger, airier focal title on every screen (hierarchy + breathing)
+     • collapse the last stacked shadows / heavy double-glows to ONE tasteful
+       cinematic shadow, keeping a restrained gold accent only where it signals
+       a real prize / achievement (game-show atmosphere preserved, not flattened)
+   ========================================================================== */
+
+/* --- ONE FOCAL TITLE PER SCREEN ------------------------------------------
+   Stronger primary title, quieter everything else — the Stage-15 hierarchy
+   move applied to every public screen header (Panel primitive + bespoke). */
+.app-shell:not(.admin-active):not(.game-active) .public-screen-title {
+  font-size: clamp(1.7rem, 5vw, 2.35rem);
+  letter-spacing: -0.01em;
+  line-height: 1.14;
+  margin-bottom: 1.5rem;
+  text-wrap: balance;
+}
+
+/* --- CATEGORY TILES: one soft cinematic shadow --------------------------- */
+.app-shell:not(.admin-active):not(.game-active) .category-card {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+.app-shell:not(.admin-active):not(.game-active) .category-card:hover {
+  box-shadow: 0 20px 48px hsla(41, 90%, 69%, 0.20);
+}
+
+/* --- LEADERBOARD CARD: match the calm glass shadow ----------------------- */
+.app-shell:not(.admin-active):not(.game-active) .leaderboard-table-card {
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.26);
+}
+
+/* --- HOME PRIZE HERO: depth + ONE restrained gold accent -----------------
+   Was three stacked layers. A prize surface is the one place a gold accent
+   earns its keep (game-show / achievement), so we keep depth + a single quiet
+   gold glow instead of a triple-stacked glow. */
+.app-shell:not(.admin-active):not(.game-active) .home-hero-prize-card {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.40), 0 0 34px rgba(247, 202, 103, 0.13);
+}
+.app-shell:not(.admin-active):not(.game-active) .home-hero-prize-card:hover {
+  box-shadow: 0 30px 72px rgba(0, 0, 0, 0.46), 0 0 42px rgba(247, 202, 103, 0.17);
+}
+
+/* --- PLAY-ALL BANNER: single lift on hover (was a double glow) ----------- */
+.app-shell:not(.admin-active):not(.game-active) .play-all-banner:hover {
+  box-shadow: 0 22px 56px hsla(41, 90%, 69%, 0.34);
+}
+
+/* --- REWARD REVEAL HERO: keep its single shadow + edge (already Stage-15);
+   only trim the legendary variant's extra elevation to match. */
+.app-shell:not(.admin-active):not(.game-active) .reward-reveal-hero.reveal-legendary-badge {
+  box-shadow: 0 18px 46px hsla(41, 90%, 69%, 0.22), inset 0 1px 0 hsla(0, 0%, 100%, 0.18);
+}
