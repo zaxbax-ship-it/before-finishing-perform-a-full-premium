@@ -29,7 +29,9 @@ export type PermissionSlug =
   | 'audit.read'
   | 'spam.read'
   | 'spam.manage'
-  | 'notifications.write';
+  | 'notifications.write'
+  | 'rewards.read'
+  | 'rewards.manage';
 
 export type Role = {
   id: EntityId;

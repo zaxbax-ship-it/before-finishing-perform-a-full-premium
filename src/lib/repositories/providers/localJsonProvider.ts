@@ -67,7 +67,9 @@ const permissionSeeds: Permission[] = [
   'audit.read',
   'spam.read',
   'spam.manage',
-  'notifications.write'
+  'notifications.write',
+  'rewards.read',
+  'rewards.manage'
 ].map(slug => ({ id: `permission-${slug}`, slug: slug as PermissionSlug, description: slug, createdAt: now() }));
 
 type LocalState = {
@@ -119,8 +121,8 @@ function createInitialState(): LocalState {
     permissions: permissionSeeds,
     rolePermissions: {
       super_admin: permissionSeeds.map(permission => permission.slug),
-      admin: ['questions.read', 'questions.write', 'submissions.read', 'submissions.review', 'moderation.read', 'audit.read', 'spam.read'],
-      moderator: ['questions.read', 'submissions.read', 'submissions.review', 'moderation.read']
+      admin: ['questions.read', 'questions.write', 'submissions.read', 'submissions.review', 'moderation.read', 'audit.read', 'spam.read', 'rewards.read', 'rewards.manage'],
+      moderator: ['questions.read', 'submissions.read', 'submissions.review', 'moderation.read', 'rewards.read']
     },
     submissions: [],
     approvedQuestions: (data.questions as Question[]).map(toApprovedQuestion),

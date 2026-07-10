@@ -16,6 +16,7 @@ const NAV_ITEMS: Array<{ href: string; label: string }> = [
   { href: '/admin/analytics', label: 'אנליטיקות' },
   { href: '/admin/health', label: 'בריאות המערכת' },
   { href: '/admin/audit', label: 'יומן ביקורת' },
+  { href: '/admin/rewards', label: 'תגמולים' },
   { href: '/admin/settings', label: 'הגדרות מערכת' },
   { href: '/admin/moderation', label: 'מודרציית קהילה' }
 ];
