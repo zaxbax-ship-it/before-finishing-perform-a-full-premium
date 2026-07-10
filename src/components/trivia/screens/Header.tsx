@@ -34,7 +34,7 @@ export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: R
       {/* Brand — always returns home. */}
       <button className="app-brand focus-ring" onClick={() => handleNav('home')} aria-label={t.headline} title={t.headline}>
         <span className="app-brand-mark"><PremiumIcon size={24} /></span>
-        <span className="app-brand-text"><strong>{t.headline}</strong><small>{t.subtitle}</small></span>
+        <span className="app-brand-text"><strong>{t.headline}</strong></span>
       </button>
 
       {/* Single menu button opens the side drawer (app-style, no wrapped rows). */}

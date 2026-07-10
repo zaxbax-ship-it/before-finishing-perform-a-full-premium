@@ -4,9 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
 import {
   AchievementsIcon,
-  CelebrationIcon,
   CopyIcon,
-  MultiplayerIcon,
   PhoneFriendIcon,
   PlayIcon,
   PremiumIcon,
@@ -480,7 +478,6 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
     revealSection(shellRef.current);
   }, [phaseKey]);
 
-  const statusLabel = gameState?.lobby.status ? copy[statusKey(gameState.lobby.status)] || gameState.lobby.status : copy.waiting;
 
   return (
     <section ref={shellRef} tabIndex={-1} className="multiplayer-shell screen-section mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8" aria-live="polite">
@@ -489,13 +486,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
       {!currentRound && gameState?.game?.status !== 'finished' && (
         <div className="multiplayer-hero glass">
           <div>
-            <p className="multiplayer-kicker">{copy.nav}</p>
-            <h1 className="inline-flex items-center gap-3"><MultiplayerIcon size={28} />{copy.title}</h1>
-            <p>{copy.subtitle}</p>
-          </div>
-          <div className="multiplayer-status-card">
-            <span>{copy.connectionReady}</span>
-            <strong>{statusLabel}</strong>
+            <h1>{copy.title}</h1>
           </div>
         </div>
       )}
@@ -520,14 +511,8 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               ))}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <button className="premium-button focus-ring inline-flex items-center justify-center gap-2" disabled={status === 'loading'} onClick={() => createOrQuick('quick_match')}>
-                <PlayIcon size={16} />
-                {copy.quick}
-              </button>
-              <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" disabled={status === 'loading'} onClick={() => createOrQuick('create')}>
-                <PremiumIcon size={16} />
-                {copy.create}
-              </button>
+              <button className="premium-button focus-ring" disabled={status === 'loading'} onClick={() => createOrQuick('quick_match')}>{copy.quick}</button>
+              <button className="ghost-button focus-ring" disabled={status === 'loading'} onClick={() => createOrQuick('create')}>{copy.create}</button>
             </div>
           </section>
 
@@ -583,7 +568,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               const isHost = player.id === gameState.lobby.hostPlayerId;
               const isMe = player.id === gameState.me?.id;
               return (
-                <div key={player.id} className={`roster-player-card glass p-5 rounded-[22px] flex flex-col items-center text-center relative border transition-all duration-300 ${isMe ? 'border-gold/50 shadow-gold/5' : 'border-white/10'}`}>
+                <div key={player.id} className={`roster-player-card glass p-4 rounded-[22px] flex flex-col items-center text-center relative ${isMe ? 'ring-1 ring-gold/50' : ''}`}>
                   {isHost && (
                     <span className="absolute top-3 right-3 text-gold" title={copy.host}>
                       <PremiumIcon size={16} aria-hidden="true" />
@@ -593,9 +578,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
                     {player.nickname.slice(0, 2).toUpperCase()}
                   </div>
                   <strong className="text-white block truncate w-full font-bold">{player.nickname}</strong>
-                  <span className="text-xs text-white/50 mt-2 block">
-                    {isHost ? copy.host : copy.players} {isMe && `(${copy.you})`}
-                  </span>
+                  {isMe && <span className="text-xs text-white/50 mt-2 block">({copy.you})</span>}
                 </div>
               );
             })}
@@ -617,7 +600,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
             {gameState.lobby.playerCount >= 2 && gameState.me?.id === gameState.lobby.hostPlayerId && (
               <button className="premium-button focus-ring inline-flex items-center justify-center gap-2" onClick={startGame}><PlayIcon size={16} />{copy.startGame}</button>
             )}
-            <button className="ghost-button focus-ring inline-flex items-center justify-center gap-2" onClick={leave}><RefreshIcon size={16} />{copy.leave}</button>
+            <button className="ghost-button focus-ring" onClick={leave}>{copy.leave}</button>
           </div>
         </section>
       )}
@@ -627,7 +610,6 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
           {/* Question first, answers immediately below — same "single frame"
               philosophy as solo gameplay. Lifelines follow as a compact toolbar. */}
           <div className="multiplayer-round-meta">
-            <span>{copy.questionLive}</span>
             {timer && (
               <div className={timer.remainingMs <= 6000 ? 'multiplayer-timer urgent' : 'multiplayer-timer'} aria-label={`${copy.timer}: ${timer.seconds}`}>
                 <span>{timer.seconds}{copy.secondsShort}</span>
@@ -679,9 +661,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
               <span>{copy.champion}</span>
               <strong>{[...gameState.results].sort((a, b) => (a.rank || 99) - (b.rank || 99))[0] ? gameState.players.find(player => player.id === [...gameState.results].sort((a, b) => (a.rank || 99) - (b.rank || 99))[0].playerId)?.nickname : ''}</strong>
             </div>
-            <CelebrationIcon size={26} aria-hidden="true" className="champion-pop" />
           </div>
-          <h2>{copy.results}</h2>
           <MultiplayerScoreboard copy={copy} state={gameState} />
           {myResult && (
             <div className="multiplayer-personal-result">
@@ -695,7 +675,7 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
 
       {(message || status === 'error') && <div className="multiplayer-toast error">{message || copy.error}</div>}
       {gameState?.notifications.map(item => (
-        <div key={item} className="multiplayer-toast">{copy.notification}: {localizeNotification(item, copy)}</div>
+        <div key={item} className="multiplayer-toast">{localizeNotification(item, copy)}</div>
       ))}
     </section>
   );
@@ -747,14 +727,16 @@ function MultiplayerLifelines({
                 <span className="sr-only">{lifelineLabel(lifeline, copy)}</span>
                 <strong>{count}</strong>
               </button>
-              <button
-                className="multiplayer-buy-link focus-ring"
-                disabled={availablePrize < LIFELINE_COST}
-                onClick={() => onBuy(lifeline)}
-                type="button"
-              >
-                <RefreshIcon size={14} aria-hidden="true" /> {copy.buyExtra} {money(LIFELINE_COST)}
-              </button>
+              {count <= 0 && (
+                <button
+                  className="multiplayer-buy-link focus-ring"
+                  disabled={availablePrize < LIFELINE_COST}
+                  onClick={() => onBuy(lifeline)}
+                  type="button"
+                >
+                  {copy.buyExtra} {money(LIFELINE_COST)}
+                </button>
+              )}
             </article>
           );
         })}

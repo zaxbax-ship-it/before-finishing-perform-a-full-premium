@@ -9,8 +9,10 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   return <label className="block"><span className="mb-2 block text-sm text-white/65">{label}</span>{children}</label>;
 }
 
-export function Panel({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
-  return <section className="mx-auto max-w-5xl px-5 pb-16 pt-8"><div className="glass rounded-[34px] p-6 md:p-10"><div className="mb-7 flex items-center justify-center gap-4 text-center text-gold"><span className="text-4xl">{icon}</span><h2 className="text-4xl font-black text-white md:text-5xl">{title}</h2></div>{children}</div></section>;
+export function Panel({ title, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
+  // Stage 12 — one lighter shared public-screen header: compact, start-aligned,
+  // no decorative icon or eyebrow. Structure comes from spacing + typography.
+  return <section className="mx-auto max-w-5xl px-5 pb-16 pt-6"><div className="glass rounded-[28px] p-5 md:p-8"><h2 className="public-screen-title">{title}</h2>{children}</div></section>;
 }
 
 export function Metric({ value, label, gold }: { value: string; label: string; gold?: boolean }) {

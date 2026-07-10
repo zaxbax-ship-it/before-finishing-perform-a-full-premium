@@ -47,8 +47,7 @@ export function Contact({ t, sent, setSent }: { t: Record<string, string>; sent:
         <Field label={t.message}>
           <textarea className="form-input min-h-36" value={message} onChange={event => setMessage(event.target.value)} required minLength={5} maxLength={4000} disabled={status === 'sending'} />
         </Field>
-        <button type="submit" className="premium-button focus-ring inline-flex items-center justify-center gap-2 w-full" disabled={status === 'sending'}>
-          <MailIcon size={16} />
+        <button type="submit" className="premium-button focus-ring w-full" disabled={status === 'sending'}>
           {t.sendMsg}
         </button>
         {status === 'error' && <div className="form-error" role="alert">{t.contactError}</div>}

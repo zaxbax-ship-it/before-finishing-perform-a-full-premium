@@ -57,21 +57,18 @@ export function Result({ t, authUi, isAuthenticated, state, correctCount, elapse
         )}
         {prize > 0 && <div className="result-halo" aria-hidden="true" />}
         <div className="glass w-full rounded-[34px] p-8 text-center md:p-12">
-          <div className={`result-icon mx-auto mb-5 text-7xl ${state === 'win' || prize > 0 ? 'text-gold' : 'text-white/60'}`}>
-            <AchievementsIcon size={56} aria-hidden="true" />
-          </div>
+          {(state === 'win' || prize > 0) && (
+            <div className="result-icon mx-auto mb-4 text-gold">
+              <AchievementsIcon size={40} aria-hidden="true" />
+            </div>
+          )}
           <h2 className="text-5xl font-black">{title}</h2>
           {prize > 0 && <div className="result-prize-hero" dir="ltr">{money(animatedPrize)}</div>}
-          <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
+          <div className="mt-8 grid gap-4 md:grid-cols-2"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /></div>
           {reveals && reveals.length > 0 && <RewardReveals t={t} reveals={reveals} />}
           {!isAuthenticated && (
             <div className="guest-progress-cta" role="note">
-              <strong>{authUi.guestCtaTitle}</strong>
-              <p>{authUi.guestCtaBody}</p>
-              <div>
-                <a className="ghost-button focus-ring" href="/login">{authUi.signIn}</a>
-                <a className="premium-button focus-ring" href="/signup">{authUi.createAccount}</a>
-              </div>
+              <a className="premium-button focus-ring" href="/login">{authUi.saveProgress}</a>
             </div>
           )}
           <div className="mt-8 flex flex-col justify-center gap-4 md:flex-row">

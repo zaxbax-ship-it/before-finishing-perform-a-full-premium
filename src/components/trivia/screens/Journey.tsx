@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CelebrationIcon, HintsIcon, LeaderboardIcon } from '@/lib/design/icons';
+import { CelebrationIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import type { DailyChallengeDto, RewardsSummaryDto, WeeklyObjectivesDto } from '@/lib/api/contracts/rewards';
 import {
@@ -58,11 +58,9 @@ export function Journey({ t }: { t: Record<string, string>; locale: Locale }) {
 
   return (
     <Panel title={t['rewards.journey.title']} icon={<CelebrationIcon size={26} aria-hidden="true" />}>
-      <p className="journey-subtitle">{t['rewards.journey.subtitle']}</p>
-
       <div className="journey-grid">
         <section className="journey-card" aria-label={t['rewards.journey.streak_title']}>
-          <div className="journey-card-head"><LeaderboardIcon size={18} aria-hidden="true" /><h3>{t['rewards.journey.streak_title']}</h3></div>
+          <div className="journey-card-head"><h3>{t['rewards.journey.streak_title']}</h3></div>
           {streak && streak.current > 0 ? (
             <>
               <div className="journey-streak-value">{fmt(t['rewards.journey.streak_days'], { count: streak.current })}</div>
@@ -74,7 +72,7 @@ export function Journey({ t }: { t: Record<string, string>; locale: Locale }) {
         </section>
 
         <section className="journey-card" aria-label={t['rewards.journey.daily_title']}>
-          <div className="journey-card-head"><HintsIcon size={18} aria-hidden="true" /><h3>{t['rewards.journey.daily_title']}</h3></div>
+          <div className="journey-card-head"><h3>{t['rewards.journey.daily_title']}</h3></div>
           <p className="journey-muted">{dailyAvailable ? t['rewards.journey.daily_available'] : t['rewards.journey.daily_done']}</p>
           <button className="premium-button focus-ring journey-action" disabled={!dailyAvailable || busy === 'daily'} onClick={checkIn}>
             {t['rewards.journey.daily_cta']}{daily ? ` · ${money(daily.rewardAmount)}` : ''}
@@ -91,12 +89,11 @@ export function Journey({ t }: { t: Record<string, string>; locale: Locale }) {
             const pct = objective.target > 0 ? Math.min(100, Math.round((objective.progress / objective.target) * 100)) : 0;
             const complete = objective.progress >= objective.target;
             return (
-              <div key={objective.objectiveId} className={`journey-objective ${complete ? 'is-complete' : ''}`}>
+              <div key={objective.objectiveId} className={`journey-objective ${complete ? 'is-complete' : ''}`} title={t[`rewards.weekly.${objective.objectiveId}.desc`] || ''}>
                 <div className="journey-objective-top">
                   <strong>{t[`rewards.weekly.${objective.objectiveId}.name`] || objective.objectiveId}</strong>
                   <span className="journey-objective-reward">{money(objective.rewardAmount)}</span>
                 </div>
-                <p className="journey-muted journey-objective-desc">{t[`rewards.weekly.${objective.objectiveId}.desc`] || ''}</p>
                 <div className="journey-progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
                   <div className="journey-progress-fill" style={{ width: `${pct}%` }} />
                 </div>

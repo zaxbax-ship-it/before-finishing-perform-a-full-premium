@@ -16,7 +16,6 @@ export function SiteFooter() {
       <div className="site-footer-inner">
         <div>
           <strong>{SITE_NAME}</strong>
-          <p>Premium trivia, responsible publishing, and protected editorial operations.</p>
         </div>
         <nav aria-label="Compliance links">
           {footerLinks.map(link => (

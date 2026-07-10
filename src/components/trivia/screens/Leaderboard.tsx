@@ -49,7 +49,6 @@ export function Leaderboard({ t, entries, status, nickname, authUi, setNickname,
               value={draft}
               maxLength={20}
               onChange={event => setDraft(event.target.value)}
-              placeholder={t.lbNickname}
               aria-invalid={draft.length > 0 && !validation.ok}
             />
           </Field>
@@ -57,13 +56,11 @@ export function Leaderboard({ t, entries, status, nickname, authUi, setNickname,
             {draft.trim() && validation.ok && <ConfirmIcon size={14} aria-hidden="true" />}
             <span>{draft.trim() ? validation.message : authUi.nicknamePrompt}</span>
           </p>
-          {!draft.trim() && <p className="leaderboard-hint">{t.lbNicknameHint}</p>}
           <button
             className="premium-button focus-ring inline-flex w-full items-center justify-center gap-2"
             disabled={status === 'saving' || !validation.ok}
             onClick={() => void setNickname(draft)}
           >
-            <ConfirmIcon size={16} />
             {t.lbSave}
           </button>
           {message && <div className={`leaderboard-message ${status}`} aria-live="polite">{message}</div>}

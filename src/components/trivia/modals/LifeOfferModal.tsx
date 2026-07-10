@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import { CloseIcon, PlayIcon } from '@/lib/design/icons';
 import { ChanceMeter } from '../ChanceMeter';
 import { fmt, money } from '../format';
 import { useDialogFocus } from '../useDialogFocus';
@@ -24,14 +23,8 @@ export function LifeOfferModal({ t, cost, accept, decline }: { t: Record<string,
         <p>{t.lifeOfferBody}</p>
         <div className="life-offer-cost">{fmt(t.lifeOfferCost, { price: money(cost) })}</div>
         <div className="mt-5 flex gap-3">
-          <button className="premium-button focus-ring inline-flex flex-1 items-center justify-center gap-2" type="button" onClick={accept}>
-            <PlayIcon size={16} />
-            {t.lifeOfferAccept}
-          </button>
-          <button className="ghost-button focus-ring inline-flex flex-1 items-center justify-center gap-2" type="button" data-autofocus onClick={dismiss}>
-            <CloseIcon size={16} />
-            {t.lifeOfferDecline}
-          </button>
+          <button className="premium-button focus-ring flex-1" type="button" onClick={accept}>{t.lifeOfferAccept}</button>
+          <button className="ghost-button focus-ring flex-1" type="button" data-autofocus onClick={dismiss}>{t.lifeOfferDecline}</button>
         </div>
       </div>
     </div>

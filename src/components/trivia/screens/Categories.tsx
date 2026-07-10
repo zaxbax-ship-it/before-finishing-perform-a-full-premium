@@ -59,7 +59,7 @@ export function Categories({ t, locale, categories, startGame, startError, clear
   };
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
-      <h1 className="mx-auto max-w-5xl text-center text-6xl font-black md:text-[86px]">{t.choose}</h1>
+      <h1 className="mx-auto max-w-5xl text-center text-4xl font-black md:text-6xl">{t.choose}</h1>
       {startError && <p className="category-start-error" role="alert">{startError}</p>}
       {/* Primary path: one prominent option that plays the full bank, above
           every specific category. */}
@@ -74,10 +74,9 @@ export function Categories({ t, locale, categories, startGame, startError, clear
           const CategoryIcon = CATEGORY_ICONS[category] || CategoriesIcon;
           const loading = pending === category;
           return (
-          <button key={category} className={`category-card focus-ring glass ${loading ? 'is-loading' : ''}`} onClick={() => launch(category)} disabled={pending !== null} aria-busy={loading}>
+          <button key={category} className={`category-card focus-ring glass ${loading ? 'is-loading' : ''}`} onClick={() => launch(category)} disabled={pending !== null} aria-busy={loading} title={localizeCategoryDescription(locale, category)}>
             <span className="category-icon">{loading ? <span className="category-launch-spinner" aria-hidden="true" /> : <CategoryIcon size={22} aria-hidden="true" />}</span>
             <h3>{localizeCategory(locale, category)}</h3>
-            <p>{localizeCategoryDescription(locale, category)}</p>
           </button>
           );
         })}
