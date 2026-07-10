@@ -1138,3 +1138,35 @@ html,body{overscroll-behavior-y:none}
 .reward-reveal-row strong{flex:1;text-align:start;font-size:.95rem;font-weight:800}
 @keyframes reward-pop{from{opacity:0;transform:translateY(10px) scale(.96)}}
 @media (prefers-reduced-motion:reduce){.reward-reveal-hero{animation:none}}
+
+/* ==========================================================================
+   Stage 10B — Journey / Challenges (daily + streak + weekly). Its own screen;
+   nothing here ever touches gameplay.
+   ========================================================================== */
+.journey-subtitle{margin:-1rem 0 1.5rem;text-align:center;color:hsla(0,0%,100%,.6)}
+.journey-grid{display:grid;gap:1rem;grid-template-columns:1fr}
+@media (min-width:640px){.journey-grid{grid-template-columns:1fr 1fr}}
+.journey-card{border:1px solid hsla(0,0%,100%,.1);background:hsla(0,0%,100%,.04);border-radius:24px;padding:1.25rem}
+.journey-card-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;color:var(--gold)}
+.journey-card-head h3{font-size:1.1rem;font-weight:800;color:#fff}
+.journey-streak-value{font-size:2rem;font-weight:950;color:#fff2b4;font-feature-settings:"tnum"}
+.journey-muted{color:hsla(0,0%,100%,.55);font-size:.95rem}
+.journey-action{margin-top:1rem;width:100%}
+.journey-weekly{margin-top:1.75rem}
+.journey-weekly-title{margin-bottom:1rem;font-size:1.25rem;font-weight:900}
+.journey-objectives{display:grid;gap:.85rem}
+.journey-objective{border:1px solid hsla(0,0%,100%,.1);background:hsla(0,0%,100%,.03);border-radius:20px;padding:1rem 1.15rem}
+.journey-objective.is-complete{border-color:hsla(41,90%,69%,.4)}
+.journey-objective-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+.journey-objective-top strong{font-size:1rem;font-weight:800}
+.journey-objective-reward{color:var(--gold);font-weight:900;font-feature-settings:"tnum"}
+.journey-objective-desc{margin:.25rem 0 .6rem}
+.journey-progress{height:8px;border-radius:999px;background:hsla(0,0%,100%,.1);overflow:hidden}
+.journey-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--azure),var(--gold));transition:width var(--duration-slow) var(--ease-default)}
+.journey-objective-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:.6rem}
+.journey-claim{min-height:auto;padding:.5rem 1.2rem}
+@media (prefers-reduced-motion:reduce){.journey-progress-fill{transition:none}}
+/* Subtle Home entry (progressive disclosure) — the only progression pointer on Home. */
+.home-journey-entry{display:flex;width:fit-content;margin:1.25rem auto 0;align-items:center;gap:.55rem;padding:.7rem 1.4rem;border-radius:999px;border:1px solid hsla(41,90%,69%,.3);background:hsla(41,90%,69%,.08);color:var(--gold);font-weight:800;transition:transform var(--duration-normal) var(--ease-spring),background var(--duration-normal) var(--ease-default)}
+.home-journey-entry:hover{background:hsla(41,90%,69%,.14)}
+.home-journey-entry:active{transform:scale(.97)}

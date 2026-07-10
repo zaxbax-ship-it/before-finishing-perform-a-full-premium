@@ -28,8 +28,9 @@ import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
 import { setHapticsEnabled } from '@/lib/haptics';
-import { submitGameResult } from '@/lib/rewards/client';
+import { fetchRewardsSummary, submitGameResult } from '@/lib/rewards/client';
 import type { RevealItem } from '@/lib/rewards/types';
+import { Journey } from '@/components/trivia/screens/Journey';
 import { applyPurchase, availablePot, canActivateLifeline, extraLifeCost, guaranteedForRung, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { pushScreen, replaceTop, sanitizeTarget } from '@/lib/navigation/screenStack';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
@@ -181,6 +182,8 @@ export default function TriviaPlatform({
   const [progressionToasts, setProgressionToasts] = useState<ProgressionToast[]>([]);
   // Server-computed post-game reward ceremony (Result screen only; never the HUD).
   const [rewardReveals, setRewardReveals] = useState<RevealItem[]>([]);
+  // Progressive disclosure: the Home "Journey" entry appears only once earned.
+  const [journeyVisible, setJourneyVisible] = useState(false);
   const [lifelineUses, setLifelineUses] = useState<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
   // One-lifeline-per-question lock: which lifeline (if any) was already used on
   // the current question. Non-null locks EVERY tile until the next question.
@@ -339,6 +342,14 @@ export default function TriviaPlatform({
   useEffect(() => {
     setHapticsEnabled(settings.effects);
   }, [settings.effects]);
+
+  // Progressive disclosure: reveal the Home "Journey" entry only once the player
+  // has earned it (played at least one game). Fire-and-forget; failure hides it.
+  useEffect(() => {
+    void fetchRewardsSummary().then(summary => {
+      if (summary?.disclosure?.journeyVisible) setJourneyVisible(true);
+    });
+  }, []);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
@@ -1173,9 +1184,10 @@ export default function TriviaPlatform({
       {screen === 'admin' && adminHeader}
       {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
-      {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} start={() => open('categories')} open={open} />}
+      {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} journeyVisible={journeyVisible} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} />}
       {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
+      {screen === 'journey' && <Journey t={t} locale={locale} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
       {screen === 'submit' && (
         <CommunitySubmit

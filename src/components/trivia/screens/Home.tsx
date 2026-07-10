@@ -1,12 +1,12 @@
 import { AdSlot } from '@/components/ads/AdSlot';
-import { MultiplayerIcon, PremiumBadgeIcon, PremiumIcon, SinglePlayerIcon } from '@/lib/design/icons';
+import { CelebrationIcon, ForwardIcon, MultiplayerIcon, PremiumBadgeIcon, PremiumIcon, SinglePlayerIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { money } from '../format';
 import { getMarketingQuestions } from '../i18n';
 import { Metric } from '../primitives';
 import type { Screen } from '../types';
 
-export function Home({ t, locale, soloLabel, multiplayerLabel, start, open }: { t: Record<string, string>; locale: Locale; soloLabel: string; multiplayerLabel: string; start: () => void; open: (screen: Screen) => void }) {
+export function Home({ t, locale, soloLabel, multiplayerLabel, journeyVisible, start, open }: { t: Record<string, string>; locale: Locale; soloLabel: string; multiplayerLabel: string; journeyVisible?: boolean; start: () => void; open: (screen: Screen) => void }) {
   // Non-numeric marketing phrase — accurate across every locale, no hard count to contradict.
   const marketingQuestions = getMarketingQuestions(locale);
   return (
@@ -42,6 +42,15 @@ export function Home({ t, locale, soloLabel, multiplayerLabel, start, open }: { 
           <span className="primary-action-label">{multiplayerLabel}</span>
         </button>
       </div>
+
+      {/* Progressive disclosure: one subtle actionable entry, only after discovery. */}
+      {journeyVisible && (
+        <button className="home-journey-entry focus-ring" onClick={() => open('journey')}>
+          <CelebrationIcon size={18} aria-hidden="true" />
+          <span>{t['rewards.journey.home_cta']}</span>
+          <ForwardIcon size={16} aria-hidden="true" />
+        </button>
+      )}
 
       <div className="mt-9 grid gap-4 md:grid-cols-2">
         <Metric value={marketingQuestions.value} label={marketingQuestions.label} />

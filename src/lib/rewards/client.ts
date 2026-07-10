@@ -1,6 +1,7 @@
 'use client';
 
 import type { RevealItem } from '@/lib/rewards/types';
+import type { DailyChallengeDto, RewardsSummaryDto, WeeklyObjectivesDto } from '@/lib/api/contracts/rewards';
 
 /**
  * Browser rewards client. Submits a finished game to `/api/rewards/result` and
@@ -61,4 +62,63 @@ export async function submitGameResult(payload: SubmitGamePayload): Promise<Reve
     // The optional rewards service is never allowed to affect the game.
   }
   return [];
+}
+
+/* ---------------- Journey / Challenges reads + actions ---------------- */
+
+function playerQuery(): string {
+  return new URLSearchParams({ playerKey: getAnonPlayerKey(), utcOffsetMinutes: String(utcOffsetMinutes()) }).toString();
+}
+
+export async function fetchRewardsSummary(): Promise<RewardsSummaryDto | null> {
+  try {
+    const response = await fetch(`/api/rewards/summary?${playerQuery()}`, { cache: 'no-store' });
+    const data = await response.json();
+    if (response.ok && data?.ok) return data as RewardsSummaryDto;
+  } catch { /* rewards are optional */ }
+  return null;
+}
+
+export async function fetchDailyChallenge(): Promise<DailyChallengeDto | null> {
+  try {
+    const response = await fetch(`/api/rewards/daily?${playerQuery()}`, { cache: 'no-store' });
+    const data = await response.json();
+    if (response.ok && data?.ok) return data as DailyChallengeDto;
+  } catch { /* rewards are optional */ }
+  return null;
+}
+
+export async function completeDailyCheckin(correct = true): Promise<{ granted: number; streakCurrent: number } | null> {
+  try {
+    const response = await fetch('/api/rewards/daily', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerKey: getAnonPlayerKey(), utcOffsetMinutes: utcOffsetMinutes(), correct })
+    });
+    const data = await response.json();
+    if (response.ok && data?.ok) return { granted: Number(data.granted) || 0, streakCurrent: Number(data.streakCurrent) || 0 };
+  } catch { /* rewards are optional */ }
+  return null;
+}
+
+export async function fetchWeeklyObjectives(): Promise<WeeklyObjectivesDto | null> {
+  try {
+    const response = await fetch(`/api/rewards/weekly?${playerQuery()}`, { cache: 'no-store' });
+    const data = await response.json();
+    if (response.ok && data?.ok) return data as WeeklyObjectivesDto;
+  } catch { /* rewards are optional */ }
+  return null;
+}
+
+export async function claimWeeklyObjectiveClient(objectiveId: string): Promise<{ granted: number; alreadyClaimed: boolean } | null> {
+  try {
+    const response = await fetch('/api/rewards/weekly', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerKey: getAnonPlayerKey(), objectiveId })
+    });
+    const data = await response.json();
+    if (response.ok && data?.ok) return { granted: Number(data.granted) || 0, alreadyClaimed: Boolean(data.alreadyClaimed) };
+  } catch { /* rewards are optional */ }
+  return null;
 }

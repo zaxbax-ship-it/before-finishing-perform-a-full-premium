@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import {
+  CelebrationIcon,
   CloseIcon,
   EditIcon,
   LeaderboardIcon,
@@ -53,6 +54,7 @@ export function Header({ t, submitLabel, multiplayerLabel, open, start }: { t: R
               <button className="drawer-item focus-ring" onClick={() => handleNav('rules')}><QuestionIcon size={18} />{t.rules}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('multiplayer')}><MultiplayerIcon size={18} />{multiplayerLabel}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('leaderboard')}><LeaderboardIcon size={18} />{t.lbNav}</button>
+              <button className="drawer-item focus-ring" onClick={() => handleNav('journey')}><CelebrationIcon size={18} />{t['rewards.journey.nav']}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('submit')}><EditIcon size={18} />{submitLabel}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('profile')}><ProfileIcon size={18} />{t.profile}</button>
               <button className="drawer-item focus-ring" onClick={() => handleNav('contact')}><SupportIcon size={18} />{t.contact}</button>

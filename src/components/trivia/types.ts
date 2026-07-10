@@ -24,7 +24,8 @@ export type Screen =
   | 'settings'
   | 'submit'
   | 'leaderboard'
-  | 'multiplayer';
+  | 'multiplayer'
+  | 'journey';
 
 export type EndState = 'win' | 'quit' | 'timeout' | 'lost';
 
