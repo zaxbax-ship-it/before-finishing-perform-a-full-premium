@@ -3,6 +3,18 @@ import type { Locale, Question } from './types';
 export type SubmissionStatus = 'auto_approved' | 'approved' | 'needs_review' | 'rejected';
 export type AdminRole = 'super_admin' | 'admin' | 'moderator';
 
+/**
+ * Stage 11 low-friction submission: the contributor provides ONLY a question and
+ * its correct answer. The AI editor builds the rest (three wrong answers,
+ * category, difficulty, etc.).
+ */
+export type ContributorSubmissionInput = {
+  question: string;
+  correctAnswer: string;
+  language: Locale;
+  contributorId?: string;
+};
+
 export type CommunityDraft = {
   question: string;
   options: string[];
@@ -13,6 +25,8 @@ export type CommunityDraft = {
   explanation: string;
   contributorName: string;
   contributorEmail: string;
+  /** Stable id for future contributor reputation (device or auth id). */
+  contributorId?: string;
 };
 
 export type ModerationResult = {
@@ -24,6 +38,8 @@ export type ModerationResult = {
   normalizedOptions: string[];
   explanation: string;
   duplicateQuestionId?: string | number;
+  /** The raw contributor submission, preserved for the admin review view. */
+  original?: { question: string; correctAnswer: string };
   aiProvider?: string;
   aiRecommendation?: 'approve' | 'reject' | 'needs_manual_review';
   aiConfidence?: number;

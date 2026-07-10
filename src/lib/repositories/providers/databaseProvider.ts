@@ -1050,7 +1050,7 @@ export function createDatabaseRepositoryProvider(): RepositoryProvider {
       async approve(input: ApproveSubmissionDto) {
         const submission = await this.findById(input.submissionId);
         if (!submission) return undefined;
-        const question = submission.question || submissionToQuestion(submission);
+        const question = input.editedQuestion || submission.question || submissionToQuestion(submission);
         const updatedModeration = { ...submission.moderation, status: 'approved' as const, recommendation: input.note || 'Approved by admin.' };
         const updated = await client.update<SupabaseRow>('question_submissions', eq('id', input.submissionId), {
           moderation: updatedModeration,

@@ -396,7 +396,7 @@ export function createLocalJsonRepositoryProvider(state = localState): Repositor
         let updated: CommunitySubmission | undefined;
         state.submissions = state.submissions.map(submission => {
           if (submission.id !== input.submissionId) return submission;
-          const question = submission.question || submissionToQuestion(submission);
+          const question = input.editedQuestion || submission.question || submissionToQuestion(submission);
           updated = {
             ...submission,
             question,

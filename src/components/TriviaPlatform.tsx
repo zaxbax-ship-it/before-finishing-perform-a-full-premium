@@ -15,11 +15,8 @@ import {
 } from '@/lib/design/icons';
 import {
   type AuditLogEntry,
-  type CommunityDraft,
   type CommunitySubmission,
   createAudit,
-  emptyCommunityDraft,
-  runLocalModeration,
   submissionToQuestion
 } from '@/lib/community';
 import { ensureLocaleResources, localizeCategory, localizeQuestion } from '@/lib/localization';
@@ -50,7 +47,7 @@ import { Rules } from '@/components/trivia/screens/Rules';
 import { SettingsPanel } from '@/components/trivia/screens/SettingsPanel';
 import { fmt, money, validateNickname } from '@/components/trivia/format';
 import { getAuthUi, getCommunityUi, getTriviaUi } from '@/components/trivia/i18n';
-import { Field, Metric, Success } from '@/components/trivia/primitives';
+import { Field, Metric } from '@/components/trivia/primitives';
 import type { EndState, GameQuestion, LeaderboardStatus, Lifeline, PublicAuthUser, Screen, Settings, Stats } from '@/components/trivia/types';
 import { LanguageMenu } from '@/components/trivia/chrome/LanguageMenu';
 import { Particles } from '@/components/trivia/chrome/Particles';
@@ -62,7 +59,7 @@ import { ACHIEVEMENT_KEYS } from '@/components/trivia/i18n';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game } from '@/components/trivia/screens/Game';
 import { RewardsProfile } from '@/components/trivia/screens/RewardsProfile';
-import { LANGUAGE_OPTIONS, LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
+import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
 
 const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
@@ -217,7 +214,7 @@ export default function TriviaPlatform({
   const [sent, setSent] = useState(false);
   const [communitySubmissions, setCommunitySubmissions] = useState<CommunitySubmission[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [communityForm, setCommunityForm] = useState<CommunityDraft>(() => emptyCommunityDraft('he'));
+  const [communityInput, setCommunityInput] = useState({ question: '', answer: '' });
   const [communityMessage, setCommunityMessage] = useState('');
   const [communityProviderLabel, setCommunityProviderLabel] = useState('Local automation ready');
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
@@ -454,10 +451,6 @@ export default function TriviaPlatform({
   useEffect(() => {
     localStorage.setItem(AUDIT_KEY, JSON.stringify(auditLogs));
   }, [auditLogs]);
-
-  useEffect(() => {
-    setCommunityForm(previous => ({ ...previous, language: locale }));
-  }, [locale]);
 
   // One reusable reveal for every dynamically opened section: scroll its
   // heading under the fixed bar and move focus there (see revealSection).
@@ -1012,76 +1005,30 @@ export default function TriviaPlatform({
   }
 
   async function submitCommunityQuestion() {
+    const question = communityInput.question.trim();
+    const correctAnswer = communityInput.answer.trim();
+    if (!question || !correctAnswer) {
+      setCommunityMessage(communityT.incomplete);
+      return;
+    }
+    setCommunityMessage('');
     try {
       const response = await fetch('/api/community/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draft: communityForm })
+        body: JSON.stringify({ question, correctAnswer, language: locale })
       });
       const data = await response.json();
-      if (response.ok && data?.ok && data.submission) {
-        const submission = data.submission as CommunitySubmission;
-        setCommunitySubmissions(previous => [submission, ...previous.filter(item => item.id !== submission.id)]);
-        if (data.auditLog) setAuditLogs(previous => [data.auditLog, ...previous].slice(0, 80));
-        if (submission.moderation.status === 'auto_approved') {
-          const question = submission.question || submissionToQuestion(submission);
-          setExtraQuestions(previous => [normalize(question), ...previous]);
-          playAudioEvent('ui.success');
-        } else if (submission.moderation.status === 'rejected') {
-          playAudioEvent('ui.error');
-        } else {
-          playAudioEvent('ui.notice');
-        }
-        setCommunityProviderLabel(data.provider === 'database' ? 'Supabase + AI moderation ready' : 'Local JSON + mock AI ready');
-        setCommunityMessage(communityT[submission.moderation.status === 'auto_approved' ? 'autoApproved' : submission.moderation.status === 'needs_review' ? 'needsReview' : 'rejected']);
-        setCommunityForm(emptyCommunityDraft(locale, categories[0] || communityForm.category));
+      if (response.ok && data?.ok) {
+        playAudioEvent('ui.success');
+        setCommunityMessage(communityT.received);
+        setCommunityInput({ question: '', answer: '' });
         return;
       }
+      setCommunityMessage(data?.error || communityT.failed);
     } catch {
-      setCommunityProviderLabel('Local fallback active');
+      setCommunityMessage(communityT.failed);
     }
-
-    const moderation = runLocalModeration(communityForm, allQuestions, communitySubmissions);
-    const id = `sub-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const now = new Date().toISOString();
-    let submission: CommunitySubmission = {
-      id,
-      createdAt: now,
-      updatedAt: now,
-      draft: {
-        ...communityForm,
-        question: communityForm.question.trim(),
-        options: communityForm.options.map(option => option.trim()),
-        explanation: communityForm.explanation.trim(),
-        contributorEmail: communityForm.contributorEmail.trim().toLowerCase(),
-        contributorName: communityForm.contributorName.trim()
-      },
-      moderation
-    };
-
-    if (moderation.status === 'auto_approved') {
-      const question = submissionToQuestion(submission);
-      submission = { ...submission, question };
-      setExtraQuestions(previous => [normalize(question), ...previous]);
-      playAudioEvent('ui.success');
-    } else if (moderation.status === 'rejected') {
-      playAudioEvent('ui.error');
-    } else {
-      playAudioEvent('ui.notice');
-    }
-
-    setCommunitySubmissions(previous => [submission, ...previous]);
-    setAuditLogs(previous => [
-      createAudit(
-        'community_submission',
-        submission.id,
-        `${moderation.status} with score ${moderation.score}`,
-        submission.draft.contributorEmail || submission.draft.contributorName || 'community-user'
-      ),
-      ...previous
-    ].slice(0, 80));
-    setCommunityMessage(communityT[moderation.status === 'auto_approved' ? 'autoApproved' : moderation.status === 'needs_review' ? 'needsReview' : 'rejected']);
-    setCommunityForm(emptyCommunityDraft(locale, categories[0] || communityForm.category));
   }
 
   async function approveSubmission(id: string) {
@@ -1192,10 +1139,8 @@ export default function TriviaPlatform({
       {screen === 'submit' && (
         <CommunitySubmit
           ui={communityT}
-          locale={locale}
-          categories={categories}
-          form={communityForm}
-          setForm={setCommunityForm}
+          input={communityInput}
+          setInput={setCommunityInput}
           submit={submitCommunityQuestion}
           message={communityMessage}
         />
@@ -1289,90 +1234,35 @@ export default function TriviaPlatform({
 
 function CommunitySubmit(props: {
   ui: Record<string, string>;
-  locale: Locale;
-  categories: string[];
-  form: CommunityDraft;
-  setForm: (form: CommunityDraft | ((form: CommunityDraft) => CommunityDraft)) => void;
+  input: { question: string; answer: string };
+  setInput: (input: { question: string; answer: string }) => void;
   submit: () => void;
   message: string;
 }) {
-  const { ui, locale, categories, form, setForm, submit, message } = props;
-  const optionLetters = OPTION_LETTERS[locale] || LETTERS;
-  const difficulties = ['קל', 'בינוני', 'קשה', 'מומחה'];
-  const updateOption = (index: number, value: string) => {
-    setForm(previous => ({
-      ...previous,
-      options: previous.options.map((option, optionIndex) => optionIndex === index ? value : option)
-    }));
-  };
+  const { ui, input, setInput, submit, message } = props;
+  const ready = input.question.trim().length > 0 && input.answer.trim().length > 0;
 
   return (
-    <section className="mx-auto grid w-full max-w-[1180px] gap-6 px-5 pb-16 pt-8 lg:px-8">
-      <div className="glass rounded-[34px] p-6 md:p-10">
-        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div className="text-center">
-            <p className="mx-auto mb-4 w-fit rounded-full border border-gold/35 bg-gold/10 px-5 py-3 text-gold">Community Studio</p>
-            <h1 className="text-4xl font-black md:text-6xl">{ui.submitTitle}</h1>
-            <p className="mx-auto mt-4 max-w-3xl text-lg leading-8 text-white/68">{ui.submitIntro}</p>
-          </div>
-          <div className="rounded-3xl border border-white/12 bg-white/[0.06] p-4 text-sm text-white/60">
-            {ui.localMode}
-          </div>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field label={ui.contributorName}>
-            <input className="form-input" value={form.contributorName} onChange={event => setForm({ ...form, contributorName: event.target.value })} />
-          </Field>
-          <Field label={ui.contributorEmail}>
-            <input className="form-input" type="email" value={form.contributorEmail} onChange={event => setForm({ ...form, contributorEmail: event.target.value })} />
-          </Field>
-          <Field label={ui.language}>
-            <select className="form-input" value={form.language} onChange={event => setForm({ ...form, language: event.target.value as Locale })}>
-              {LANGUAGE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.native}</option>)}
-            </select>
-          </Field>
-          <Field label={ui.category}>
-            <select className="form-input" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })}>
-              {categories.map(category => <option key={category} value={category}>{localizeCategory(locale, category)}</option>)}
-            </select>
-          </Field>
-          <Field label={ui.difficulty}>
-            <select className="form-input" value={form.difficulty} onChange={event => setForm({ ...form, difficulty: event.target.value })}>
-              {difficulties.map(item => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </Field>
-          <Field label={ui.correctAnswer}>
-            <select className="form-input" value={form.correctIndex} onChange={event => setForm({ ...form, correctIndex: Number(event.target.value) })}>
-              {optionLetters.map((letter, index) => <option key={letter} value={index}>{ui.answer} {letter}</option>)}
-            </select>
-          </Field>
-        </div>
-
-        <div className="mt-5">
-          <Field label={ui.question}>
-            <textarea className="form-input min-h-28 text-xl font-bold" value={form.question} onChange={event => setForm({ ...form, question: event.target.value })} />
-          </Field>
-        </div>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {form.options.map((option, index) => (
-            <Field key={index} label={`${ui.answer} ${optionLetters[index]}`}>
-              <input className="form-input" value={option} onChange={event => updateOption(index, event.target.value)} />
-            </Field>
-          ))}
-        </div>
-
-        <div className="mt-5">
-          <Field label={ui.explanation}>
-            <textarea className="form-input min-h-28" value={form.explanation} onChange={event => setForm({ ...form, explanation: event.target.value })} />
-          </Field>
-        </div>
-
-        <div className="mt-7 flex flex-col gap-4 md:flex-row md:items-center">
-          <button className="premium-button focus-ring md:min-w-72" onClick={submit}>{ui.send}</button>
-          {message && <Success text={message} />}
-        </div>
+    <section className="community-submit">
+      <div className="community-submit-card glass">
+        <h1 className="community-submit-title">{ui.submitTitle}</h1>
+        <textarea
+          className="community-question-input"
+          placeholder={ui.questionPlaceholder}
+          value={input.question}
+          onChange={event => setInput({ ...input, question: event.target.value })}
+          rows={4}
+          aria-label={ui.question}
+        />
+        <input
+          className="community-answer-input"
+          placeholder={ui.answerPlaceholder}
+          value={input.answer}
+          onChange={event => setInput({ ...input, answer: event.target.value })}
+          aria-label={ui.answerLabel}
+        />
+        <button className="community-submit-button focus-ring" onClick={submit} disabled={!ready}>{ui.send}</button>
+        {message && <p className="community-submit-note" role="status">{message}</p>}
       </div>
     </section>
   );

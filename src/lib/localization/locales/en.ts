@@ -1902,6 +1902,12 @@ const resources: LocaleResources = {
   },
   "communityUi": {
     "submitNav": "Submit Question",
+    "questionPlaceholder": "Write your question here…",
+    "answerPlaceholder": "The correct answer",
+    "answerLabel": "Correct answer",
+    "received": "Your question has been received successfully. It is now being reviewed. If approved, it will become part of the game.",
+    "incomplete": "Please add both a question and an answer.",
+    "failed": "Submission failed. Please try again in a moment.",
     "submitTitle": "Submit a Community Question",
     "submitIntro": "Add a new question to the pool. The system checks quality, duplicates and wording before publishing.",
     "contributorName": "Name",

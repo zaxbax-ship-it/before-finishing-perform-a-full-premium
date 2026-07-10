@@ -1770,6 +1770,12 @@ const resources: LocaleResources = {
   },
   "communityUi": {
     "submitNav": "ጥያቄ ላክ",
+    "questionPlaceholder": "ጥያቄዎን እዚህ ይጻፉ…",
+    "answerPlaceholder": "ትክክለኛው መልስ",
+    "answerLabel": "ትክክለኛው መልስ",
+    "received": "ጥያቄዎ በተሳካ ሁኔታ ተቀብሏል። አሁን በግምገማ ላይ ነው። ከጸደቀ የጨዋታው አካል ይሆናል።",
+    "incomplete": "እባክዎ ጥያቄና መልስ ሁለቱንም ይሙሉ።",
+    "failed": "መላክ አልተሳካም። እባክዎ ከጥቂት ጊዜ በኋላ እንደገና ይሞክሩ።",
     "submitTitle": "የማህበረሰብ ጥያቄ ላክ",
     "submitIntro": "አዲስ ጥያቄ ወደ ማዕከሉ ያክሉ። ስርዓቱ ከህትመት በፊት ጥራትን፣ ተደጋጋሚነትን እና አጻጻፍን ይፈትሻል።",
     "contributorName": "ስም",

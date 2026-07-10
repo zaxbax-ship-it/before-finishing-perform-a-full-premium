@@ -1774,6 +1774,12 @@ const resources: LocaleResources = {
   },
   "communityUi": {
     "submitNav": "إرسال سؤال",
+    "questionPlaceholder": "اكتب سؤالك هنا…",
+    "answerPlaceholder": "الإجابة الصحيحة",
+    "answerLabel": "الإجابة الصحيحة",
+    "received": "تم استلام سؤالك بنجاح. تتم مراجعته الآن. إذا تمت الموافقة عليه، فسيصبح جزءًا من اللعبة.",
+    "incomplete": "يرجى إدخال السؤال والإجابة معًا.",
+    "failed": "فشل الإرسال. حاول مرة أخرى بعد قليل.",
     "submitTitle": "إرسال سؤال للمجتمع",
     "submitIntro": "أضف سؤالا جديدا إلى البنك. يفحص النظام الجودة والتكرار والصياغة قبل النشر.",
     "contributorName": "الاسم",

@@ -1,8 +1,19 @@
-import { generateExplanation, runLocalModeration, type CommunityDraft } from '@/lib/community';
+import type { CommunityDraft } from '@/lib/community';
 import { readBooleanEnv, readEnv } from '@/lib/infrastructure/environment';
 import type { Question } from '@/lib/types';
 import type { AiModerationInput, AiModerationOutput, AiModerationProvider } from './types';
 import { clampScore, trimExplanation } from './validation';
+import {
+  cleanText,
+  duplicateRiskFor,
+  generateWrongAnswers,
+  improveAnswerWording,
+  improveQuestionWording,
+  inferCategory,
+  inferDifficulty,
+  normalizeComparable,
+  shuffleOptions
+} from './editorial';
 
 type BudgetBucket = {
   count: number;
@@ -18,7 +29,6 @@ export type AiSafetyConfig = {
   monthlyRequestLimit: number;
   dailyEstimatedTokenLimit: number;
   monthlyEstimatedTokenLimit: number;
-  autoApproveMinConfidence: number;
   duplicateReviewRisk: number;
   lowQualityReviewRisk: number;
   unsafeRejectRisk: number;
@@ -32,6 +42,8 @@ export type AiSafetyDecision = {
 };
 
 const budgetBuckets = new Map<string, BudgetBucket>();
+const DIFFICULTY_LABELS = { easy: 'קל', medium: 'בינוני', hard: 'קשה', expert: 'מומחה' };
+const DEFAULT_CATEGORY = 'ידע כללי';
 
 function numberEnv(name: string, fallback: number) {
   const value = Number(readEnv(name));
@@ -47,7 +59,6 @@ export function getAiSafetyConfig(): AiSafetyConfig {
     monthlyRequestLimit: numberEnv('AI_MODERATION_MONTHLY_REQUEST_LIMIT', 20000),
     dailyEstimatedTokenLimit: numberEnv('AI_MODERATION_DAILY_ESTIMATED_TOKEN_LIMIT', 2500000),
     monthlyEstimatedTokenLimit: numberEnv('AI_MODERATION_MONTHLY_ESTIMATED_TOKEN_LIMIT', 50000000),
-    autoApproveMinConfidence: numberEnv('AI_MODERATION_AUTO_APPROVE_MIN_CONFIDENCE', 88),
     duplicateReviewRisk: numberEnv('AI_MODERATION_DUPLICATE_REVIEW_RISK', 55),
     lowQualityReviewRisk: numberEnv('AI_MODERATION_LOW_QUALITY_REVIEW_RISK', 60),
     unsafeRejectRisk: numberEnv('AI_MODERATION_UNSAFE_REJECT_RISK', 85),
@@ -112,60 +123,83 @@ export async function runWithTimeout<T>(work: (signal: AbortSignal) => Promise<T
   }
 }
 
-export function createManualReviewFallback(input: { draft: CommunityDraft; existingQuestions: Question[]; reason: string; provider: AiModerationOutput['provider'] }): AiModerationOutput {
-  const explanation = trimExplanation(input.draft.explanation || generateExplanation(input.draft));
-  const moderation = runLocalModeration({ ...input.draft, explanation }, input.existingQuestions, []);
-  const output: AiModerationOutput = {
-    provider: input.provider,
-    recommendation: 'needs_manual_review',
-    confidence: clampScore(Math.min(moderation.score, 55)),
-    improvedQuestion: moderation.normalizedQuestion,
-    improvedOptions: moderation.normalizedOptions,
-    correctIndex: input.draft.correctIndex,
-    explanation,
-    reasons: [input.reason, ...moderation.reasons],
-    factCheck: {
-      status: 'uncertain',
-      notes: ['A safety control prevented automatic AI approval. Human review is required.']
-    },
-    qualitySignals: {
-      duplicateRisk: 50,
-      spamRisk: 0,
-      unsafeRisk: 0,
-      lowQualityRisk: 50
-    },
-    moderation: {
-      ...moderation,
-      status: 'needs_review',
-      score: clampScore(Math.min(moderation.score, 55)),
-      recommendation: 'needs_manual_review',
-      reasons: [input.reason, ...moderation.reasons],
-      explanation,
-      aiProvider: input.provider,
-      aiRecommendation: 'needs_manual_review',
-      aiConfidence: clampScore(Math.min(moderation.score, 55)),
-      improvedQuestion: moderation.normalizedQuestion,
-      improvedOptions: moderation.normalizedOptions,
-      factCheck: {
-        status: 'uncertain',
-        notes: ['A safety control prevented automatic AI approval. Human review is required.']
-      },
-      qualitySignals: {
-        duplicateRisk: 50,
-        spamRisk: 0,
-        unsafeRisk: 0,
-        lowQualityRisk: 50
-      }
-    }
-  };
-  return output;
+function fallbackExplanation(correctAnswer: string, language: string) {
+  const answer = cleanText(correctAnswer);
+  if (language === 'he') return `התשובה הנכונה היא ${answer}.`;
+  if (language === 'ar') return `الإجابة الصحيحة هي ${answer}.`;
+  if (language === 'ru') return `Правильный ответ — ${answer}.`;
+  if (language === 'am') return `ትክክለኛው መልስ ${answer} ነው።`;
+  return `The correct answer is ${answer}.`;
 }
 
+/**
+ * Safety net for a failed/timed-out/over-budget request. Still produces a
+ * complete, valid, game-ready question (via the editorial helpers) so a human
+ * can review it — but always as `needs_manual_review`, never auto-approved.
+ */
+export function createManualReviewFallback(input: { draft: CommunityDraft; existingQuestions: Question[]; existingSubmissions?: Array<{ question: string }>; reason: string; provider: AiModerationOutput['provider'] }): AiModerationOutput {
+  const draft = input.draft;
+  const rawQuestion = draft.question;
+  const rawCorrect = draft.options[draft.correctIndex] || '';
+  const seed = normalizeComparable(rawQuestion) + '|' + normalizeComparable(rawCorrect);
+  const improvedQuestion = improveQuestionWording(rawQuestion);
+  const correctAnswer = improveAnswerWording(rawCorrect);
+  const category = inferCategory(rawQuestion, rawCorrect, input.existingQuestions, DEFAULT_CATEGORY);
+  const difficulty = inferDifficulty(rawQuestion, rawCorrect, DIFFICULTY_LABELS);
+  const generatedWrongAnswers = generateWrongAnswers(correctAnswer, input.existingQuestions, category, seed);
+  const { options: improvedOptions, correctIndex } = shuffleOptions(correctAnswer, generatedWrongAnswers, seed);
+  const explanation = trimExplanation(fallbackExplanation(correctAnswer, draft.language));
+  const dup = duplicateRiskFor(improvedQuestion, input.existingQuestions, input.existingSubmissions || []);
+  const confidence = clampScore(Math.min(55, 55 - Math.round(dup.risk * 0.2)));
+  const reasons = [input.reason];
+  const factCheck = { status: 'uncertain' as const, notes: ['A safety control prevented automatic AI processing. Human review is required.'] };
+  const qualitySignals = { duplicateRisk: dup.risk, spamRisk: 0, unsafeRisk: 0, lowQualityRisk: 50 };
+
+  return {
+    provider: input.provider,
+    recommendation: 'needs_manual_review',
+    confidence,
+    improvedQuestion,
+    correctAnswer,
+    generatedWrongAnswers,
+    improvedOptions,
+    correctIndex,
+    category,
+    difficulty,
+    explanation,
+    reasons,
+    factCheck,
+    qualitySignals,
+    moderation: {
+      status: 'needs_review',
+      score: confidence,
+      recommendation: 'needs_manual_review',
+      reasons,
+      normalizedQuestion: improvedQuestion,
+      normalizedOptions: improvedOptions,
+      explanation,
+      duplicateQuestionId: dup.duplicateId,
+      aiProvider: input.provider,
+      aiRecommendation: 'needs_manual_review',
+      aiConfidence: confidence,
+      improvedQuestion,
+      improvedOptions,
+      factCheck,
+      qualitySignals,
+      original: { question: cleanText(rawQuestion), correctAnswer: cleanText(rawCorrect) }
+    }
+  };
+}
+
+/**
+ * Editorial guardrails. The AI never publishes, so this only downgrades the
+ * advisory recommendation and flags unsafe content for rejection — the stored
+ * status stays `needs_review` for a human to decide.
+ */
 export function enforceHumanReviewPolicy(output: AiModerationOutput, config = getAiSafetyConfig()): AiModerationOutput {
   if (!config.enforceStrictReview) return output;
 
   const reviewReasons: string[] = [];
-  if (output.confidence < config.autoApproveMinConfidence) reviewReasons.push(`Confidence below auto-approval threshold (${output.confidence}/${config.autoApproveMinConfidence}).`);
   if (output.factCheck.status !== 'passed') reviewReasons.push(`Fact-check status is ${output.factCheck.status}.`);
   if (output.qualitySignals.duplicateRisk >= config.duplicateReviewRisk) reviewReasons.push(`Duplicate risk is ${output.qualitySignals.duplicateRisk}.`);
   if (output.qualitySignals.lowQualityRisk >= config.lowQualityReviewRisk) reviewReasons.push(`Low-quality risk is ${output.qualitySignals.lowQualityRisk}.`);
@@ -174,7 +208,6 @@ export function enforceHumanReviewPolicy(output: AiModerationOutput, config = ge
   if (!reviewReasons.length && !unsafeReject) return output;
 
   const recommendation = unsafeReject ? 'reject' : 'needs_manual_review';
-  const status = unsafeReject ? 'rejected' : 'needs_review';
   const reasons = [...reviewReasons, ...output.reasons];
   return {
     ...output,
@@ -182,7 +215,8 @@ export function enforceHumanReviewPolicy(output: AiModerationOutput, config = ge
     reasons,
     moderation: {
       ...output.moderation,
-      status,
+      // Never publish automatically — the stored status is always review-gated.
+      status: 'needs_review',
       recommendation,
       reasons,
       aiRecommendation: recommendation
@@ -191,9 +225,10 @@ export function enforceHumanReviewPolicy(output: AiModerationOutput, config = ge
 }
 
 export async function moderateWithSafety(provider: AiModerationProvider, input: AiModerationInput, config = getAiSafetyConfig()): Promise<AiModerationOutput> {
+  const existingSubmissions = input.existingSubmissions.map(s => ({ question: s.question }));
   const budget = checkAndConsumeAiBudget(input, config);
   if (!budget.allowed) {
-    return createManualReviewFallback({ draft: input.draft, existingQuestions: input.existingQuestions, reason: budget.reason || 'AI budget limit exceeded.', provider: provider.name });
+    return createManualReviewFallback({ draft: input.draft, existingQuestions: input.existingQuestions, existingSubmissions, reason: budget.reason || 'AI budget limit exceeded.', provider: provider.name });
   }
 
   let lastError: unknown;
@@ -210,5 +245,5 @@ export async function moderateWithSafety(provider: AiModerationProvider, input: 
   const message = lastError instanceof Error && lastError.name === 'AbortError'
     ? 'AI moderation timed out and was routed to manual review.'
     : 'AI moderation failed and was routed to manual review.';
-  return createManualReviewFallback({ draft: input.draft, existingQuestions: input.existingQuestions, reason: message, provider: provider.name });
+  return createManualReviewFallback({ draft: input.draft, existingQuestions: input.existingQuestions, existingSubmissions, reason: message, provider: provider.name });
 }

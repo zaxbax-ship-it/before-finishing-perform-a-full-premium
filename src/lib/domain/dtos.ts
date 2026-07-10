@@ -44,6 +44,8 @@ export type ApproveSubmissionDto = {
   submissionId: EntityId;
   adminUserId?: EntityId;
   note?: string;
+  /** Admin edits applied before publishing (Stage 11 edit-before-publish). */
+  editedQuestion?: Question;
 };
 
 export type RejectSubmissionDto = {

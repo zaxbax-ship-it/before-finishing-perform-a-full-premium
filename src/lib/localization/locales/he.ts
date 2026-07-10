@@ -425,6 +425,12 @@ const resources: LocaleResources = {
   },
   "communityUi": {
     "submitNav": "שליחת שאלה",
+    "questionPlaceholder": "כתבו כאן את השאלה שלכם…",
+    "answerPlaceholder": "התשובה הנכונה",
+    "answerLabel": "תשובה נכונה",
+    "received": "השאלה התקבלה בהצלחה. היא נמצאת בבדיקה. אם תאושר, היא תיכנס למשחק.",
+    "incomplete": "צריך למלא גם שאלה וגם תשובה.",
+    "failed": "השליחה נכשלה. נסו שוב עוד רגע.",
     "submitTitle": "שליחת שאלה לקהילה",
     "submitIntro": "הוסיפו שאלה חדשה למאגר. המערכת בודקת איכות, כפילויות וניסוח לפני פרסום.",
     "contributorName": "שם",
