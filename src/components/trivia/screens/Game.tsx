@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
 import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
-import { lifelinePrice, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
+import { lifelineAvailability, lifelinePrice, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { ChanceMeter } from '../ChanceMeter';
 import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '../constants';
 import { fmt, money } from '../format';
@@ -24,10 +24,10 @@ export function Game(props: {
   timerUrgency: string;
   progress: number;
   currentPrize: number;
-  nextPrize: number;
   guaranteedPrize: number;
   chances: number;
   lifelineUses: Record<Lifeline, number>;
+  lifelineQuestionLock: Record<Lifeline, boolean>;
   advice: string;
   notice: string;
   chooseAnswer: (index: number) => void;
@@ -36,7 +36,7 @@ export function Game(props: {
   quit: () => void;
   requestExit: () => void;
 }) {
-  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, nextPrize, guaranteedPrize, chances, lifelineUses, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
+  const { t, locale, current, round, order, selected, hiddenAnswers, timer, timerUrgency, progress, currentPrize, guaranteedPrize, chances, lifelineUses, lifelineQuestionLock, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   // Presentation-only: the pot eases between real values; logic sees exact numbers.
   const animatedPot = useCountUp(currentPrize, 650);
   const [reuseHelpOpen, setReuseHelpOpen] = useState(false);
@@ -117,36 +117,42 @@ export function Game(props: {
         </span>
         {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}
         {notice && <div className="mt-6 rounded-3xl border border-gold/40 bg-gold/10 p-5 text-lg leading-8 text-gold">{notice}</div>}
-        {/* Slim meta strip: only information not already shown in the topline. */}
-        <div className="game-meta-below mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
-          <span className="font-bold text-gold">{t.currentPrize}: {money(nextPrize)}</span>
-          <span className="text-white/55">{t.guaranteed}: {money(guaranteedPrize)}</span>
-        </div>
-        <div className="mt-4 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-l from-gold to-azure transition-all duration-500" style={{ width: `${progress}%` }} /></div>
+        {/* Progress toward question 15 — the ladder + topline pot carry the money,
+            so no duplicate prize labels compete with the timer here. */}
+        <div className="mt-6 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-l from-gold to-azure transition-all duration-500" style={{ width: `${progress}%` }} /></div>
       </section>
       <aside className="space-y-5">
         <div className="glass rounded-[28px] p-5">
-          <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{t.lifelines}</h3><span className="text-gold"><HintsIcon size={16} aria-hidden="true" /></span></div>
+          <h3 className="mb-4 text-xl font-extrabold">{t.lifelines}</h3>
           <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
             const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
             const price = lifelinePrice(currentPrize, lifelineUses[type]);
-            const exhausted = price === null;
-            // A second use always shows its price (even $0 at an empty pot) so
-            // the tile never looks "free" when a confirm dialog will appear.
-            const stateLabel = exhausted ? t.usedUp : lifelineUses[type] >= 1 ? money(price as number) : t.free;
+            const availability = lifelineAvailability(lifelineUses[type], Boolean(lifelineQuestionLock[type]));
+            const disabled = availability === 'exhausted' || availability === 'locked-question';
+            // Minimum text: a free first use shows no label (the bright tile is
+            // enough), a paid second use shows its price, a lifeline already used
+            // on THIS question shows a check, and an exhausted one just dims. The
+            // full state stays in aria-label/title for assistive tech.
+            const statusLabel =
+              availability === 'exhausted' ? t.lifelineExhausted
+              : availability === 'locked-question' ? t.lifelineUsedThisQuestion
+              : availability === 'paid' ? money(price as number)
+              : t.free;
             return (
               <button
                 key={type}
-                className={`lifeline-tile focus-ring ${exhausted ? 'exhausted' : lifelineUses[type] ? 'paid' : ''}`}
+                className={`lifeline-tile focus-ring ${availability === 'exhausted' ? 'exhausted' : availability === 'locked-question' ? 'locked' : availability === 'paid' ? 'paid' : ''}`}
                 onClick={() => triggerLifeline(type)}
-                disabled={exhausted}
-                aria-disabled={exhausted}
-                aria-label={exhausted ? `${t[type]} — ${t.lifelineExhausted}` : `${t[type]} — ${stateLabel}`}
-                title={exhausted ? t.lifelineExhausted : t[type]}
+                disabled={disabled}
+                aria-disabled={disabled}
+                aria-label={`${t[type]} — ${statusLabel}`}
+                title={disabled ? statusLabel : t[type]}
               >
                 <span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span>
                 <span className="sr-only">{t[type]}</span>
-                <small>{stateLabel}</small>
+                <small className="lifeline-status" aria-hidden="true">
+                  {availability === 'paid' ? money(price as number) : availability === 'locked-question' ? <ConfirmIcon size={12} /> : ''}
+                </small>
               </button>
             );
           })}</div>

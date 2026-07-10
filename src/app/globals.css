@@ -1009,6 +1009,14 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 @keyframes toast-in{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
 .lifeline-tile:disabled,.lifeline-tile.exhausted{opacity:.32;filter:grayscale(.85);cursor:not-allowed;border-color:hsla(0,0%,100%,.08)}
 .lifeline-tile:disabled:hover,.lifeline-tile.exhausted:hover{transform:none;box-shadow:none;border-color:hsla(0,0%,100%,.08)}
+/* Per-question lock: already used on THIS question, but a game-level use still
+   remains. A softer gold-tinted dim (never the grayscale 'exhausted' look) so
+   players read it as "returns next question", not "gone for good". */
+.lifeline-tile.locked:disabled{opacity:.6;filter:none;cursor:not-allowed;border-color:hsla(41,90%,69%,.34);background:linear-gradient(145deg,hsla(41,90%,69%,.12),hsla(0,0%,100%,.02))}
+.lifeline-tile.locked:disabled:hover{transform:none;box-shadow:none}
+.lifeline-tile.locked .lifeline-icon-shell{opacity:.92}
+.lifeline-tile.locked .lifeline-status{color:var(--gold)}
+.lifeline-status{display:inline-grid;place-items:center;min-height:1.1em}
 
 /* ===== Mobile gameplay layout integrity ===== */
 /* ChanceMeter: game-show mistake allowance — slanted gold segments that dim

@@ -27,7 +27,7 @@ import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
-import { applyPurchase, availablePot, extraLifeCost, guaranteedForRung, isLifelineExhausted, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
+import { applyPurchase, availablePot, canActivateLifeline, extraLifeCost, guaranteedForRung, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { pushScreen, replaceTop, sanitizeTarget } from '@/lib/navigation/screenStack';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
 import type { PlayerProgressionState } from '@/lib/progression/types';
@@ -177,6 +177,9 @@ export default function TriviaPlatform({
   const [lifeOffer, setLifeOffer] = useState<{ cost: number; reason: EndState } | null>(null);
   const [progressionToasts, setProgressionToasts] = useState<ProgressionToast[]>([]);
   const [lifelineUses, setLifelineUses] = useState<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
+  // Per-question challenge lock: which lifelines were already used on the
+  // current question (reset on every question advance, kept across a swap).
+  const [lifelineQuestionLock, setLifelineQuestionLock] = useState<Record<Lifeline, boolean>>({ fifty: false, swap: false, phone: false, audience: false });
   const [advice, setAdvice] = useState('');
   const [notice, setNotice] = useState('');
   const [pendingPaid, setPendingPaid] = useState<{ type: Lifeline; price: number } | null>(null);
@@ -189,6 +192,9 @@ export default function TriviaPlatform({
   // batch must not both read the pre-update count (that would grant a free
   // second use, bypassing the official 50% price and the confirm dialog).
   const lifelineUsesRef = useRef<Record<Lifeline, number>>({ fifty: 0, swap: 0, phone: 0, audience: 0 });
+  // Synchronous mirror of the per-question lock so two taps in one event batch
+  // can never both pass the "already used this question" gate.
+  const lifelineQuestionLockRef = useRef<Record<Lifeline, boolean>>({ fifty: false, swap: false, phone: false, audience: false });
   const lifelineTapAtRef = useRef(0);
   const [endState, setEndState] = useState<EndState>('lost');
   const [finalPrize, setFinalPrize] = useState(0);
@@ -234,7 +240,6 @@ export default function TriviaPlatform({
   // All money figures come from the economy module — the pot reflects every
   // in-game purchase and can never go negative.
   const currentPrize = availablePot(MONEY, round, deductions);
-  const nextPrize = MONEY[round] || MONEY[MONEY.length - 1];
   const guaranteedPrize = guaranteedForRung(MONEY, round);
   const progress = Math.round(((round + 1) / 15) * 100);
   const timerUrgency = timer <= 8 ? 'danger' : timer <= 15 ? 'warn' : '';
@@ -667,6 +672,8 @@ export default function TriviaPlatform({
     setChances(SOLO_INITIAL_LIVES);
     lifelineUsesRef.current = { fifty: 0, swap: 0, phone: 0, audience: 0 };
     setLifelineUses({ fifty: 0, swap: 0, phone: 0, audience: 0 });
+    lifelineQuestionLockRef.current = { fifty: false, swap: false, phone: false, audience: false };
+    setLifelineQuestionLock({ fifty: false, swap: false, phone: false, audience: false });
     setAdvice('');
     setNotice('');
     setElapsed(0);
@@ -702,6 +709,10 @@ export default function TriviaPlatform({
     setTimer(SOLO_TIMER_SECONDS);
     setAdvice('');
     setNotice('');
+    // New question: clear ONLY the per-question lock. Game-level usage counters
+    // (lifelineUses) deliberately persist so pricing and the 2-per-game cap hold.
+    lifelineQuestionLockRef.current = { fifty: false, swap: false, phone: false, audience: false };
+    setLifelineQuestionLock({ fifty: false, swap: false, phone: false, audience: false });
   }
 
   /** Correct answer: secure the rung and climb. The only path that raises the pot. */
@@ -859,12 +870,13 @@ export default function TriviaPlatform({
     lifelineTapAtRef.current = tappedAt;
     // Official rules (economy module): use 1 is free, use 2 ALWAYS opens the
     // purchase dialog (even when the current pot — and therefore the price —
-    // is 0), use 3 never happens. Gating the dialog on the use count, not on
-    // price>0, is what makes a second use at rung 0 still confirm instead of
-    // silently applying for free.
+    // is 0), use 3 never happens. Additionally, a lifeline already used on THIS
+    // question is locked until the next question. canActivateLifeline enforces
+    // both the game-level cap and the per-question lock from one source.
     const timesUsed = lifelineUsesRef.current[type];
+    if (!canActivateLifeline(timesUsed, lifelineQuestionLockRef.current[type])) return;
     const price = lifelinePrice(currentPrize, timesUsed);
-    if (price === null) return; // permanently exhausted (tile is disabled too)
+    if (price === null) return; // defensive: canActivateLifeline already excludes exhaustion
     if (timesUsed >= 1) {
       setPendingPaid({ type, price });
       return;
@@ -874,13 +886,15 @@ export default function TriviaPlatform({
 
   function applyLifeline(type: Lifeline, price: number) {
     if (!current) return;
-    // Synchronous allowance check: a double-tap (tile or confirm button) in
-    // one batch must apply exactly once — never a second free use, never a
-    // double charge.
-    if (isLifelineExhausted(lifelineUsesRef.current[type])) return;
+    // Synchronous allowance check: a double-tap (tile or confirm button) in one
+    // batch must apply exactly once — never a second free use, never a double
+    // charge, and never a second activation on the same question.
+    if (!canActivateLifeline(lifelineUsesRef.current[type], lifelineQuestionLockRef.current[type])) return;
     lifelineUsesRef.current = { ...lifelineUsesRef.current, [type]: lifelineUsesRef.current[type] + 1 };
+    lifelineQuestionLockRef.current = { ...lifelineQuestionLockRef.current, [type]: true };
     setPendingPaid(null);
     setLifelineUses(previous => ({ ...previous, [type]: previous[type] + 1 }));
+    setLifelineQuestionLock(previous => ({ ...previous, [type]: true }));
     // Deduct the price BEFORE the effect is applied (official rule). A 0 price
     // (second use at rung 0) is a no-op purchase but the use is still consumed.
     if (price > 0) {
@@ -1146,10 +1160,10 @@ export default function TriviaPlatform({
           timerUrgency={timerUrgency}
           progress={progress}
           currentPrize={currentPrize}
-          nextPrize={nextPrize}
           guaranteedPrize={guaranteedPrize}
           chances={chances}
           lifelineUses={lifelineUses}
+          lifelineQuestionLock={lifelineQuestionLock}
           advice={advice}
           notice={notice}
           chooseAnswer={chooseAnswer}

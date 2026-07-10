@@ -86,3 +86,31 @@ export function isLifelineExhausted(timesUsed: number): boolean {
 export function extraLifeCost(ladder: number[], rung: number, deductions: number): number {
   return Math.floor(availablePot(ladder, rung, deductions) * EXTRA_LIFE_POT_FRACTION);
 }
+
+/**
+ * Live availability of a single lifeline, combining the game-level counter with
+ * the per-question challenge lock.
+ *   'free'            → first game-level use, no cost
+ *   'paid'            → second game-level use, 25% of the current pot
+ *   'locked-question' → already used on THIS question; still has a game-level
+ *                       use left, so it returns on the next question
+ *   'exhausted'       → both game-level uses are spent (permanent for the game)
+ */
+export type LifelineAvailability = 'free' | 'paid' | 'locked-question' | 'exhausted';
+
+export function lifelineAvailability(timesUsedThisGame: number, usedThisQuestion: boolean): LifelineAvailability {
+  if (isLifelineExhausted(timesUsedThisGame)) return 'exhausted';
+  if (usedThisQuestion) return 'locked-question';
+  return timesUsedThisGame >= 1 ? 'paid' : 'free';
+}
+
+/**
+ * Whether a lifeline may be activated right now. The single guard every client
+ * calls before applying a lifeline: enforces both the two-per-game cap and the
+ * "not twice on the same question" rule. Pure, so the web client, the tests and
+ * future native clients share one source of truth.
+ */
+export function canActivateLifeline(timesUsedThisGame: number, usedThisQuestion: boolean): boolean {
+  const availability = lifelineAvailability(timesUsedThisGame, usedThisQuestion);
+  return availability === 'free' || availability === 'paid';
+}

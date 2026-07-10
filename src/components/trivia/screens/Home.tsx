@@ -43,10 +43,9 @@ export function Home({ t, locale, soloLabel, multiplayerLabel, start, open }: { 
         </button>
       </div>
 
-      <div className="mt-9 grid gap-4 md:grid-cols-3">
+      <div className="mt-9 grid gap-4 md:grid-cols-2">
         <Metric value={marketingQuestions.value} label={marketingQuestions.label} />
         <Metric value="3" label={t.chancesLabel} />
-        <Metric value={money(1000000)} label={t.homePrize} gold />
       </div>
       <AdSlot placement="homepage-hero-below" className="mt-4" />
       <AdSlot placement="homepage-content" className="mt-8" />

@@ -46,7 +46,6 @@ export function Categories({ t, locale, categories, startGame }: { t: Record<str
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
       <h1 className="mx-auto max-w-5xl text-center text-6xl font-black md:text-[86px]">{t.choose}</h1>
-      <p className="mx-auto mt-5 max-w-4xl text-center text-xl leading-8 text-white/72">{t.chooseText}</p>
       {/* Primary path: one prominent option that plays the full bank, above
           every specific category. */}
       <button className="play-all-banner focus-ring" onClick={() => startGame('הכול')}>

@@ -39,7 +39,6 @@ export function Leaderboard({ t, entries, status, nickname, authUi, setNickname,
     <Panel title={t.lbTitle} icon={<LeaderboardIcon size={26} aria-hidden="true" />}>
       <div className="leaderboard-layout">
         <section className="leaderboard-profile-card">
-          <p className="leaderboard-eyebrow">{t.lbSubtitle}</p>
           <div className="leaderboard-personal-best">
             <span>{t.lbYourBest}</span>
             <strong>{money(bestPrize)}</strong>

@@ -16,7 +16,6 @@ import type { EndState } from '../types';
  */
 export function Result({ t, authUi, isAuthenticated, state, correctCount, elapsed, prize, start, home }: { t: Record<string, string>; authUi: Record<string, string>; isAuthenticated: boolean; state: EndState; correctCount: number; elapsed: number; prize: number; start: () => void; home: () => void }) {
   const title = state === 'win' ? t.winTitle : state === 'quit' ? t.quitTitle : state === 'timeout' ? t.timeoutTitle : t.lostTitle;
-  const time = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
   const tone = state === 'win' ? 'is-win' : prize > 0 ? 'is-cashout' : 'is-neutral';
   const [copied, setCopied] = useState(false);
   const animatedPrize = useCountUp(prize, 1100);
@@ -61,7 +60,6 @@ export function Result({ t, authUi, isAuthenticated, state, correctCount, elapse
           </div>
           <h2 className="text-5xl font-black">{title}</h2>
           {prize > 0 && <div className="result-prize-hero" dir="ltr">{money(animatedPrize)}</div>}
-          <p className="mx-auto mt-4 max-w-2xl text-xl leading-8 text-white/70">{fmt(t.resultSummary, { correct: correctCount, time, prize: money(prize) })}</p>
           <div className="mt-8 grid gap-4 md:grid-cols-3"><Metric value={`${correctCount}/15`} label={t.accuracy} /><Metric value={`${elapsed}s`} label={t.timeLabel} /><Metric value={money(prize)} label={t.homePrize} gold /></div>
           {!isAuthenticated && (
             <div className="guest-progress-cta" role="note">

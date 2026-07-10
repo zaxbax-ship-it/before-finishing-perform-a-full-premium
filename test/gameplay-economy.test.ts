@@ -5,9 +5,11 @@ import {
   SOLO_INITIAL_LIVES,
   applyPurchase,
   availablePot,
+  canActivateLifeline,
   extraLifeCost,
   guaranteedForRung,
   isLifelineExhausted,
+  lifelineAvailability,
   lifelinePrice,
   payoutFor,
   potForRung
@@ -114,5 +116,42 @@ describe('Official lifeline usage rules', () => {
     expect(lifelinePrice(pot, uses.swap)).toBe(2500);      // paid second use (25%)
     expect(lifelinePrice(pot, uses.phone)).toBe(0);        // still free
     expect(lifelinePrice(pot, uses.audience)).toBe(0);     // still free
+  });
+});
+
+describe('Per-question lifeline challenge lock', () => {
+  it('classifies availability from game-level uses + the per-question lock', () => {
+    // Not yet used on this question:
+    expect(lifelineAvailability(0, false)).toBe('free');   // first game use, free
+    expect(lifelineAvailability(1, false)).toBe('paid');   // second game use, 25%
+    expect(lifelineAvailability(2, false)).toBe('exhausted');
+    // Already used on this question (game-level uses still remain):
+    expect(lifelineAvailability(0, true)).toBe('locked-question');
+    expect(lifelineAvailability(1, true)).toBe('locked-question');
+    // Exhausted always wins over the per-question lock (stays permanent).
+    expect(lifelineAvailability(2, true)).toBe('exhausted');
+  });
+
+  it('allows activation only when free or paid, never when locked or exhausted', () => {
+    expect(canActivateLifeline(0, false)).toBe(true);  // free
+    expect(canActivateLifeline(1, false)).toBe(true);  // paid second use
+    expect(canActivateLifeline(0, true)).toBe(false);  // used this question
+    expect(canActivateLifeline(1, true)).toBe(false);  // used this question
+    expect(canActivateLifeline(2, false)).toBe(false); // exhausted
+    expect(canActivateLifeline(2, true)).toBe(false);  // exhausted
+  });
+
+  it('models the official flow: 50:50 free on Q4, locked on Q4, paid on Q5, gone on Q6', () => {
+    // Q4: first use — free and allowed.
+    expect(canActivateLifeline(0, false)).toBe(true);
+    // Still on Q4 after using it — locked for the rest of the question.
+    expect(canActivateLifeline(1, true)).toBe(false);
+    expect(lifelineAvailability(1, true)).toBe('locked-question');
+    // Q5 (per-question lock reset): second game use is a paid 25% activation.
+    expect(canActivateLifeline(1, false)).toBe(true);
+    expect(lifelineAvailability(1, false)).toBe('paid');
+    // Q6: both game uses spent — permanently exhausted regardless of the lock.
+    expect(canActivateLifeline(2, false)).toBe(false);
+    expect(lifelineAvailability(2, false)).toBe('exhausted');
   });
 });
