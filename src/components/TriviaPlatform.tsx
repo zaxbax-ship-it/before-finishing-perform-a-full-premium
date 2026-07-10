@@ -27,6 +27,7 @@ import { revealSection } from '@/lib/ui/revealSection';
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
+import { setHapticsEnabled } from '@/lib/haptics';
 import { applyPurchase, availablePot, canActivateLifeline, extraLifeCost, guaranteedForRung, lifelinePrice, payoutFor, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { pushScreen, replaceTop, sanitizeTarget } from '@/lib/navigation/screenStack';
 import { applyGameToLocalProgression, readLocalProgression } from '@/lib/progression/local';
@@ -326,6 +327,12 @@ export default function TriviaPlatform({
   useEffect(() => {
     setAudioEnabled(settings.sound);
   }, [settings.sound]);
+
+  // Haptics ride the "effects" toggle and are independent of sound, so a muted
+  // player can still feel the game. No-op where the Vibration API is absent.
+  useEffect(() => {
+    setHapticsEnabled(settings.effects);
+  }, [settings.effects]);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();

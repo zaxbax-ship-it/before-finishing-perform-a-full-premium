@@ -1084,3 +1084,47 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 
 /* Admin: muted "not configured" status chip. */
 .admin-tag.is-mut{border-color:hsla(0,0%,100%,.2);color:hsla(0,0%,100%,.6)}
+
+/* ==========================================================================
+   Stage 8B — native-feel refinements (still a web app). Purely additive and
+   feature-safe: snappier taps, no rubber-band scroll chaining, and no
+   accidental long-press text selection on controls/chrome. Real content
+   (question + answer text) stays selectable.
+   ========================================================================== */
+/* Instant taps: drop the double-tap-zoom delay on every control. */
+button,a,select,summary,[role="button"],input[type="checkbox"],
+.lifeline-tile,.category-card,.answer-button,.primary-action-card,
+.play-all-banner,.drawer-item,.icon-button,.game-next-button,.game-topline-home{
+  touch-action:manipulation;
+}
+/* Controls & chrome shouldn't be text-selectable on long-press (native feel). */
+button,[role="button"],.app-brand,.drawer-item,.drawer-head,.lifeline-tile,
+.category-card,.primary-action-card,.play-all-banner,.game-topline,
+.prize-ladder,.chance-meter,.progression-toast,.ad-slot,.leaderboard-head,
+nav,header,label.setting-row{
+  -webkit-user-select:none;user-select:none;
+}
+/* Keep the app from rubber-band scroll-chaining into the browser. */
+html,body{overscroll-behavior-y:none}
+/* Scrollable surfaces keep their own momentum but never chain to the page. */
+.modal-card,.drawer-panel,.admin-scroll,.leaderboard-list,.lifeline-help-pop{
+  overscroll-behavior:contain;
+}
+
+/* Loading perception: a tapped category acknowledges instantly and shows a
+   quiet busy state while the round is dealt, instead of a dead pause. */
+.category-card.is-loading,.play-all-banner.is-loading{
+  opacity:.9;cursor:progress;
+}
+.category-card.is-loading{border-color:hsla(41,90%,69%,.5)}
+.category-launch-spinner{
+  display:inline-block;width:16px;height:16px;border-radius:50%;
+  border:2px solid hsla(41,90%,69%,.35);border-top-color:var(--gold);
+  animation:category-spin .7s linear infinite;vertical-align:middle;
+}
+@keyframes category-spin{to{transform:rotate(360deg)}}
+/* Sibling cards recede while one launches, focusing attention on the choice. */
+.category-grid.is-launching .category-card:not(.is-loading){opacity:.5}
+@media (prefers-reduced-motion:reduce){
+  .category-launch-spinner{animation-duration:1.4s}
+}

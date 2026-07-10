@@ -13,6 +13,8 @@
  * fanfares sing (~0.12). A per-event throttle prevents machine-gun repeats.
  */
 
+import { playHaptic } from '@/lib/haptics';
+
 export type AudioEventName =
   | 'ui.tap'              // any small interaction (navigation, buttons)
   | 'ui.open'             // drawer / menu opens
@@ -175,6 +177,9 @@ function ensureContext(): { ctx: AudioContext; master: GainNode } | undefined {
 
 /** Plays a semantic audio event (no-op when sound is off or unsupported). */
 export function playAudioEvent(event: AudioEventName) {
+  // Fire the matching haptic first, independent of the sound setting: a player
+  // who muted audio should still feel the game (haptics ride the effects flag).
+  playHaptic(event);
   if (!audioEnabled) return;
   const now = Date.now();
   const throttle = THROTTLE_MS[event] ?? DEFAULT_THROTTLE_MS;
