@@ -563,8 +563,11 @@ export default function TriviaPlatform({
 
   async function signOut() {
     await createAuthService().signOut();
+    // Stage 17 — clear the authenticated identity AND route to a clean guest
+    // screen, so no authenticated personal screen (Profile/Journey) can keep
+    // rendering the signed-out user's server data while still mounted.
     setAuthUser(null);
-    playAudioEvent('ui.tap');
+    open('home');
   }
 
   async function submitLeaderboardScore(publicNickname: string, prize: number, correctCount: number) {
@@ -1221,15 +1224,10 @@ export default function TriviaPlatform({
           t={t}
           entries={leaderboardEntries}
           status={leaderboardStatus}
-          nickname={nickname}
-          locale={locale}
-          authUi={authT}
-          setNickname={saveNickname}
-          bestPrize={stats.bestPrize}
         />
       )}
       {screen === 'profile' && <RewardsProfile t={t} locale={locale} displayName={nickname || authUser?.displayName || ''} />}
-      {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
+      {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} nickname={nickname} saveNickname={saveNickname} leaderboardStatus={leaderboardStatus} authUi={authT} />}
       </div>
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => { pendingPaidRef.current = null; setPendingPaid(null); }} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
       {lifeOffer && <LifeOfferModal t={t} cost={lifeOffer.cost} accept={acceptLifeOffer} decline={declineLifeOffer} />}
