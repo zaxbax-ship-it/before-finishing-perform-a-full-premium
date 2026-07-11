@@ -1,5 +1,5 @@
 import { AdSlot } from '@/components/ads/AdSlot';
-import { CelebrationIcon, ForwardIcon, LeaderboardIcon, MultiplayerIcon, PremiumIcon, SinglePlayerIcon } from '@/lib/design/icons';
+import { CelebrationIcon, ForwardIcon, MultiplayerIcon, PremiumIcon, SinglePlayerIcon, TrophyIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { ASSETS } from '@/lib/assets';
 import type { Screen } from '../types';
@@ -41,10 +41,9 @@ export function Home({ t, soloLabel, multiplayerLabel, journeyVisible, start, op
 
       {/* Leaderboard lives here now (relocated from the drawer): a compact secondary
           action below the primary Play buttons, part of the game ecosystem. */}
-      <button className="home-leaderboard-card focus-ring" onClick={() => open('leaderboard')} aria-label={t.lbNav} title={t.lbNav}>
-        <span className="home-leaderboard-icon" aria-hidden="true"><LeaderboardIcon size={22} /></span>
+      <button className="home-leaderboard-card is-enlarged focus-ring" onClick={() => open('leaderboard')} aria-label={t.lbNav} title={t.lbNav}>
+        <span className="home-leaderboard-icon primary-action-icon" aria-hidden="true"><TrophyIcon size={40} /></span>
         <span className="home-leaderboard-label">{t.lbNav}</span>
-        <ForwardIcon size={16} aria-hidden="true" />
       </button>
 
       {/* Progressive disclosure: one subtle actionable entry, only after discovery. */}

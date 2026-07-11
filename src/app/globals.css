@@ -2049,3 +2049,164 @@ html,body{overscroll-behavior-y:none}
 .app-shell:not(.admin-active) .modal-card {
   box-shadow: var(--shadow-xl), inset 0 1px 0 hsla(0, 0%, 100%, 0.18), var(--stage-edge-cyan);
 }
+
+/* ==========================================================================
+   STAGE 31 — category chooser refresh, enlarged leaderboard, launch cinematic.
+   Appended last so these overrides win by source order.
+   ========================================================================== */
+
+/* 1. Drawer menu items: soften the azure lower-edge light to half intensity
+   (rgba .4 -> .2 and .5 -> .25). Matches the base rule's specificity. */
+.app-shell:not(.admin-active):not(.game-active) .drawer-item {
+  box-shadow: inset 0 -1.5px 0 rgba(120, 210, 255, 0.2), inset 0 -20px 30px -22px rgba(69, 194, 255, 0.25);
+}
+
+/* 2. Home leaderboard button: ~2x larger, a single gold trophy medallion that
+   shares the exact texture of the two play-button icons; no arrow, no medal. */
+.app-shell:not(.admin-active) .home-leaderboard-card.is-enlarged {
+  min-height: 118px;
+  gap: 20px;
+  padding: 0 30px;
+  border-radius: 26px;
+}
+.home-leaderboard-card.is-enlarged .home-leaderboard-icon.primary-action-icon {
+  height: 66px;
+  width: 66px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #08101f;
+  box-shadow: var(--shadow-gold-glow);
+}
+.home-leaderboard-card.is-enlarged .home-leaderboard-label {
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+/* 10-12. Locked / coming-soon category tiles: dimmed, un-tappable, lock badge
+   in the corner and a small gold "coming soon" caption; pinned at the bottom. */
+.category-grid-locked { opacity: 0.96; }
+.app-shell:not(.admin-active) .category-card.category-locked {
+  position: relative;
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+.category-card.category-locked .category-lock {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.72);
+}
+.category-card.category-locked .category-soon {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+/* 13. Launch interstitial: the million-dollar hero crowns the screen and the
+   eight prize milestones deal in one-by-one, stacking with a soft settle. */
+.launch-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 4vh, 44px);
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(69, 194, 255, 0.14), transparent 40%),
+    radial-gradient(circle at 50% 30%, hsla(41, 90%, 69%, 0.1), transparent 42%),
+    linear-gradient(160deg, #02040c, #06122b 45%, #02040b);
+  animation: launch-fade 0.35s ease both;
+}
+@keyframes launch-fade { from { opacity: 0; } to { opacity: 1; } }
+.launch-million { position: relative; display: grid; place-items: center; }
+.launch-million-img {
+  position: relative;
+  z-index: 1;
+  width: min(72vw, 520px);
+  height: auto;
+  filter: drop-shadow(0 24px 60px rgba(0, 0, 0, 0.5));
+  animation: launch-million-in 0.7s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+.launch-million-halo {
+  position: absolute;
+  width: 120%;
+  height: 220%;
+  background: radial-gradient(circle, hsla(41, 90%, 69%, 0.28), transparent 60%);
+  filter: blur(8px);
+  animation: launch-halo-pulse 2.6s ease-in-out infinite;
+}
+@keyframes launch-million-in {
+  from { opacity: 0; transform: translateY(-18px) scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes launch-halo-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+.launch-ladder {
+  position: relative;
+  width: min(92vw, 440px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.launch-rung {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 1px solid hsla(0, 0%, 100%, 0.14);
+  background: var(--stage-glass);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3), var(--stage-edge-cyan);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(-26px) scale(0.96);
+  animation: launch-rung-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes launch-rung-in {
+  0% { opacity: 0; transform: translateY(-26px) scale(0.96); }
+  60% { opacity: 1; transform: translateY(3px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.launch-rung-index {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: hsla(0, 0%, 100%, 0.08);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.75);
+}
+.launch-rung-prize { font-size: 1.05rem; font-weight: 900; color: var(--gold); }
+.launch-rung.is-final {
+  border-color: hsla(41, 90%, 69%, 0.6);
+  background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.22), var(--stage-glass));
+  box-shadow: 0 18px 40px hsla(41, 90%, 69%, 0.28), var(--stage-edge-cyan-strong);
+}
+.launch-rung.is-final .launch-rung-prize { font-size: 1.2rem; }
+.launch-caption {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.8);
+}
+@media (prefers-reduced-motion: reduce) {
+  .launch-transition, .launch-million-img, .launch-million-halo, .launch-rung {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .launch-rung { opacity: 1; transform: none; }
+}

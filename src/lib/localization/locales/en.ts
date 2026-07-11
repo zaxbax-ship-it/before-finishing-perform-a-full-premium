@@ -18,8 +18,8 @@ const resources: LocaleResources = {
     "קולנוע": "Cinema",
     "מוזיקה": "Music",
     "נטפליקס": "Netflix",
-    "עולם הרכב": "Cars and Motoring",
-    "עולם בעלי החיים": "Animal Kingdom",
+    "עולם הרכב": "Cars",
+    "עולם בעלי החיים": "Wildlife",
     "טיקטוק": "TikTok"
   },
   "difficulty": {
@@ -1546,12 +1546,14 @@ const resources: LocaleResources = {
     "פוליטיקה": "Politics",
     "מוזיקה": "Music",
     "נטפליקס": "Netflix",
-    "עולם הרכב": "Cars and Motoring",
-    "עולם בעלי החיים": "Animal Kingdom",
+    "עולם הרכב": "Cars",
+    "עולם בעלי החיים": "Wildlife",
     "טיקטוק": "TikTok",
-    "רכילות ותרבות ישראלית": "Israeli Celebrity and Culture",
-    "רכילות ותרבות אמריקאית ועולמית": "Global Celebrity and Pop Culture",
-    "ידע כללי": "General Knowledge"
+    "רכילות ותרבות ישראלית": "Gossip",
+    "רכילות ותרבות אמריקאית ועולמית": "Culture",
+    "ידע כללי": "General Knowledge",
+    "אינסטגרם": "Instagram",
+    "טרנדים": "Trends"
   },
   "cleanDifficulty": {
     "קל": "Easy",
@@ -1608,7 +1610,9 @@ const resources: LocaleResources = {
     "choose": "Choose a category",
     "startNoQuestions": "No questions available right now. Try another category.",
     "chooseText": "Every topic includes a rich balanced question bank with the same prize ladder and studio feeling.",
-    "all": "All Categories",
+    "all": "Random Game",
+    "soon": "Coming soon",
+    "launching": "Preparing the arena…",
     "question": "Question",
     "currentPrize": "Current Prize",
     "lifelines": "Lifelines",

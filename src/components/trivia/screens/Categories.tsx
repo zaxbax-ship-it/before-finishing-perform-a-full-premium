@@ -6,11 +6,11 @@ import {
   CelebrationIcon,
   EditIcon,
   FavoritesIcon,
-  ForwardIcon,
   FriendsIcon,
   GlobeIcon,
   HintsIcon,
   HistoryIcon,
+  LockIcon,
   PlayIcon,
   QuizIcon,
   SettingsIcon,
@@ -37,8 +37,19 @@ const CATEGORY_ICONS: Record<string, ComponentType<{ size?: number; 'aria-hidden
   'רכילות ותרבות ישראלית': FriendsIcon,
   'רכילות ותרבות אמריקאית ועולמית': FriendsIcon,
   'אנגלית - בחינה עצמית': EditIcon,
-  'טיקטוק': ShareIcon
+  'טיקטוק': ShareIcon,
+  'אינסטגרם': ShareIcon,
+  'טרנדים': CelebrationIcon
 };
+
+/**
+ * Categories that exist in the bank but are presented as locked ("coming soon")
+ * for now, plus two brand-new topics that have no questions yet. All render as
+ * disabled tiles at the very bottom of the chooser. Canonical Hebrew keys.
+ */
+const LOCKED_CATEGORIES = new Set(['רפואה', 'נטפליקס', 'מדע']);
+const COMING_SOON_CATEGORIES = ['אינסטגרם', 'טרנדים'];
+
 import { localizeCategory, localizeCategoryDescription } from '@/lib/localization';
 import type { Locale } from '@/lib/types';
 
@@ -57,20 +68,20 @@ export function Categories({ t, locale, categories, startGame, startError, clear
       setPending(null);
     }
   };
+  const activeCategories = categories.filter(category => !LOCKED_CATEGORIES.has(category));
+  const lockedCategories = [...categories.filter(category => LOCKED_CATEGORIES.has(category)), ...COMING_SOON_CATEGORIES];
   return (
     <section className="mx-auto w-full max-w-[1680px] px-5 pb-16 pt-8 lg:px-8">
-      <h1 className="mx-auto max-w-5xl text-center text-4xl font-black md:text-6xl">{t.choose}</h1>
       {startError && <p className="category-start-error" role="alert">{startError}</p>}
       {/* Primary path: one prominent option that plays the full bank, above
           every specific category. */}
       <button className={`play-all-banner focus-ring ${pending === 'הכול' ? 'is-loading' : ''}`} onClick={() => launch('הכול')} disabled={pending !== null} aria-busy={pending === 'הכול'}>
         <span className="play-all-icon">{pending === 'הכול' ? <span className="category-launch-spinner" aria-hidden="true" /> : <QuizIcon size={22} aria-hidden="true" />}</span>
         <span className="play-all-label">{t.all}</span>
-        <ForwardIcon size={18} aria-hidden="true" />
       </button>
       <AdSlot placement="categories-top" className="mt-7" />
       <div className={`category-grid mt-8 ${pending !== null ? 'is-launching' : ''}`}>
-        {categories.map(category => {
+        {activeCategories.map(category => {
           const CategoryIcon = CATEGORY_ICONS[category] || CategoriesIcon;
           const loading = pending === category;
           return (
@@ -81,6 +92,22 @@ export function Categories({ t, locale, categories, startGame, startError, clear
           );
         })}
       </div>
+      {/* Locked / coming-soon topics, always at the bottom, never launchable. */}
+      {lockedCategories.length > 0 && (
+        <div className="category-grid category-grid-locked mt-4">
+          {lockedCategories.map(category => {
+            const CategoryIcon = CATEGORY_ICONS[category] || CategoriesIcon;
+            return (
+              <button key={category} className="category-card category-locked focus-ring glass stage-interactive" disabled aria-disabled="true">
+                <span className="category-lock" aria-hidden="true"><LockIcon size={16} /></span>
+                <span className="category-icon"><CategoryIcon size={22} aria-hidden="true" /></span>
+                <h3>{localizeCategory(locale, category)}</h3>
+                <span className="category-soon">{t.soon}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       <AdSlot placement="categories-grid-after" className="mt-8" />
     </section>
   );

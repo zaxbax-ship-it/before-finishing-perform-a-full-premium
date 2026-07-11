@@ -44,6 +44,7 @@ import { createBrowserSupabaseClient } from '@/lib/auth/supabaseBrowserClient';
 import type { Locale, Question } from '@/lib/types';
 import type { User } from '@supabase/supabase-js';
 import { Categories } from '@/components/trivia/screens/Categories';
+import { LaunchTransition } from '@/components/trivia/LaunchTransition';
 import { Contact } from '@/components/trivia/screens/Contact';
 import { Header } from '@/components/trivia/screens/Header';
 import { Home } from '@/components/trivia/screens/Home';
@@ -195,6 +196,7 @@ export default function TriviaPlatform({
   const [advice, setAdvice] = useState('');
   const [notice, setNotice] = useState('');
   const [startError, setStartError] = useState('');
+  const [launching, setLaunching] = useState(false);
   const [pendingPaid, setPendingPaid] = useState<{ type: Lifeline; price: number } | null>(null);
   const [exitPrompt, setExitPrompt] = useState(false);
   const screenSectionRef = useRef<HTMLDivElement | null>(null);
@@ -667,6 +669,10 @@ export default function TriviaPlatform({
   async function startGame(nextCategory = category) {
     if (startingRef.current) return; // guard against duplicate starts
     startingRef.current = true;
+    // Cinematic interstitial: show the million-dollar hero + stacking ladder
+    // while the round is dealt, held for a minimum beat so it always plays.
+    setLaunching(true);
+    const launchAnimation = new Promise<void>(resolve => setTimeout(resolve, 2200));
     setStartError('');
     clearAdvanceTimer();
     advancingRef.current = false;
@@ -701,6 +707,7 @@ export default function TriviaPlatform({
     if (available.length < 4) {
       // Never a silent no-op: surface a recoverable error and stay on Categories.
       startingRef.current = false;
+      setLaunching(false);
       setStartError(t.startNoQuestions || 'No questions are available right now. Please try another category.');
       playAudioEvent('ui.error');
       return;
@@ -737,8 +744,11 @@ export default function TriviaPlatform({
     setMilestoneCorrect(null);
     celebrationRef.current.reset();
     setConfettiBurst(0);
+    // Hold the interstitial for its full beat before the stage takes over.
+    await launchAnimation;
     commitScreen('game', 'push');
     playAudioEvent('game.start');
+    setLaunching(false);
     startingRef.current = false;
   }
 
@@ -1212,6 +1222,7 @@ export default function TriviaPlatform({
         )}
       </div>
       {screen === 'admin' && adminHeader}
+      {launching && <LaunchTransition caption={t.launching} />}
       {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} journeyVisible={journeyVisible} start={() => open('categories')} open={open} />}

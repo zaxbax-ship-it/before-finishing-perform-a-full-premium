@@ -21,6 +21,7 @@ import {
   Home,
   LifeBuoy,
   Lightbulb,
+  Lock,
   LogIn,
   LogOut,
   Mail,
@@ -62,6 +63,8 @@ export const PremiumIcon = createSemanticIcon(Crown);
 export const CoinsIcon = createSemanticIcon(Coins);
 export const RewardsIcon = createSemanticIcon(Coins);
 export const AchievementsIcon = createSemanticIcon(Trophy);
+export const TrophyIcon = createSemanticIcon(Trophy);
+export const LockIcon = createSemanticIcon(Lock);
 export const LeaderboardIcon = createSemanticIcon(Medal);
 export const ProfileIcon = createSemanticIcon(User);
 export const SinglePlayerIcon = createSemanticIcon(User);
