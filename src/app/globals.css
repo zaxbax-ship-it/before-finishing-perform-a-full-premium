@@ -1986,3 +1986,73 @@ html,body{overscroll-behavior-y:none}
   filter: blur(24px);
   pointer-events: none;
 }
+
+
+/* ===================== Stage 27 — final public unification: inner surfaces to the gameplay language ===================== */
+/* Every remaining public inner surface (rows, tiles, list items, popover
+   options, progression cards, form-adjacent panels) adopts the deep-navy glass,
+   thin pale border and restrained cyan lower-edge of the gameplay answer
+   surfaces — replacing the old white-glass "dashboard" look. Scoped away from
+   Admin and gameplay. */
+.app-shell:not(.admin-active):not(.game-active) .language-option,
+.app-shell:not(.admin-active):not(.game-active) .leaderboard-row,
+.app-shell:not(.admin-active):not(.game-active) .leaderboard-empty,
+.app-shell:not(.admin-active):not(.game-active) .leaderboard-message,
+.app-shell:not(.admin-active):not(.game-active) .journey-card,
+.app-shell:not(.admin-active):not(.game-active) .journey-objective,
+.app-shell:not(.admin-active):not(.game-active) .rule-row,
+.app-shell:not(.admin-active):not(.game-active) .drawer-item,
+.app-shell:not(.admin-active):not(.game-active) .profile-chip,
+.app-shell:not(.admin-active):not(.game-active) .profile-collection,
+.app-shell:not(.admin-active):not(.game-active) .profile-mastery-row,
+.app-shell:not(.admin-active):not(.game-active) .profile-trophy-slot,
+.app-shell:not(.admin-active):not(.game-active) .metric-tile {
+  background: var(--stage-glass-quiet);
+  border: 1px solid hsla(0, 0%, 100%, 0.16);
+  box-shadow: var(--stage-edge-cyan);
+}
+
+/* Interactive rows/options carry the azure interaction edge on hover (never a
+   replacement for the real focus ring). */
+.app-shell:not(.admin-active):not(.game-active) .language-option:hover,
+.app-shell:not(.admin-active):not(.game-active) .leaderboard-row:hover,
+.app-shell:not(.admin-active):not(.game-active) .drawer-item:hover {
+  border-color: rgba(69, 194, 255, 0.55);
+  background: var(--stage-glass);
+  box-shadow: 0 14px 34px rgba(69, 194, 255, 0.14), var(--stage-edge-cyan-strong);
+}
+
+/* Selected / active state stays gold (identity/achievement) over the navy base. */
+.app-shell:not(.admin-active):not(.game-active) .language-option.active {
+  border-color: hsla(41, 90%, 69%, 0.6);
+  background: radial-gradient(circle at 50% -30%, hsla(41, 90%, 69%, 0.24), transparent 62%), var(--stage-glass);
+  box-shadow: 0 0 26px hsla(41, 90%, 69%, 0.18), var(--stage-edge-cyan);
+  color: #fff;
+}
+
+/* The language popover shares the unified panel signature (navy glass + cyan edge). */
+.app-shell:not(.admin-active):not(.game-active) .language-panel {
+  box-shadow: var(--shadow-xl), inset 0 1px 0 hsla(0, 0%, 100%, 0.18), var(--stage-edge-cyan);
+}
+
+/* Identity / achievement cards keep their warm gold tone but gain the shared
+   cyan edge signature so they read as the same family. */
+.app-shell:not(.admin-active):not(.game-active) .profile-identity,
+.app-shell:not(.admin-active):not(.game-active) .profile-hero-card,
+.app-shell:not(.admin-active):not(.game-active) .profile-achievements-card,
+.app-shell:not(.admin-active):not(.game-active) .leaderboard-you {
+  box-shadow: var(--stage-depth), var(--stage-edge-cyan);
+}
+
+/* Result / game-summary screen: the primary glass card carries the cyan edge. */
+.app-shell:not(.admin-active):not(.game-active) .result-stage .glass {
+  box-shadow: var(--shadow-xl), inset 0 1px 0 hsla(0, 0%, 100%, 0.18), var(--stage-edge-cyan);
+}
+
+/* Stage 27 — every public modal/overlay (including those opened DURING gameplay:
+   exit, cash-out, paid-lifeline, extra-life, game-over) carries the unified
+   cyan lower-edge signature. Scoped to modals only (never the gameplay screen),
+   and NOT excluded by .game-active so in-game dialogs match too. */
+.app-shell:not(.admin-active) .modal-card {
+  box-shadow: var(--shadow-xl), inset 0 1px 0 hsla(0, 0%, 100%, 0.18), var(--stage-edge-cyan);
+}

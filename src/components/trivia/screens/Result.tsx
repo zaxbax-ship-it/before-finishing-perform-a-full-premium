@@ -56,7 +56,7 @@ export function Result({ t, authUi, isAuthenticated, state, correctCount, elapse
           </div>
         )}
         {prize > 0 && <div className="result-halo" aria-hidden="true" />}
-        <div className="glass w-full rounded-[34px] p-8 text-center md:p-12">
+        <div className="glass stage-panel w-full rounded-[34px] p-8 text-center md:p-12">
           {(state === 'win' || prize > 0) && (
             <div className="result-icon mx-auto mb-4 text-gold">
               <AchievementsIcon size={40} aria-hidden="true" />

@@ -16,7 +16,7 @@ export function Panel({ title, children }: { title: string; icon?: ReactNode; ch
 }
 
 export function Metric({ value, label, gold }: { value: string; label: string; gold?: boolean }) {
-  return <div className="rounded-3xl bg-white/[0.08] p-5 text-center"><div className={`mt-2 text-3xl font-black ${gold ? 'text-gold' : 'text-azure'}`}>{value}</div><div className="text-white/55">{label}</div></div>;
+  return <div className="metric-tile rounded-3xl p-5 text-center"><div className={`mt-2 text-3xl font-black ${gold ? 'text-gold' : 'text-azure'}`}>{value}</div><div className="text-white/55">{label}</div></div>;
 }
 
 export function Success({ text }: { text: string }) {
