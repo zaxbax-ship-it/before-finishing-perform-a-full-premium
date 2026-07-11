@@ -27,6 +27,9 @@ import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { isPlayableQuestion } from '@/lib/services/questionValidation';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
+import { playRewardCelebration } from '@/lib/audio/reward';
+import { createCelebrationTracker } from '@/lib/rewards/celebration';
+import { RewardConfetti } from '@/components/trivia/chrome/RewardConfetti';
 import { setHapticsEnabled } from '@/lib/haptics';
 import { fetchRewardsSummary, submitGameResult } from '@/lib/rewards/client';
 import type { RevealItem } from '@/lib/rewards/types';
@@ -235,6 +238,11 @@ export default function TriviaPlatform({
   const [milestoneCorrect, setMilestoneCorrect] = useState<number | null>(null);
   const seqTimersRef = useRef<number[]>([]);
   const advancingRef = useRef(false);
+  // Stage 25 — the reward-celebration tracker survives re-renders (a ref) and is
+  // reset only when a genuinely new Solo game starts; confettiBurst is a timestamp
+  // key so a re-render/restoration can never replay the celebration.
+  const celebrationRef = useRef(createCelebrationTracker());
+  const [confettiBurst, setConfettiBurst] = useState(0);
   const startingRef = useRef(false);
 
   const t = getTriviaUi(locale);
@@ -727,6 +735,8 @@ export default function TriviaPlatform({
     liveGameRef.current = true;
     setGamePhase('intro');
     setMilestoneCorrect(null);
+    celebrationRef.current.reset();
+    setConfettiBurst(0);
     commitScreen('game', 'push');
     playAudioEvent('game.start');
     startingRef.current = false;
@@ -852,6 +862,15 @@ export default function TriviaPlatform({
       seq(() => {
         setMilestoneCorrect(nextCorrect);
         setGamePhase('milestone');
+        // Stage 25 — a real prize-ladder ADVANCEMENT (the silent intro never reaches
+        // here). Count it once per completed stage; fire the tiered reward only when
+        // the tab is visible so a backgrounded burst is never replayed on return.
+        const advancement = celebrationRef.current.advance(nextCorrect);
+        const celebrateVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
+        if (advancement > 0 && celebrateVisible) {
+          playRewardCelebration(advancement);
+          if (advancement === 3 && settings.effects) setConfettiBurst(Date.now());
+        }
         if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
         seq(() => {
           setGamePhase('milestone-exit');
@@ -1169,6 +1188,7 @@ export default function TriviaPlatform({
   return (
     <main className={`app-shell font-hebrew premium-typography ${screen === 'game' ? 'game-active' : ''} ${screen === 'admin' ? 'admin-active' : ''}`} dir={dir}>
       {settings.effects && <Particles />}
+      <RewardConfetti burstId={confettiBurst} />
       {/* Single shared utility bar: language (physical left) and account (physical
           right) live in one flex row, so they can never overlap on any device. */}
       <div className="top-utility-bar" dir="ltr">

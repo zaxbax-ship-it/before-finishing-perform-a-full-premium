@@ -1940,3 +1940,25 @@ html,body{overscroll-behavior-y:none}
   border-color: rgba(69, 194, 255, 0.5);
   box-shadow: 0 14px 34px rgba(69, 194, 255, 0.18), var(--stage-edge-cyan-strong);
 }
+
+
+/* ===================== Stage 25 — prize-ladder reward confetti ===================== */
+/* Two-sided edge burst, portalled, pointer-events:none, self-cleaning. Gold-heavy
+   with azure + a little white; particles spray inward toward (but not across) the
+   centre so the prize amount stays readable. overflow:hidden => no scrollbars. */
+.reward-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 45; overflow: hidden; }
+.reward-confetti .cf {
+  position: absolute;
+  border-radius: 1.5px;
+  opacity: 0;
+  will-change: transform, opacity;
+  box-shadow: 0 0 6px rgba(247, 202, 103, 0.3);
+  animation: cf-fly var(--dur) cubic-bezier(0.2, 0.7, 0.3, 1) var(--delay) both;
+}
+@keyframes cf-fly {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  10% { opacity: 1; }
+  85% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+}
+.reward-confetti.is-reduced .cf { box-shadow: none; }

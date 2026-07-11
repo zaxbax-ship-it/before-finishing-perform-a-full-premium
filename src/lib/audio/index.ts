@@ -185,6 +185,14 @@ function ensureContext(): { ctx: AudioContext; master: GainNode } | undefined {
   return masterGain ? { ctx: sharedContext, master: masterGain } : undefined;
 }
 
+/** Shared, mute-aware audio access for the reward-celebration synth (Stage 25).
+ * Returns undefined when sound is off or unsupported; resumes the context. */
+export function acquireRewardAudio(): { ctx: AudioContext; destination: AudioNode } | undefined {
+  if (!audioEnabled) return undefined;
+  const audio = ensureContext();
+  return audio ? { ctx: audio.ctx, destination: audio.master } : undefined;
+}
+
 /** Plays a semantic audio event (no-op when sound is off or unsupported). */
 export function playAudioEvent(event: AudioEventName) {
   // Fire the matching haptic first, independent of the sound setting: a player
