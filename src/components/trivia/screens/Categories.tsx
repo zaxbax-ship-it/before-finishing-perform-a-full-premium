@@ -74,7 +74,7 @@ export function Categories({ t, locale, categories, startGame, startError, clear
           const CategoryIcon = CATEGORY_ICONS[category] || CategoriesIcon;
           const loading = pending === category;
           return (
-          <button key={category} className={`category-card focus-ring glass ${loading ? 'is-loading' : ''}`} onClick={() => launch(category)} disabled={pending !== null} aria-busy={loading} title={localizeCategoryDescription(locale, category)}>
+          <button key={category} className={`category-card focus-ring glass stage-interactive ${loading ? 'is-loading' : ''}`} onClick={() => launch(category)} disabled={pending !== null} aria-busy={loading} title={localizeCategoryDescription(locale, category)}>
             <span className="category-icon">{loading ? <span className="category-launch-spinner" aria-hidden="true" /> : <CategoryIcon size={22} aria-hidden="true" />}</span>
             <h3>{localizeCategory(locale, category)}</h3>
           </button>

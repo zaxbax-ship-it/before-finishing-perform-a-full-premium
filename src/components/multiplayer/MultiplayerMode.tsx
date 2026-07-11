@@ -486,7 +486,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
       {/* The hero only frames the entry and waiting phases; during a live round
           and on the results screen the gameplay content owns the top of the page. */}
       {!currentRound && gameState?.game?.status !== 'finished' && (
-        <div className="multiplayer-hero glass">
+        <div className="multiplayer-hero glass stage-panel">
           <div>
             <h1>{copy.title}</h1>
           </div>
@@ -495,7 +495,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
 
       {!gameState && (
         <div className="multiplayer-grid">
-          <section className="glass multiplayer-panel">
+          <section className="glass multiplayer-panel stage-panel">
             <label className="block">
               <span className="mb-2 block text-sm text-white/65">{copy.nickname}</span>
               <input className="form-input" value={nickname} maxLength={20} onChange={event => setNickname(event.target.value)} />
@@ -506,7 +506,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
             </div>
           </section>
 
-          <section className="glass multiplayer-panel">
+          <section className="glass multiplayer-panel stage-panel">
             <div className="multiplayer-panel-heading">
               <h2>{copy.openGames}</h2>
               <button className="ghost-button focus-ring inline-flex items-center gap-2" onClick={refreshLobbies}><RefreshIcon size={16} />{copy.refresh}</button>
@@ -515,7 +515,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
               {lobbies.length === 0 && status !== 'loading' && <p className="multiplayer-empty">{copy.noGames}</p>}
               {status === 'loading' && lobbies.length === 0 && (
                 Array.from({ length: 3 }).map((_, index) => (
-                  <article key={index} className="multiplayer-lobby-card skeleton-row" style={{ opacity: 0.8 }}>
+                  <article key={index} className="multiplayer-lobby-card stage-interactive skeleton-row" style={{ opacity: 0.8 }}>
                     <div className="multiplayer-lobby-info" style={{ width: '100%' }}>
                       <span className="skeleton-block" style={{ width: '40%', height: '1.2rem', marginBottom: '8px' }} />
                       <span className="skeleton-block" style={{ width: '60%', height: '1rem', marginBottom: '8px' }} />
@@ -528,7 +528,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
                 ))
               )}
               {lobbies.map(lobby => (
-                <article key={lobby.id} className="multiplayer-lobby-card">
+                <article key={lobby.id} className="multiplayer-lobby-card stage-interactive">
                   <div className="multiplayer-lobby-info">
                     <strong>
                       <PremiumIcon size={14} aria-hidden="true" className="lobby-host-icon" />
@@ -549,7 +549,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
       )}
 
       {gameState && !currentRound && gameState.game?.status !== 'finished' && (
-        <section className="glass multiplayer-waiting">
+        <section className="glass multiplayer-waiting stage-panel">
           <div className="multiplayer-loader" aria-hidden="true" />
           <h2>{copy.waiting}</h2>
           <p>{gameState.lobby.playerCount} / {gameState.lobby.maxPlayers} {copy.players}</p>
@@ -598,7 +598,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
       )}
 
       {gameState && currentRound && (
-        <section key={currentRound.id} className="glass multiplayer-game multiplayer-round-enter">
+        <section key={currentRound.id} className="glass multiplayer-game multiplayer-round-enter stage-panel">
           {/* Question first, answers immediately below — same "single frame"
               philosophy as solo gameplay. Lifelines follow as a compact toolbar. */}
           <div className="multiplayer-round-meta">
@@ -646,7 +646,7 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
       )}
 
       {gameState?.game?.status === 'finished' && (
-        <section className="glass multiplayer-results multiplayer-celebrate">
+        <section className="glass multiplayer-results multiplayer-celebrate stage-panel">
           <div className="multiplayer-champion" role="status">
             <AchievementsIcon size={44} aria-hidden="true" className="champion-trophy" />
             <div>

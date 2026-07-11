@@ -12,7 +12,7 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 export function Panel({ title, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
   // Stage 12 — one lighter shared public-screen header: compact, start-aligned,
   // no decorative icon or eyebrow. Structure comes from spacing + typography.
-  return <section className="mx-auto max-w-5xl px-5 pb-16 pt-6"><div className="glass rounded-[28px] p-5 md:p-8"><h2 className="public-screen-title">{title}</h2>{children}</div></section>;
+  return <section className="mx-auto max-w-5xl px-5 pb-16 pt-6"><div className="glass stage-panel rounded-[28px] p-5 md:p-8"><h2 className="public-screen-title">{title}</h2>{children}</div></section>;
 }
 
 export function Metric({ value, label, gold }: { value: string; label: string; gold?: boolean }) {

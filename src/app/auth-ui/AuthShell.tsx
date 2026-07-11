@@ -10,7 +10,7 @@ export function AuthShell({ title, subtitle, onBack, children }: { title: string
     <main className="app-shell font-hebrew premium-typography" dir="rtl">
       <Particles />
       <section className="auth-shell">
-        <div className="glass auth-card">
+        <div className="glass auth-card stage-panel">
           {onBack && (
             <button type="button" className="auth-back focus-ring" onClick={onBack} aria-label="חזרה" title="חזרה">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>

@@ -17,7 +17,7 @@ export function LifeOfferModal({ t, cost, accept, decline }: { t: Record<string,
   useDialogFocus(true, dialogRef, dismiss);
   return (
     <div className={`modal-backdrop ${closing ? 'is-closing' : ''}`} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="life-offer-title">
-      <div className="glass modal-card">
+      <div className="glass modal-card stage-panel">
         <div className="life-offer-meter" aria-hidden="true"><ChanceMeter total={3} remaining={0} /></div>
         <h3 id="life-offer-title">{t.lifeOfferTitle}</h3>
         <p>{t.lifeOfferBody}</p>

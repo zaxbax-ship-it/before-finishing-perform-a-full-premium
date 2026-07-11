@@ -25,11 +25,11 @@ export function Home({ t, soloLabel, multiplayerLabel, journeyVisible, start, op
 
       {/* Primary actions: the visual focal point. Icon-first, secondary nav lives in the header drawer. */}
       <div className="home-primary-actions">
-        <button className="primary-action-card is-solo focus-ring" onClick={start} aria-label={soloLabel} title={soloLabel}>
+        <button className="primary-action-card is-solo focus-ring stage-interactive" onClick={start} aria-label={soloLabel} title={soloLabel}>
           <span className="primary-action-icon"><SinglePlayerIcon size={46} aria-hidden="true" /></span>
           <span className="primary-action-label">{soloLabel}</span>
         </button>
-        <button className="primary-action-card is-multi focus-ring" onClick={() => open('multiplayer')} aria-label={multiplayerLabel} title={multiplayerLabel}>
+        <button className="primary-action-card is-multi focus-ring stage-interactive" onClick={() => open('multiplayer')} aria-label={multiplayerLabel} title={multiplayerLabel}>
           <span className="primary-action-icon"><MultiplayerIcon size={46} aria-hidden="true" /></span>
           <span className="primary-action-label">{multiplayerLabel}</span>
         </button>

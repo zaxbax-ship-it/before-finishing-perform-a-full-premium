@@ -10,7 +10,7 @@ export function GameExitModal({ t, stay, leave, cashOut }: { t: Record<string, s
   useDialogFocus(true, dialogRef, dismiss);
   return (
     <div className={`modal-backdrop ${closing ? 'is-closing' : ''}`} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="exit-title">
-      <div className="glass modal-card">
+      <div className="glass modal-card stage-panel">
         <h3 id="exit-title">{t.exitTitle}</h3>
         <p>{t.exitBody}</p>
         <div className="mt-5 flex flex-col gap-3">

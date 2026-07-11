@@ -12,7 +12,7 @@ export function PaidModal({ t, pending, pot, cancel, confirm }: { t: Record<stri
   useDialogFocus(true, dialogRef, dismiss);
   return (
     <div className={`modal-backdrop ${closing ? 'is-closing' : ''}`} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="paid-title">
-      <div className="glass modal-card">
+      <div className="glass modal-card stage-panel">
         <h3 id="paid-title">{t.paidTitle}</h3>
         <div className="paid-delta" dir="ltr" aria-label={fmt(t.paidPotInfo, { pot: money(pot) })}>
           <span className="paid-delta-from">{money(pot)}</span>

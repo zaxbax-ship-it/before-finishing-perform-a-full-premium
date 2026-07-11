@@ -1844,3 +1844,99 @@ html,body{overscroll-behavior-y:none}
 
 /* Any standalone leaderboard sub-card matches the master glass edge weight (.16). */
 .leaderboard-profile-card { border-color: hsla(0, 0%, 100%, 0.16); }
+
+
+/* ===================== Stage 24B — the Solo Gameplay visual language on every public surface ===================== */
+
+:root {
+  /* The Solo answer-card DNA, reusable across the public product: deep navy
+     translucent glass + the signature cyan lower-edge light. */
+  --stage-glass: linear-gradient(135deg, rgba(16, 40, 92, 0.9), rgba(4, 10, 26, 0.78));
+  --stage-glass-quiet: linear-gradient(150deg, rgba(15, 33, 74, 0.5), rgba(6, 13, 32, 0.62));
+  --stage-edge-cyan: inset 0 -1.5px 0 rgba(120, 210, 255, 0.4), inset 0 -20px 30px -22px rgba(69, 194, 255, 0.5);
+  --stage-edge-cyan-strong: inset 0 -2px 0 rgba(150, 225, 255, 0.6), inset 0 -24px 42px -22px rgba(69, 194, 255, 0.72);
+  --stage-depth: 0 20px 56px rgba(0, 0, 0, 0.42);
+}
+
+/* 1. Shared INTERACTIVE surface — recreated directly from the Solo answer card:
+   navy translucent glass, thin pale border, restrained cinematic depth, the
+   signature cyan lower-edge light, and an azure edge glow on hover. */
+.app-shell:not(.admin-active):not(.game-active) .stage-interactive {
+  border: 1px solid hsla(0, 0%, 100%, 0.17);
+  background: var(--stage-glass), radial-gradient(circle at 18% 0, rgba(69, 194, 255, 0.16), transparent 40%);
+  box-shadow: var(--stage-depth), var(--stage-edge-cyan), inset 0 1px 0 hsla(0, 0%, 100%, 0.12);
+  color: #fff;
+  transition: transform var(--duration-normal) var(--ease-spring),
+    border-color var(--duration-normal) var(--ease-default),
+    box-shadow var(--duration-normal) var(--ease-default);
+}
+.app-shell:not(.admin-active):not(.game-active) .stage-interactive:hover:not(:disabled) {
+  transform: translateY(-4px);
+  border-color: rgba(69, 194, 255, 0.62);
+  box-shadow: 0 28px 68px rgba(30, 145, 255, 0.24), var(--stage-edge-cyan-strong), inset 0 1px 0 hsla(0, 0%, 100%, 0.16);
+}
+.app-shell:not(.admin-active):not(.game-active) .stage-interactive:active:not(:disabled) { transform: translateY(-1px); }
+
+/* Home keeps a whisper of gold (Solo) / azure (Multiplayer) identity at the top,
+   over the same navy answer-card body — so the two play choices read as larger
+   siblings of the answer cards. */
+.app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-solo.stage-interactive {
+  background: radial-gradient(circle at 50% -12%, hsla(41, 90%, 69%, 0.3), transparent 55%), var(--stage-glass);
+  border-color: hsla(41, 90%, 69%, 0.44);
+}
+.app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-multi.stage-interactive {
+  background: radial-gradient(circle at 50% -12%, rgba(69, 194, 255, 0.3), transparent 55%), var(--stage-glass);
+  border-color: rgba(69, 194, 255, 0.5);
+}
+
+/* 2. Shared PANEL — the glass Panel with a restrained cyan lower-edge signature,
+   so every public page sits on a surface that echoes the gameplay stage without
+   over-glowing. */
+.app-shell:not(.admin-active):not(.game-active) .stage-panel {
+  box-shadow: var(--shadow-xl), inset 0 1px 0 hsla(0, 0%, 100%, 0.18), var(--stage-edge-cyan);
+}
+
+/* 3. Public INPUTS — dark navy glass, thin pale border, cyan focus edge (was
+   white-ish glass with a gold focus ring). Applies to auth, contact, community
+   and settings forms. */
+.app-shell:not(.admin-active):not(.game-active) .form-input,
+.app-shell:not(.admin-active):not(.game-active) .community-question-input,
+.app-shell:not(.admin-active):not(.game-active) .community-answer-input {
+  border-radius: 16px;
+  border: 1px solid hsla(0, 0%, 100%, 0.16);
+  background: var(--stage-glass-quiet);
+  box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.06);
+  color: #fff;
+}
+.app-shell:not(.admin-active):not(.game-active) .form-input:focus,
+.app-shell:not(.admin-active):not(.game-active) .community-question-input:focus,
+.app-shell:not(.admin-active):not(.game-active) .community-answer-input:focus {
+  outline: none;
+  border-color: rgba(69, 194, 255, 0.72);
+  box-shadow: 0 0 0 3px rgba(69, 194, 255, 0.16), var(--stage-edge-cyan);
+}
+.app-shell:not(.admin-active):not(.game-active) .form-input::placeholder,
+.app-shell:not(.admin-active):not(.game-active) .community-question-input::placeholder,
+.app-shell:not(.admin-active):not(.game-active) .community-answer-input::placeholder { color: hsla(0, 0%, 100%, 0.42); }
+
+/* 4. Secondary actions — a restrained cyan edge on hover to share the gameplay
+   interactive identity (primary CTAs keep the premium gold). */
+.app-shell:not(.admin-active):not(.game-active) .ghost-button:hover {
+  border-color: rgba(69, 194, 255, 0.5);
+  box-shadow: 0 18px 46px rgba(69, 194, 255, 0.16), var(--stage-edge-cyan);
+}
+
+/* 5. Settings interactive rows — navy glass + cyan edge (were flat white glass). */
+.app-shell:not(.admin-active):not(.game-active) .setting-row {
+  background: var(--stage-glass-quiet);
+  border: 1px solid hsla(0, 0%, 100%, 0.16);
+  box-shadow: var(--stage-edge-cyan);
+}
+
+/* 6. Home leaderboard entry — carry a subtle cyan edge as an interactive surface
+   (keeps its compact gold pill identity). */
+.app-shell:not(.admin-active):not(.game-active) .home-leaderboard-card { box-shadow: var(--stage-edge-cyan); }
+.app-shell:not(.admin-active):not(.game-active) .home-leaderboard-card:hover {
+  border-color: rgba(69, 194, 255, 0.5);
+  box-shadow: 0 14px 34px rgba(69, 194, 255, 0.18), var(--stage-edge-cyan-strong);
+}
