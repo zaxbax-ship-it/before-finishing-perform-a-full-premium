@@ -60,8 +60,8 @@ import { LifeOfferModal } from '@/components/trivia/modals/LifeOfferModal';
 import { ProgressionToasts, type ProgressionToast } from '@/components/trivia/ProgressionToasts';
 import { ACHIEVEMENT_KEYS } from '@/components/trivia/i18n';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
-import { Game } from '@/components/trivia/screens/Game';
-import { PrizeLadder } from '@/components/trivia/screens/PrizeLadder';
+import { Game, type GamePhase } from '@/components/trivia/screens/Game';
+import { completesMilestone } from '@/components/trivia/milestones';
 import { RewardsProfile } from '@/components/trivia/screens/RewardsProfile';
 import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
 
@@ -231,6 +231,9 @@ export default function TriviaPlatform({
   const [authReady, setAuthReady] = useState(false);
   const [authConfigured, setAuthConfigured] = useState(false);
   const advanceTimeoutRef = useRef<number | null>(null);
+  const [gamePhase, setGamePhase] = useState<GamePhase>('question');
+  const [milestoneCorrect, setMilestoneCorrect] = useState<number | null>(null);
+  const seqTimersRef = useRef<number[]>([]);
   const advancingRef = useRef(false);
   const startingRef = useRef(false);
 
@@ -465,7 +468,7 @@ export default function TriviaPlatform({
   }, [screen, questionIndex]);
 
   useEffect(() => {
-    if (screen !== 'game' || selected !== null || lifeOffer !== null) return;
+    if (screen !== 'game' || gamePhase !== 'question' || selected !== null || lifeOffer !== null) return;
     if (timer <= 0) {
       loseChance('timeout');
       return;
@@ -475,7 +478,7 @@ export default function TriviaPlatform({
       if (timer <= 6) playAudioEvent('timer.tick');
     }, 1000);
     return () => window.clearTimeout(id);
-  }, [screen, selected, settings.sound, timer, lifeOffer]);
+  }, [screen, gamePhase, selected, settings.sound, timer, lifeOffer]);
 
   useEffect(() => {
     if (screen !== 'game') return;
@@ -484,18 +487,14 @@ export default function TriviaPlatform({
   }, [screen]);
 
   useEffect(() => () => clearAdvanceTimer(), []);
-
-  // Keyboard shortcut: Enter advances to the next question after answering.
+  useEffect(() => { if (screen !== 'game') clearSeq(); return () => clearSeq(); }, [screen]);
+  // Stage 20C — automatic milestone intro: hold the compact ladder ~1.9s, then
+  // begin question 1. No tap, no button.
   useEffect(() => {
-    if (screen !== 'game' || selected === null) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Enter') return;
-      event.preventDefault();
-      advanceAfterAnswer();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [screen, selected]);
+    if (screen !== 'game' || gamePhase !== 'intro') return;
+    clearSeq();
+    seq(() => { setGamePhase('question'); setTimer(SOLO_TIMER_SECONDS); }, 1900);
+  }, [screen, gamePhase]);
 
   function clearAdvanceTimer() {
     if (advanceTimeoutRef.current === null) return;
@@ -509,6 +508,16 @@ export default function TriviaPlatform({
       advanceTimeoutRef.current = null;
       callback();
     }, AUTO_ADVANCE_MS);
+  }
+
+  // Stage 20C — one owned queue for the answer/milestone sequence, cleared on any
+  // exit/unmount so a stale transition can never fire after leaving gameplay.
+  function clearSeq() {
+    seqTimersRef.current.forEach(id => window.clearTimeout(id));
+    seqTimersRef.current = [];
+  }
+  function seq(callback: () => void, ms: number) {
+    seqTimersRef.current.push(window.setTimeout(callback, ms));
   }
 
   async function refreshLeaderboard() {
@@ -716,16 +725,11 @@ export default function TriviaPlatform({
     setNotice('');
     setElapsed(0);
     liveGameRef.current = true;
-    commitScreen('prizeladder', 'push');
+    setGamePhase('intro');
+    setMilestoneCorrect(null);
+    commitScreen('game', 'push');
     playAudioEvent('game.start');
     startingRef.current = false;
-  }
-
-  // Stage 20 — the Prize Ladder gate hands off to gameplay when the player taps
-  // the first (only unlocked) rung. Timer is (re)armed as play truly begins.
-  function beginGameplay() {
-    setTimer(SOLO_TIMER_SECONDS);
-    commitScreen('game', 'replace');
   }
 
   /** Puts the next question on stage without touching the ladder. */
@@ -821,21 +825,42 @@ export default function TriviaPlatform({
     handleFinalLifeLost('lost');
   }
 
-  function advanceAfterAnswer() {
-    if (selected === null || advancingRef.current) return;
+  // Stage 20C — answering drives an explicit auto-advance sequence: brief blue/
+  // red feedback, an optional cinematic milestone advance, then the next question.
+  // No manual Next button. completeAnsweredQuestion is called with the captured
+  // index (not from state) so the render closure stays correct.
+  function resolveAnswer(index: number) {
+    if (advancingRef.current) return;
     advancingRef.current = true;
     clearAdvanceTimer();
-    completeAnsweredQuestion(selected);
+    completeAnsweredQuestion(index);
   }
-
   function chooseAnswer(index: number) {
-    if (!current || selected !== null) return;
+    if (!current || selected !== null || gamePhase !== 'question') return;
     setSelected(index);
     const correct = index === current.correctIndex;
     playAudioEvent(correct ? 'answer.correct' : 'answer.wrong');
-    // No auto-advance after answering: the player reviews the explanation and
-    // chooses when to continue via the Next button (or keyboard). The timeout
-    // path below still expires unanswered questions automatically.
+    setAdvice('');
+    setGamePhase('feedback');
+    clearSeq();
+    const nextCorrect = round + 1;
+    if (correct && nextCorrect < 15 && completesMilestone(nextCorrect)) {
+      seq(() => {
+        setMilestoneCorrect(nextCorrect);
+        setGamePhase('milestone');
+        if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
+        seq(() => {
+          setMilestoneCorrect(null);
+          setGamePhase('question');
+          resolveAnswer(index);
+        }, 1400);
+      }, 500);
+    } else {
+      seq(() => {
+        setGamePhase('question');
+        resolveAnswer(index);
+      }, correct ? 500 : 750);
+    }
   }
 
   function loseChance(reason: EndState) {
@@ -1173,7 +1198,6 @@ export default function TriviaPlatform({
           message={communityMessage}
         />
       )}
-      {screen === 'prizeladder' && <PrizeLadder t={t} onBegin={beginGameplay} />}
       {screen === 'game' && current && (
         <Game
           t={t}
@@ -1184,18 +1208,16 @@ export default function TriviaPlatform({
           selected={selected}
           hiddenAnswers={hiddenAnswers}
           timer={timer}
-          progress={progress}
           currentPrize={currentPrize}
-          guaranteedPrize={guaranteedPrize}
           chances={chances}
           lifelineUses={lifelineUses}
           lifelineUsedThisQuestion={lifelineUsedThisQuestion}
           advice={advice}
           notice={notice}
+          gamePhase={gamePhase}
+          ladderCorrect={milestoneCorrect ?? round}
           chooseAnswer={chooseAnswer}
-          advanceAfterAnswer={advanceAfterAnswer}
           triggerLifeline={triggerLifeline}
-          quit={() => finishWithReason('quit')}
           requestExit={() => setExitPrompt(true)}
         />
       )}
@@ -1248,6 +1270,7 @@ export default function TriviaPlatform({
         <GameExitModal
           t={t}
           stay={() => setExitPrompt(false)}
+          cashOut={() => { setExitPrompt(false); clearSeq(); clearAdvanceTimer(); finishWithReason('quit'); }}
           leave={() => {
             setExitPrompt(false);
             clearAdvanceTimer();
