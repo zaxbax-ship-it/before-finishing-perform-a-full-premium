@@ -58,7 +58,7 @@ describe('Multiplayer Lobby API integration tests', () => {
     const body = await response.json();
     expect(body.ok).toBe(true);
     expect(body.lobby).toBeDefined();
-    expect(body.lobby.maxPlayers).toBe(3);
+    expect(body.lobby.maxPlayers).toBe(2); // Stage 18: head-to-head collapses any request to 2
     expect(body.lobby.locale).toBe('en');
     expect(body.lobby.playerCount).toBe(1);
     expect(body.credentials).toBeDefined();

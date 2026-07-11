@@ -119,7 +119,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       id: id('mp-lobby'),
       status: 'waiting',
       visibility: 'public',
-      maxPlayers: input.maxPlayers,
+      maxPlayers: 2,
       locale: input.locale,
       category: input.category,
       createdAt: date,
@@ -212,7 +212,8 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
     }
 
     const players = await repositories.multiplayer.listPlayers(lobby.id);
-    if (players.length >= lobby.maxPlayers) return fail('Lobby is full.', 'lobby_full');
+    // Head-to-head: exactly two seats, enforced regardless of any stored/legacy maxPlayers.
+    if (players.length >= 2) return fail('Lobby is full.', 'lobby_full');
     if (players.some(player => normalizeNicknameKey(player.nickname) === normalizeNicknameKey(nickname))) {
       return fail('Nickname is already used in this lobby.', 'nickname_taken');
     }
@@ -264,7 +265,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       }
 
       const latestPlayers = await repositories.multiplayer.listPlayers(lobby.id);
-      if (latestPlayers.length >= lobby.maxPlayers) return fail('Lobby is full.', 'lobby_full');
+      if (latestPlayers.length >= 2) return fail('Lobby is full.', 'lobby_full');
 
       multiplayerServiceLogger.error('Multiplayer player insert failed during lobby join.', {
         lobbyId: lobby.id,
@@ -282,7 +283,7 @@ export function createMultiplayerService(repositories: RepositoryProvider = getR
       maxPlayers: lobby.maxPlayers
     });
 
-    if (players.length + 1 >= updatedLobby.maxPlayers) {
+    if (players.length + 1 >= 2) {
       const started = await tryAutoStartAfterJoin(updatedLobby, { playerId: player.id, playerToken: token });
       if (started?.ok) return { ...started, credentials: { playerId: player.id, playerToken: token } };
     }

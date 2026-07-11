@@ -46,7 +46,7 @@ type StoredSession = MultiplayerPlayerCredentials & {
 export function MultiplayerMode({ locale, initialNickname, isAuthenticated, saveProgressLabel }: MultiplayerModeProps) {
   const copy = getMultiplayerCopy(locale);
   const [nickname, setNickname] = useState(initialNickname || '');
-  const [maxPlayers, setMaxPlayers] = useState<2 | 3 | 4>(2);
+  const maxPlayers = 2 as const;
   const [lobbies, setLobbies] = useState<MultiplayerLobbySummary[]>([]);
   const [gameState, setGameState] = useState<MultiplayerPublicGameState | undefined>();
   const [credentials, setCredentials] = useState<StoredSession | undefined>();
@@ -500,18 +500,6 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
               <span className="mb-2 block text-sm text-white/65">{copy.nickname}</span>
               <input className="form-input" value={nickname} maxLength={20} onChange={event => setNickname(event.target.value)} />
             </label>
-            <div className="multiplayer-player-count" role="group" aria-label={copy.players}>
-              {([2, 3, 4] as const).map(count => (
-                <button
-                  key={count}
-                  className={maxPlayers === count ? 'multiplayer-pill active focus-ring' : 'multiplayer-pill focus-ring'}
-                  onClick={() => setMaxPlayers(count)}
-                  type="button"
-                >
-                  {count === 2 ? copy.twoPlayers : count === 3 ? copy.threePlayers : copy.fourPlayers}
-                </button>
-              ))}
-            </div>
             <div className="grid gap-3 md:grid-cols-2">
               <button className="premium-button focus-ring" disabled={status === 'loading'} onClick={() => createOrQuick('quick_match')}>{copy.quick}</button>
               <button className="ghost-button focus-ring" disabled={status === 'loading'} onClick={() => createOrQuick('create')}>{copy.create}</button>

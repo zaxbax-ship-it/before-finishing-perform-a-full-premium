@@ -82,8 +82,9 @@ function stringValue(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function maxPlayersValue(value: unknown): 2 | 3 | 4 {
-  return value === 3 || value === 4 ? value : 2;
+function maxPlayersValue(_value: unknown): 2 {
+  // Head-to-head is the only supported mode: any requested count collapses to two.
+  return 2;
 }
 
 function localeValue(value: unknown): Locale {

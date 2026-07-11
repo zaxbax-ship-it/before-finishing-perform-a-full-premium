@@ -72,7 +72,7 @@ export type MultiplayerLobby = {
   id: EntityId;
   status: MultiplayerLobbyStatus;
   visibility: MultiplayerVisibility;
-  maxPlayers: 2 | 3 | 4;
+  maxPlayers: 2;
   locale: Locale;
   category?: string;
   hostPlayerId?: EntityId;
@@ -201,7 +201,7 @@ export type MultiplayerCreateInput = {
   authUserId?: EntityId;
   displayName?: string;
   locale: Locale;
-  maxPlayers: 2 | 3 | 4;
+  maxPlayers: 2;
   category?: string;
 };
 
