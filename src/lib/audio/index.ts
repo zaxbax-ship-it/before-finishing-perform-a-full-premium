@@ -159,9 +159,6 @@ const DEFAULT_THROTTLE_MS = 80;
 let audioEnabled = false;
 let sharedContext: AudioContext | undefined;
 let masterGain: GainNode | undefined;
-// Stage 23B — a separate, quieter bus for the adaptive music bed so it always
-// sits UNDER the SFX (buttons, rewards, milestones) through the same warm filter.
-let musicBus: GainNode | undefined;
 const lastPlayed = new Map<AudioEventName, number>();
 
 /** Synced from the app's sound setting; components then just emit events. */
@@ -169,7 +166,7 @@ export function setAudioEnabled(enabled: boolean) {
   audioEnabled = enabled;
 }
 
-function ensureContext(): { ctx: AudioContext; master: GainNode; music: GainNode } | undefined {
+function ensureContext(): { ctx: AudioContext; master: GainNode } | undefined {
   if (typeof window === 'undefined') return undefined;
   const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctor) return undefined;
@@ -182,25 +179,10 @@ function ensureContext(): { ctx: AudioContext; master: GainNode; music: GainNode
     masterGain = sharedContext.createGain();
     masterGain.gain.value = 0.9;
     masterGain.connect(filter);
-    musicBus = sharedContext.createGain();
-    musicBus.gain.value = 0.5; // music mixed clearly below the SFX master
-    musicBus.connect(filter);
     filter.connect(sharedContext.destination);
   }
   if (sharedContext.state === 'suspended') void sharedContext.resume();
-  return masterGain && musicBus ? { ctx: sharedContext, master: masterGain, music: musicBus } : undefined;
-}
-
-/** Shared audio graph for the adaptive music director (creates/resumes the
- * context — call only from a user gesture or once a game is already running). */
-export function getAudioGraph(): { ctx: AudioContext; music: GainNode; sfx: GainNode } | undefined {
-  const a = ensureContext();
-  return a ? { ctx: a.ctx, music: a.music, sfx: a.master } : undefined;
-}
-
-/** Whether sound is currently enabled (mirrors the app sound setting). */
-export function isAudioEnabled(): boolean {
-  return audioEnabled;
+  return masterGain ? { ctx: sharedContext, master: masterGain } : undefined;
 }
 
 /** Plays a semantic audio event (no-op when sound is off or unsupported). */

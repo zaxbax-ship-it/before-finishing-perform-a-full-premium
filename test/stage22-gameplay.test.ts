@@ -138,7 +138,7 @@ describe('Stage 22 — 11/22/23/24: state-machine & race safety preserved', () =
     expect(platform).toContain('if (advancingRef.current) return');
   });
   it('23: the sequence cleans up on exit/unmount', () => {
-    expect(platform).toContain("if (screen !== 'game') { clearSeq(); stopGameMusic(); } return () => clearSeq();");
+    expect(platform).toContain("if (screen !== 'game') clearSeq(); return () => clearSeq();");
   });
   it('24: the timer never ticks during feedback/milestone phases', () => {
     expect(platform).toContain("gamePhase !== 'question'");

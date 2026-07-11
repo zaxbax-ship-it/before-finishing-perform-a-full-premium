@@ -27,7 +27,6 @@ import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import { API_QUESTION_EXCLUDE_MAX, CLIENT_SEEN_QUESTION_LIMIT } from '@/lib/services/questionSampling';
 import { isPlayableQuestion } from '@/lib/services/questionValidation';
 import { playAudioEvent, setAudioEnabled } from '@/lib/audio';
-import { startGameMusic, stopGameMusic, setMusicIntensity, musicSwell, setMusicEnabled } from '@/lib/audio/music';
 import { setHapticsEnabled } from '@/lib/haptics';
 import { fetchRewardsSummary, submitGameResult } from '@/lib/rewards/client';
 import type { RevealItem } from '@/lib/rewards/types';
@@ -342,7 +341,6 @@ export default function TriviaPlatform({
   // semantic events without threading the flag around.
   useEffect(() => {
     setAudioEnabled(settings.sound);
-    setMusicEnabled(settings.sound);
   }, [settings.sound]);
 
   // Haptics ride the "effects" toggle and are independent of sound, so a muted
@@ -488,20 +486,8 @@ export default function TriviaPlatform({
     return () => window.clearInterval(id);
   }, [screen]);
 
-  useEffect(() => () => { clearAdvanceTimer(); stopGameMusic(); }, []);
-  useEffect(() => { if (screen !== 'game') { clearSeq(); stopGameMusic(); } return () => clearSeq(); }, [screen]);
-  // Stage 23B — drive adaptive music intensity from the live clock/phase: the bed
-  // tightens (tenser, not louder) as time runs down and relaxes between questions.
-  useEffect(() => {
-    if (screen !== 'game') return;
-    let level = 0.12;
-    if (gamePhase === 'question') {
-      const progress = 1 - timer / SOLO_TIMER_SECONDS;
-      level = 0.2 + 0.8 * Math.min(1, progress * progress);
-    } else if (gamePhase === 'feedback') level = 0.12;
-    else level = 0.05; // intro / milestone / exit — calm reveal
-    setMusicIntensity(level);
-  }, [screen, gamePhase, timer]);
+  useEffect(() => () => clearAdvanceTimer(), []);
+  useEffect(() => { if (screen !== 'game') clearSeq(); return () => clearSeq(); }, [screen]);
   // Stage 20C — automatic milestone intro: hold the compact ladder ~1.9s, then
   // begin question 1. No tap, no button.
   useEffect(() => {
@@ -743,7 +729,6 @@ export default function TriviaPlatform({
     setMilestoneCorrect(null);
     commitScreen('game', 'push');
     playAudioEvent('game.start');
-    startGameMusic();
     startingRef.current = false;
   }
 
@@ -867,7 +852,6 @@ export default function TriviaPlatform({
       seq(() => {
         setMilestoneCorrect(nextCorrect);
         setGamePhase('milestone');
-        musicSwell(); // premium orchestral rise for the prize reveal
         if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
         seq(() => {
           setGamePhase('milestone-exit');
