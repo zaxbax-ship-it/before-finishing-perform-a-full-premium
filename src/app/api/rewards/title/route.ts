@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { enforceRewardsWriteRateLimit } from '@/lib/api/rewardsSecurity';
 import { resolvePlayerKey } from '@/lib/rewards/playerKey';
 import { getRewardsRepository } from '@/lib/rewards/repositoryFactory';
 import { toStr } from '@/lib/rewards/requestParsing';
@@ -10,6 +11,8 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const player = await resolvePlayerKey(body.playerKey);
     if (!player) return NextResponse.json({ ok: false, status: 'invalid_request' }, { status: 400 });
+    const limited = await enforceRewardsWriteRateLimit(request, 'title', player.playerKey);
+    if (limited) return limited;
     const titleId = body.titleId === null ? null : toStr(body.titleId) || null;
     const activeTitleId = await equipTitleForPlayer(getRewardsRepository(), player.playerKey, titleId);
     return NextResponse.json({ ok: true, activeTitleId }, { headers: { 'Cache-Control': 'no-store' } });

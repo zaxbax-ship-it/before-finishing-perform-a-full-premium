@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { enforceRewardsWriteRateLimit } from '@/lib/api/rewardsSecurity';
+import { MAX_GAME_PRIZE } from '@/lib/gameplay/economy';
 import { toDayKey } from '@/lib/rewards';
 import { resolvePlayerKey } from '@/lib/rewards/playerKey';
 import { getRewardsRepository } from '@/lib/rewards/repositoryFactory';
@@ -24,6 +26,8 @@ export async function POST(request: Request) {
     if (!gameId) {
       return NextResponse.json({ ok: false, status: 'invalid_request', error: 'gameId is required.' }, { status: 400 });
     }
+    const limited = await enforceRewardsWriteRateLimit(request, 'result', player.playerKey);
+    if (limited) return limited;
 
     const nowIso = new Date().toISOString();
     const dayKey = toDayKey(nowIso, toOffsetMinutes(body.utcOffsetMinutes));
@@ -31,13 +35,13 @@ export async function POST(request: Request) {
       mode: body.mode === 'multiplayer' ? 'multiplayer' : 'solo',
       won: toBool(body.won),
       cashedOut: toBool(body.cashedOut),
-      correctAnswers: Math.min(15, toNum(body.correctAnswers)),
-      questionsFaced: toNum(body.questionsFaced),
-      prize: toNum(body.prize),
-      lifelinesUsed: toNum(body.lifelinesUsed),
+      correctAnswers: toNum(body.correctAnswers, 0, 15),
+      questionsFaced: toNum(body.questionsFaced, 0, 50),
+      prize: toNum(body.prize, 0, MAX_GAME_PRIZE),
+      lifelinesUsed: toNum(body.lifelinesUsed, 0, 15),
       category: toStr(body.category, 'mixed'),
-      livesLostBeforeWin: toNum(body.livesLostBeforeWin),
-      fastAnswers: toNum(body.fastAnswers),
+      livesLostBeforeWin: toNum(body.livesLostBeforeWin, 0, 10),
+      fastAnswers: toNum(body.fastAnswers, 0, 50),
       playedAt: nowIso
     };
 

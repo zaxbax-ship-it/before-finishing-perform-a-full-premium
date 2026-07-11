@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { enforceRewardsWriteRateLimit } from '@/lib/api/rewardsSecurity';
 import { resolvePlayerKey } from '@/lib/rewards/playerKey';
 import { getRewardsRepository } from '@/lib/rewards/repositoryFactory';
 import { toStr } from '@/lib/rewards/requestParsing';
@@ -12,6 +13,8 @@ export async function POST(request: Request) {
     if (!player) return NextResponse.json({ ok: false, status: 'invalid_request' }, { status: 400 });
     const cosmeticId = toStr(body.cosmeticId);
     if (!cosmeticId) return NextResponse.json({ ok: false, status: 'invalid_request' }, { status: 400 });
+    const limited = await enforceRewardsWriteRateLimit(request, 'cosmetics', player.playerKey);
+    if (limited) return limited;
     const cosmetics = await equipCosmeticForPlayer(getRewardsRepository(), player.playerKey, cosmeticId);
     return NextResponse.json({ ok: true, cosmetics }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {

@@ -44,3 +44,10 @@ export function getMultiplayerAnswerRateLimit() {
     windowMs: numberEnv('MULTIPLAYER_ANSWER_RATE_LIMIT_WINDOW_SECONDS', 60) * 1000
   };
 }
+
+export function getRewardsWriteRateLimit() {
+  return {
+    limit: numberEnv('REWARDS_WRITE_RATE_LIMIT', 60),
+    windowMs: numberEnv('REWARDS_WRITE_RATE_LIMIT_WINDOW_SECONDS', 60) * 1000
+  };
+}

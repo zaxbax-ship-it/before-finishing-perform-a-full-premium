@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { enforceRewardsWriteRateLimit } from '@/lib/api/rewardsSecurity';
 import { toDayKey, toWeekKey } from '@/lib/rewards';
 import { resolvePlayerKey } from '@/lib/rewards/playerKey';
 import { getRewardsRepository } from '@/lib/rewards/repositoryFactory';
@@ -27,6 +28,8 @@ export async function POST(request: Request) {
     if (!player) return NextResponse.json({ ok: false, status: 'invalid_request' }, { status: 400 });
     const objectiveId = toStr(body.objectiveId);
     if (!objectiveId) return NextResponse.json({ ok: false, status: 'invalid_request' }, { status: 400 });
+    const limited = await enforceRewardsWriteRateLimit(request, 'weekly', player.playerKey);
+    if (limited) return limited;
     const outcome = await claimWeekly(getRewardsRepository(), player.playerKey, objectiveId, new Date().toISOString());
     return NextResponse.json({ ok: true, granted: outcome.granted, alreadyClaimed: outcome.alreadyClaimed }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {

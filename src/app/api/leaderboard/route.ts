@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { enforceRewardsWriteRateLimit } from '@/lib/api/rewardsSecurity';
 import { getAuthUser } from '@/lib/auth/session';
+import { MAX_GAME_PRIZE } from '@/lib/gameplay/economy';
 import { getRepositoryProvider } from '@/lib/repositories/providerFactory';
 import type { LeaderboardResponse } from '@/lib/api/contracts';
 
@@ -29,8 +31,9 @@ const RESERVED_NICKNAMES = new Set([
   'undefined'
 ]);
 
-function numberFromBody(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+function numberFromBody(value: unknown, max = Number.MAX_SAFE_INTEGER) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.min(max, Math.max(0, Math.floor(value)));
 }
 
 function cleanNickname(value: unknown) {
@@ -72,11 +75,13 @@ export async function POST(request: Request) {
     }
 
     const user = await getAuthUser();
+    const limited = await enforceRewardsWriteRateLimit(request, 'leaderboard', user?.id || nickname.toLowerCase());
+    if (limited) return limited;
     const repositories = getRepositoryProvider();
     const result = await repositories.leaderboard.submitScore({
       nickname,
-      prize: numberFromBody(body.prize),
-      correctCount: numberFromBody(body.correctCount),
+      prize: numberFromBody(body.prize, MAX_GAME_PRIZE),
+      correctCount: numberFromBody(body.correctCount, 15),
       claimOnly: body.claimOnly === true,
       displayName: typeof body.displayName === 'string' && body.displayName.trim() ? body.displayName.trim() : displayNameFromUser(user?.email),
       authUserId: user?.id

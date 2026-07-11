@@ -4,8 +4,9 @@
  * flags or the timezone offset.
  */
 
-export function toNum(value: unknown, min = 0): number {
-  return typeof value === 'number' && Number.isFinite(value) ? Math.max(min, Math.floor(value)) : min;
+export function toNum(value: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.floor(value)));
 }
 
 export function toBool(value: unknown): boolean {

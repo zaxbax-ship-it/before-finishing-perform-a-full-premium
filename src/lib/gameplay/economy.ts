@@ -19,6 +19,12 @@
 export const SOLO_INITIAL_LIVES = 3;
 /** The extra life costs this fraction of the current (net) pot. */
 export const EXTRA_LIFE_POT_FRACTION = 0.5;
+/**
+ * The largest prize any single game can legitimately award (the top ladder
+ * rung). Server-side request validation clamps client-reported prizes to this
+ * bound so a forged request can never inflate Career Earnings past it.
+ */
+export const MAX_GAME_PRIZE = 1_000_000;
 
 export type SoloEndReason = 'win' | 'quit' | 'timeout' | 'lost';
 
