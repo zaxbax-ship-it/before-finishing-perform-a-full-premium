@@ -42,7 +42,7 @@ export function Home({ t, soloLabel, multiplayerLabel, journeyVisible, start, op
       {/* Leaderboard lives here now (relocated from the drawer): a compact secondary
           action below the primary Play buttons, part of the game ecosystem. */}
       <button className="home-leaderboard-card is-enlarged focus-ring" onClick={() => open('leaderboard')} aria-label={t.lbNav} title={t.lbNav}>
-        <span className="home-leaderboard-icon primary-action-icon" aria-hidden="true"><TrophyIcon size={40} /></span>
+        <span className="home-leaderboard-icon primary-action-icon" aria-hidden="true"><TrophyIcon size={46} /></span>
         <span className="home-leaderboard-label">{t.lbNav}</span>
       </button>
 

@@ -57,10 +57,11 @@ describe('Stage 22 — 3: the milestone transition is a calm >= 2.5s sequence', 
     expect(game).toContain('milestone-focus milestone-focus-${gamePhase}');
     expect(game).toContain("gamePhase === 'milestone-exit'");
   });
-  it('the sequence is owned by the phase model, not scattered timeouts', () => {
-    expect(platform).toContain('setGamePhase(\'milestone-exit\')');
-    expect(platform).toContain('MILESTONE_HOLD_MS');
-    expect(platform).toContain('MILESTONE_EXIT_MS');
+  it('the sequence is owned by the seq queue: verdict, then the 3s climb overlay, then advance', () => {
+    // The milestone advance now plays the climb overlay for a 3s beat, sequenced
+    // off the single owned seq() queue (verdict hold -> climb -> next question).
+    expect(platform).toContain('setMilestoneClimb(currentMilestoneIndex(nextCorrect))');
+    expect(platform).toContain('setMilestoneClimb(null)');
     expect(platform).toContain('MILESTONE_FEEDBACK_MS');
   });
 });

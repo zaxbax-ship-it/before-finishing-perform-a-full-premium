@@ -65,9 +65,9 @@ import { ProgressionToasts, type ProgressionToast } from '@/components/trivia/Pr
 import { ACHIEVEMENT_KEYS } from '@/components/trivia/i18n';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game, type GamePhase } from '@/components/trivia/screens/Game';
-import { completesMilestone } from '@/components/trivia/milestones';
+import { completesMilestone, currentMilestoneIndex } from '@/components/trivia/milestones';
 import { RewardsProfile } from '@/components/trivia/screens/RewardsProfile';
-import { CORRECT_FEEDBACK_MS, LETTERS, MILESTONE_EXIT_MS, MILESTONE_FEEDBACK_MS, MILESTONE_HOLD_MS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS, WRONG_FEEDBACK_MS } from '@/components/trivia/constants';
+import { CORRECT_FEEDBACK_MS, LETTERS, MILESTONE_FEEDBACK_MS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS, WRONG_FEEDBACK_MS } from '@/components/trivia/constants';
 
 const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
@@ -197,6 +197,7 @@ export default function TriviaPlatform({
   const [notice, setNotice] = useState('');
   const [startError, setStartError] = useState('');
   const [launching, setLaunching] = useState(false);
+  const [milestoneClimb, setMilestoneClimb] = useState<number | null>(null);
   const [pendingPaid, setPendingPaid] = useState<{ type: Lifeline; price: number } | null>(null);
   const [exitPrompt, setExitPrompt] = useState(false);
   const screenSectionRef = useRef<HTMLDivElement | null>(null);
@@ -498,13 +499,6 @@ export default function TriviaPlatform({
 
   useEffect(() => () => clearAdvanceTimer(), []);
   useEffect(() => { if (screen !== 'game') clearSeq(); return () => clearSeq(); }, [screen]);
-  // Stage 20C — automatic milestone intro: hold the compact ladder ~1.9s, then
-  // begin question 1. No tap, no button.
-  useEffect(() => {
-    if (screen !== 'game' || gamePhase !== 'intro') return;
-    clearSeq();
-    seq(() => { setGamePhase('question'); setTimer(SOLO_TIMER_SECONDS); }, 1900);
-  }, [screen, gamePhase]);
 
   function clearAdvanceTimer() {
     if (advanceTimeoutRef.current === null) return;
@@ -672,7 +666,7 @@ export default function TriviaPlatform({
     // Cinematic interstitial: show the million-dollar hero + stacking ladder
     // while the round is dealt, held for a minimum beat so it always plays.
     setLaunching(true);
-    const launchAnimation = new Promise<void>(resolve => setTimeout(resolve, 2200));
+    const launchAnimation = new Promise<void>(resolve => setTimeout(resolve, 3000));
     setStartError('');
     clearAdvanceTimer();
     advancingRef.current = false;
@@ -740,11 +734,13 @@ export default function TriviaPlatform({
     setNotice('');
     setElapsed(0);
     liveGameRef.current = true;
-    setGamePhase('intro');
+    // The launch interstitial is the only pre-game animation now — go straight
+    // to the first question when it ends (no second, redundant intro ladder).
+    setGamePhase('question');
     setMilestoneCorrect(null);
     celebrationRef.current.reset();
     setConfettiBurst(0);
-    // Hold the interstitial for its full beat before the stage takes over.
+    // Hold the interstitial for its full 3s beat before the stage takes over.
     await launchAnimation;
     commitScreen('game', 'push');
     playAudioEvent('game.start');
@@ -867,11 +863,12 @@ export default function TriviaPlatform({
     clearSeq();
     const nextCorrect = round + 1;
     if (correct && nextCorrect < 15 && completesMilestone(nextCorrect)) {
-      // Stage 22 — blue verdict stays readable, then a calm >=2.5s cinematic
-      // milestone sequence: rise (enter) -> readable hold -> sink (exit) -> advance.
+      // Blue verdict stays readable, then the cinematic climb overlay: the full
+      // prize ladder in place with a gold marker climbing one rung, held for a
+      // 3s beat that fades in and out, then the next question.
       seq(() => {
         setMilestoneCorrect(nextCorrect);
-        setGamePhase('milestone');
+        setMilestoneClimb(currentMilestoneIndex(nextCorrect));
         // Stage 25 — a real prize-ladder ADVANCEMENT (the silent intro never reaches
         // here). Count it once per completed stage; fire the tiered reward only when
         // the tab is visible so a backgrounded burst is never replayed on return.
@@ -883,13 +880,11 @@ export default function TriviaPlatform({
         }
         if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
         seq(() => {
-          setGamePhase('milestone-exit');
-          seq(() => {
-            setMilestoneCorrect(null);
-            setGamePhase('question');
-            resolveAnswer(index);
-          }, MILESTONE_EXIT_MS);
-        }, MILESTONE_HOLD_MS);
+          setMilestoneClimb(null);
+          setMilestoneCorrect(null);
+          setGamePhase('question');
+          resolveAnswer(index);
+        }, 3000);
       }, MILESTONE_FEEDBACK_MS);
     } else {
       // Stage 22 — hold the blue/red verdict ~1.5s longer for comprehension.
@@ -1222,7 +1217,8 @@ export default function TriviaPlatform({
         )}
       </div>
       {screen === 'admin' && adminHeader}
-      {launching && <LaunchTransition caption={t.launching} />}
+      {launching && <LaunchTransition />}
+      {milestoneClimb !== null && <LaunchTransition mode="climb" climbTo={milestoneClimb} />}
       {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} journeyVisible={journeyVisible} start={() => open('categories')} open={open} />}

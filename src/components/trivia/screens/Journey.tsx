@@ -3,11 +3,9 @@
 import { useEffect, useState } from 'react';
 import { CelebrationIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
-import type { DailyChallengeDto, RewardsSummaryDto, WeeklyObjectivesDto } from '@/lib/api/contracts/rewards';
+import type { RewardsSummaryDto, WeeklyObjectivesDto } from '@/lib/api/contracts/rewards';
 import {
   claimWeeklyObjectiveClient,
-  completeDailyCheckin,
-  fetchDailyChallenge,
   fetchRewardsSummary,
   fetchWeeklyObjectives
 } from '@/lib/rewards/client';
@@ -22,15 +20,13 @@ import { Panel } from '../primitives';
  */
 export function Journey({ t }: { t: Record<string, string>; locale: Locale }) {
   const [summary, setSummary] = useState<RewardsSummaryDto | null>(null);
-  const [daily, setDaily] = useState<DailyChallengeDto | null>(null);
   const [weekly, setWeekly] = useState<WeeklyObjectivesDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
   async function load() {
-    const [s, d, w] = await Promise.all([fetchRewardsSummary(), fetchDailyChallenge(), fetchWeeklyObjectives()]);
+    const [s, w] = await Promise.all([fetchRewardsSummary(), fetchWeeklyObjectives()]);
     setSummary(s);
-    setDaily(d);
     setWeekly(w);
     setLoading(false);
   }
@@ -38,13 +34,6 @@ export function Journey({ t }: { t: Record<string, string>; locale: Locale }) {
   useEffect(() => {
     void load();
   }, []);
-
-  async function checkIn() {
-    setBusy('daily');
-    await completeDailyCheckin(true);
-    await load();
-    setBusy(null);
-  }
 
   async function claim(objectiveId: string) {
     setBusy(objectiveId);
@@ -54,7 +43,6 @@ export function Journey({ t }: { t: Record<string, string>; locale: Locale }) {
   }
 
   const streak = summary?.streak;
-  const dailyAvailable = daily ? daily.available : summary?.dailyAvailable ?? true;
 
   return (
     <Panel title={t['rewards.journey.title']} icon={<CelebrationIcon size={26} aria-hidden="true" />}>
@@ -69,14 +57,6 @@ export function Journey({ t }: { t: Record<string, string>; locale: Locale }) {
           ) : (
             <p className="journey-muted">{t['rewards.journey.streak_none']}</p>
           )}
-        </section>
-
-        <section className="journey-card" aria-label={t['rewards.journey.daily_title']}>
-          <div className="journey-card-head"><h3>{t['rewards.journey.daily_title']}</h3></div>
-          <p className="journey-muted">{dailyAvailable ? t['rewards.journey.daily_available'] : t['rewards.journey.daily_done']}</p>
-          <button className="premium-button focus-ring journey-action" disabled={!dailyAvailable || busy === 'daily'} onClick={checkIn}>
-            {t['rewards.journey.daily_cta']}{daily ? ` · ${money(daily.rewardAmount)}` : ''}
-          </button>
         </section>
       </div>
 

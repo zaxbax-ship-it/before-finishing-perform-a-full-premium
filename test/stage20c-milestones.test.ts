@@ -89,15 +89,18 @@ describe('Stage 20C — 13/14/25/26/27 answer colours + timer', () => {
 });
 
 describe('Stage 20C — 1/2/3/28/29/30 explicit state machine', () => {
-  it('1/2/3. category selection opens the auto intro (no click), then gameplay begins', () => {
-    expect(platform.includes("setGamePhase('intro')")).toBe(true);
-    expect(platform.includes("if (screen !== 'game' || gamePhase !== 'intro') return")).toBe(true);
-    expect(platform.includes("seq(() => { setGamePhase('question'); setTimer(SOLO_TIMER_SECONDS); }, 1900)")).toBe(true);
+  it('1/2/3. category selection shows the launch interstitial (no click), then gameplay begins — no separate intro', () => {
+    // The launch cinematic is the only pre-game animation; it holds ~3s then the
+    // first question begins. The old auto-intro phase is gone.
+    expect(platform.includes('setLaunching(true)')).toBe(true);
+    expect(platform.includes("setGamePhase('question')")).toBe(true);
+    expect(platform.includes("setGamePhase('intro')")).toBe(false);
     expect(platform.includes("commitScreen('prizeladder'")).toBe(false); // Stage 20 gate removed
   });
   it('15/20/21. milestone transition only when earned; wrong never advances a milestone', () => {
     expect(platform.includes("completesMilestone(nextCorrect)")).toBe(true);
-    expect(platform.includes("setGamePhase('milestone')")).toBe(true);
+    // A reached milestone now plays the climb overlay (not the old ladder phase).
+    expect(platform.includes('setMilestoneClimb(currentMilestoneIndex(nextCorrect))')).toBe(true);
   });
   it('28. temporary lifeline content closes on answer', () => {
     expect(platform.slice(platform.indexOf('function chooseAnswer')).includes("setAdvice('')")).toBe(true);
