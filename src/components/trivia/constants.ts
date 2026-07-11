@@ -31,7 +31,7 @@ export const SAFE_STEPS = [4, 9, 14];
 
 /** Solo round timer in seconds. Presentation (the timer ring) derives its
  * progress from the same constant the game clock uses. */
-export const SOLO_TIMER_SECONDS = 45;
+export const SOLO_TIMER_SECONDS = 25;
 
 // Lifeline pricing lives in src/lib/gameplay/economy.ts (lifelinePrice) — the
 // single source of truth for every client. No component prices lifelines.

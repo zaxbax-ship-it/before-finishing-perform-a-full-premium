@@ -61,6 +61,7 @@ import { ProgressionToasts, type ProgressionToast } from '@/components/trivia/Pr
 import { ACHIEVEMENT_KEYS } from '@/components/trivia/i18n';
 import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game } from '@/components/trivia/screens/Game';
+import { PrizeLadder } from '@/components/trivia/screens/PrizeLadder';
 import { RewardsProfile } from '@/components/trivia/screens/RewardsProfile';
 import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
 
@@ -715,9 +716,16 @@ export default function TriviaPlatform({
     setNotice('');
     setElapsed(0);
     liveGameRef.current = true;
-    commitScreen('game', 'push');
+    commitScreen('prizeladder', 'push');
     playAudioEvent('game.start');
     startingRef.current = false;
+  }
+
+  // Stage 20 — the Prize Ladder gate hands off to gameplay when the player taps
+  // the first (only unlocked) rung. Timer is (re)armed as play truly begins.
+  function beginGameplay() {
+    setTimer(SOLO_TIMER_SECONDS);
+    commitScreen('game', 'replace');
   }
 
   /** Puts the next question on stage without touching the ladder. */
@@ -1165,6 +1173,7 @@ export default function TriviaPlatform({
           message={communityMessage}
         />
       )}
+      {screen === 'prizeladder' && <PrizeLadder t={t} onBegin={beginGameplay} />}
       {screen === 'game' && current && (
         <Game
           t={t}

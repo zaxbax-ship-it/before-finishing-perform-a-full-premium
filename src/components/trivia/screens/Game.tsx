@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { GameplayAdSlot } from '@/components/ads/AdSlot';
-import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, ForwardIcon, HintsIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WalletIcon } from '@/lib/design/icons';
+import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, ForwardIcon, HomeIcon, LeaderboardIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WalletIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { lifelineAvailability, lifelinePrice, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { timerProgress } from '@/lib/gameplay/timer';
@@ -39,15 +39,14 @@ export function Game(props: {
   const { t, locale, current, round, order, selected, hiddenAnswers, timer, currentPrize, guaranteedPrize, chances, lifelineUses, lifelineUsedThisQuestion, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   // Presentation-only: the pot eases between real values; logic sees exact numbers.
   const animatedPot = useCountUp(currentPrize, 650);
-  const [reuseHelpOpen, setReuseHelpOpen] = useState(false);
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
-  // Stage 19 — the countdown is the single premium bar at the base of the unified
-  // gameplay stage (below the lifelines). No standalone ring, no timer behind Next.
   const timerModel = timerProgress(SOLO_TIMER_SECONDS, timer);
+  // Stage 20 — the single countdown bar shifts azure -> gold -> red across the
+  // 25s, then a stronger, slightly thicker red for the final urgent seconds.
+  const elapsed = SOLO_TIMER_SECONDS - timer;
+  const timerBand = timer <= 4 ? 'critical' : elapsed < 7 ? 'azure' : elapsed < 14 ? 'gold' : 'red';
   const infoUi = getInfoUi(locale);
   const nextButtonRef = useRef<HTMLButtonElement | null>(null);
-  // Keyboard flow: focus moves to the continue button once an answer locks in
-  // (the button only exists after the answer resolves).
   useEffect(() => {
     if (selected !== null) nextButtonRef.current?.focus();
   }, [selected]);
@@ -75,8 +74,8 @@ export function Game(props: {
         )}
         <h2 key={`q-${current.id}`} className="question-text stage-enter mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl">{current.question}</h2>
 
-        {/* Stage 19 — ONE unified gameplay stage: the four answers, the lifelines
-            and the single countdown bar share one premium surface. */}
+        {/* Stage 19/20 — ONE unified gameplay stage: answers, lifelines and the
+            single countdown bar share one premium surface. */}
         <div className="gameplay-stage">
           <div key={`a-${current.id}`} className="answers-grid grid gap-4">
             {order.map((answerIndex, displayIndex) => {
@@ -90,8 +89,8 @@ export function Game(props: {
             })}
           </div>
 
+          {/* Stage 20 — lifelines are four clean controls only: no title, no info. */}
           <div className="stage-lifelines">
-            <h3 className="stage-lifelines-title">{t.lifelines}</h3>
             <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
               const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
               const price = lifelinePrice(currentPrize, lifelineUses[type]);
@@ -133,34 +132,13 @@ export function Game(props: {
                 </button>
               );
             })}</div>
-            <div className="lifeline-help">
-              <button
-                type="button"
-                className="lifeline-help-btn focus-ring"
-                aria-label={t.lifelines}
-                aria-describedby="reuse-help-text"
-                aria-expanded={reuseHelpOpen}
-                title={t.reuseHint}
-                onClick={() => setReuseHelpOpen(value => !value)}
-                onKeyDown={event => { if (event.key === 'Escape') setReuseHelpOpen(false); }}
-              >
-                <HintsIcon size={15} aria-hidden="true" />
-              </button>
-              <span id="reuse-help-text" className="sr-only">{t.reuseHint}</span>
-              {reuseHelpOpen && <div className="lifeline-help-pop" role="tooltip">{t.reuseHint}</div>}
-            </div>
           </div>
 
-          {/* Single premium countdown bar — the only visible timer. Full at the
-              question start, shrinking continuously; azure -> cyan -> orange -> red
-              with rising urgency. Keyed per question so it resets without rewinding. */}
           <div className="gameplay-timer" aria-hidden="true">
-            <span key={`timer-${current.id}`} className={`gameplay-timer-fill next-${timerModel.urgency}`} style={{ width: `${timerModel.progress * 100}%` }} />
+            <span key={`timer-${current.id}`} className={`gameplay-timer-fill band-${timerBand}`} style={{ width: `${timerModel.progress * 100}%` }} />
           </div>
         </div>
 
-        {/* The continue control does not exist while the player is thinking — it
-            appears only once the answer has resolved. */}
         {answerInfo && (
           <div className="game-next-row">
             <button

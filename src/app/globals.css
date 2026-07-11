@@ -1681,3 +1681,46 @@ html,body{overscroll-behavior-y:none}
   border-color: hsla(203, 90%, 62%, 0.22);
   box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38), 0 0 30px -6px hsla(203, 92%, 60%, 0.35);
 }
+
+
+/* ==========================================================================
+   STAGE 20 — Prize Ladder gate, premium-blue correct answer, and the 25s
+   four-band countdown. Presentation only; scoped to gameplay.
+   ========================================================================== */
+
+/* Prize Ladder gate: full ladder, first rung unlocked/tappable, rest locked. */
+.prize-ladder-screen { padding-top: 1.5rem; }
+.prize-ladder-gate { border-radius: 28px; padding: 1rem; border: 1px solid hsla(203, 90%, 62%, 0.22); box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38), 0 0 30px -6px hsla(203, 92%, 60%, 0.35); }
+.prize-ladder-rungs { display: grid; gap: 5px; }
+.pl-rung { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 14px; border: 1px solid hsla(0, 0%, 100%, 0.09); background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.045), hsla(0, 0%, 100%, 0.015)); color: hsla(0, 0%, 100%, 0.62); }
+.pl-rung .ladder-step { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: hsla(0, 0%, 100%, 0.07); color: hsla(0, 0%, 100%, 0.55); font-size: 0.74rem; font-weight: 900; flex: none; }
+.pl-rung .ladder-amount { font-weight: 900; font-feature-settings: "tnum"; }
+.pl-rung-content { display: flex; align-items: center; gap: 10px; filter: blur(3px); opacity: 0.5; }
+.pl-rung-locked.safe .pl-rung-content { opacity: 0.6; }
+.pl-lock { color: hsla(0, 0%, 100%, 0.6); display: grid; place-items: center; flex: none; }
+.pl-rung-unlocked { width: 100%; text-align: start; cursor: pointer; border-color: hsla(41, 90%, 69%, 0.9); background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.3), rgba(69, 194, 255, 0.1)); box-shadow: 0 0 26px hsla(41, 90%, 69%, 0.3), inset 0 1px 0 hsla(0, 0%, 100%, 0.22); color: #fff; animation: ladder-live var(--duration-ambient-pulse, 2.4s) ease-in-out infinite; }
+.pl-rung-unlocked .ladder-step { background: var(--gold); color: #08101f; }
+.pl-rung-unlocked .ladder-amount { color: #fff2b4; font-size: 1.1em; }
+@media (prefers-reduced-motion: reduce) { .pl-rung-unlocked { animation: none; } }
+
+/* Correct answer is now the premium blue (the Home multiplayer button), not green. */
+.game-active .answer-button.correct,
+.multiplayer-answer-grid .answer-button.correct {
+  border-color: rgba(69, 194, 255, 0.9);
+  background: linear-gradient(135deg, var(--azure), var(--violet));
+  box-shadow: 0 0 44px rgba(69, 194, 255, 0.34), 0 24px 72px rgba(0, 0, 0, 0.3);
+}
+.game-active .answer-button.correct .answer-letter,
+.multiplayer-answer-grid .answer-button.correct .answer-letter {
+  border-color: hsla(0, 0%, 100%, 0.5);
+  background: var(--azure);
+  color: #04122b;
+}
+
+/* 25s countdown: continuous azure -> gold -> red, then a stronger, thicker red. */
+.gameplay-timer { transition: height var(--duration-normal) var(--ease-default); }
+.gameplay-timer-fill.band-azure { background: linear-gradient(90deg, #45c2ff, #38e0ff); box-shadow: 0 0 12px hsla(203, 92%, 60%, 0.5); }
+.gameplay-timer-fill.band-gold { background: linear-gradient(90deg, #38e0ff, #f7ca67); box-shadow: 0 0 12px hsla(41, 90%, 69%, 0.5); }
+.gameplay-timer-fill.band-red { background: linear-gradient(90deg, #f7ca67, #ff5a5a); box-shadow: 0 0 14px hsla(4, 92%, 62%, 0.55); }
+.gameplay-timer-fill.band-critical { background: linear-gradient(90deg, #ff5a5a, #ff2020); box-shadow: 0 0 20px hsla(0, 95%, 58%, 0.75); }
+.gameplay-timer:has(.band-critical) { height: 9px; }

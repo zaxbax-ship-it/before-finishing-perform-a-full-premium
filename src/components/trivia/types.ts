@@ -16,6 +16,7 @@ export type Screen =
   | 'categories'
   | 'rules'
   | 'game'
+  | 'prizeladder'
   | 'result'
   | 'admin'
   | 'contact'
