@@ -1,0 +1,25 @@
+/**
+ * PUBLIC DESIGN SYSTEM — CANONICAL DESIGN TOKENS (single source of truth)
+ * =======================================================================
+ * The Solo Gameplay screen is the approved Design Master. These are the
+ * canonical, gameplay-derived tokens for the ENTIRE public product: the deep
+ * navy translucent glass of the answer card, its quieter variant for inner
+ * surfaces, and the signature cyan lower-edge light + cinematic depth.
+ *
+ * Every public surface derives from these (directly via var(), or through the
+ * primitives in src/design/public). Do NOT introduce new bespoke public visual
+ * values elsewhere — extend the design system here. Base color / spacing /
+ * radius / shadow tokens live in :root in globals.css and are mirrored by
+ * ./tokens.ts.
+ */
+:root {
+  /* Deep-navy translucent glass — the answer-card body. */
+  --stage-glass: linear-gradient(135deg, rgba(16, 40, 92, 0.9), rgba(4, 10, 26, 0.78));
+  /* A quieter navy glass for inner surfaces (rows, tiles, inputs). */
+  --stage-glass-quiet: linear-gradient(150deg, rgba(15, 33, 74, 0.5), rgba(6, 13, 32, 0.62));
+  /* The signature cyan lower-edge light. */
+  --stage-edge-cyan: inset 0 -1.5px 0 rgba(120, 210, 255, 0.4), inset 0 -20px 30px -22px rgba(69, 194, 255, 0.5);
+  --stage-edge-cyan-strong: inset 0 -2px 0 rgba(150, 225, 255, 0.6), inset 0 -24px 42px -22px rgba(69, 194, 255, 0.72);
+  /* Restrained cinematic depth. */
+  --stage-depth: 0 20px 56px rgba(0, 0, 0, 0.42);
+}

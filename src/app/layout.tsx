@@ -6,6 +6,7 @@ import { SiteFooter } from '@/components/compliance/SiteFooter';
 import { StructuredData } from '@/components/compliance/StructuredData';
 import { readEnv } from '@/lib/infrastructure/environment';
 import { getAbsoluteUrl, getSiteOrigin, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '@/lib/site/config';
+import '@/design/public/tokens.css';
 import './globals.css';
 import './language-menu.css';
 import './ads.css';

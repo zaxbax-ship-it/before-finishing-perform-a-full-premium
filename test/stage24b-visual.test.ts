@@ -6,17 +6,18 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 const css = read('src/app/globals.css');
 const home = read('src/components/trivia/screens/Home.tsx');
 const categories = read('src/components/trivia/screens/Categories.tsx');
-const panel = read('src/components/trivia/primitives.tsx');
+const panel = read('src/design/public/primitives.tsx');
+const dsTokens = read('src/design/public/tokens.css');
 const auth = read('src/app/auth-ui/AuthShell.tsx');
 const mp = read('src/components/multiplayer/MultiplayerMode.tsx');
 const game = read('src/components/trivia/screens/Game.tsx');
 
 describe('Stage 24B — shared gameplay-derived visual primitives exist', () => {
   it('defines the answer-card interactive surface + cyan lower-edge signature', () => {
-    expect(css).toContain('--stage-edge-cyan:');
+    expect(dsTokens).toContain('--stage-edge-cyan:');
     expect(css).toContain('.app-shell:not(.admin-active):not(.game-active) .stage-interactive');
     // recreates the Solo answer-card navy gradient
-    expect(css).toContain('rgba(16, 40, 92, 0.9), rgba(4, 10, 26, 0.78)');
+    expect(dsTokens).toContain('rgba(16, 40, 92, 0.9), rgba(4, 10, 26, 0.78)');
   });
   it('defines the shared panel signature + is scoped away from Admin', () => {
     expect(css).toContain('.app-shell:not(.admin-active):not(.game-active) .stage-panel');
@@ -43,8 +44,11 @@ describe('Stage 24B — primitives applied across public components', () => {
     expect(mp).toContain('multiplayer-hero glass stage-panel');
     expect(mp).toContain('glass multiplayer-panel stage-panel');
     expect(mp).toContain('multiplayer-lobby-card stage-interactive');
+    // dialogs now render through the design-system PublicModal (the one
+    // approved public dialog surface), and each still routes through it.
+    expect(read('src/design/public/PublicModal.tsx')).toContain('glass modal-card stage-panel');
     for (const m of ['GameExitModal', 'LifeOfferModal', 'PaidModal']) {
-      expect(read(`src/components/trivia/modals/${m}.tsx`)).toContain('glass modal-card stage-panel');
+      expect(read(`src/components/trivia/modals/${m}.tsx`)).toContain('PublicModal');
     }
   });
 });

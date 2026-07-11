@@ -1,10 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
 import { ChanceMeter } from '../ChanceMeter';
 import { fmt, money } from '../format';
-import { useDialogFocus } from '../useDialogFocus';
-import { useDismissable } from '../useDismissable';
+import { PublicButton, PublicModal } from '@/design/public';
 
 /**
  * The dramatic third-life decision: buy one extra life for half the current
@@ -12,21 +10,20 @@ import { useDismissable } from '../useDismissable';
  * exact price is always shown. Maps to a native two-action alert sheet.
  */
 export function LifeOfferModal({ t, cost, accept, decline }: { t: Record<string, string>; cost: number; accept: () => void; decline: () => void }) {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const { closing, dismiss } = useDismissable(decline);
-  useDialogFocus(true, dialogRef, dismiss);
   return (
-    <div className={`modal-backdrop ${closing ? 'is-closing' : ''}`} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="life-offer-title">
-      <div className="glass modal-card stage-panel">
-        <div className="life-offer-meter" aria-hidden="true"><ChanceMeter total={3} remaining={0} /></div>
-        <h3 id="life-offer-title">{t.lifeOfferTitle}</h3>
-        <p>{t.lifeOfferBody}</p>
-        <div className="life-offer-cost">{fmt(t.lifeOfferCost, { price: money(cost) })}</div>
-        <div className="mt-5 flex gap-3">
-          <button className="premium-button focus-ring flex-1" type="button" onClick={accept}>{t.lifeOfferAccept}</button>
-          <button className="ghost-button focus-ring flex-1" type="button" data-autofocus onClick={dismiss}>{t.lifeOfferDecline}</button>
-        </div>
-      </div>
-    </div>
+    <PublicModal labelledBy="life-offer-title" onDismiss={decline}>
+      {(dismiss) => (
+        <>
+          <div className="life-offer-meter" aria-hidden="true"><ChanceMeter total={3} remaining={0} /></div>
+          <h3 id="life-offer-title">{t.lifeOfferTitle}</h3>
+          <p>{t.lifeOfferBody}</p>
+          <div className="life-offer-cost">{fmt(t.lifeOfferCost, { price: money(cost) })}</div>
+          <div className="mt-5 flex gap-3">
+            <PublicButton variant="primary" className="flex-1" onClick={accept}>{t.lifeOfferAccept}</PublicButton>
+            <PublicButton variant="secondary" className="flex-1" data-autofocus onClick={dismiss}>{t.lifeOfferDecline}</PublicButton>
+          </div>
+        </>
+      )}
+    </PublicModal>
   );
 }

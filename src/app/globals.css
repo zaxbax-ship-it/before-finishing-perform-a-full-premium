@@ -1818,15 +1818,8 @@ html,body{overscroll-behavior-y:none}
 
 /* ===================== Stage 24B — the Solo Gameplay visual language on every public surface ===================== */
 
-:root {
-  /* The Solo answer-card DNA, reusable across the public product: deep navy
-     translucent glass + the signature cyan lower-edge light. */
-  --stage-glass: linear-gradient(135deg, rgba(16, 40, 92, 0.9), rgba(4, 10, 26, 0.78));
-  --stage-glass-quiet: linear-gradient(150deg, rgba(15, 33, 74, 0.5), rgba(6, 13, 32, 0.62));
-  --stage-edge-cyan: inset 0 -1.5px 0 rgba(120, 210, 255, 0.4), inset 0 -20px 30px -22px rgba(69, 194, 255, 0.5);
-  --stage-edge-cyan-strong: inset 0 -2px 0 rgba(150, 225, 255, 0.6), inset 0 -24px 42px -22px rgba(69, 194, 255, 0.72);
-  --stage-depth: 0 20px 56px rgba(0, 0, 0, 0.42);
-}
+/* Public design tokens (--stage-*) are the single source of truth in
+   src/design/public/tokens.css (imported first in the root layout). */
 
 /* 1. Shared INTERACTIVE surface — recreated directly from the Solo answer card:
    navy translucent glass, thin pale border, restrained cinematic depth, the

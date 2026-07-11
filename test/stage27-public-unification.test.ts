@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 const css = read('src/app/globals.css');
 const result = read('src/components/trivia/screens/Result.tsx');
-const primitives = read('src/components/trivia/primitives.tsx');
+const primitives = read('src/design/public/primitives.tsx');
 const game = read('src/components/trivia/screens/Game.tsx');
 
 // the Stage 27 block

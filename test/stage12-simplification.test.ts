@@ -103,7 +103,7 @@ describe('Stage 12 — Settings & Contact', () => {
 
 describe('Stage 12 — shared header primitive', () => {
   it('14. Panel renders the lighter public-screen title and no big centered icon', () => {
-    const primitives = read('src/components/trivia/primitives.tsx');
+    const primitives = read('src/design/public/primitives.tsx');
     expect(primitives.includes('public-screen-title')).toBe(true);
     expect(primitives.includes('text-4xl font-black text-white md:text-5xl')).toBe(false);
   });
