@@ -95,3 +95,49 @@ describe('Stage 18 — capacity is fixed at two across API, UI and types', () =>
     expect(types.includes('maxPlayers: 2;')).toBe(true);
   });
 });
+
+describe('Stage 18 — Multiplayer shares the Solo game-show visual language', () => {
+  const mp = read('src/components/multiplayer/MultiplayerMode.tsx');
+  const css = read('src/app/globals.css');
+  it('1/2/10. waiting room renders exactly two seats — no roster grid, no third seat', () => {
+    expect(mp.includes('multiplayer-versus')).toBe(true);
+    expect(mp.includes('([0, 1] as const).map')).toBe(true);
+    expect(mp.includes('multiplayer-roster')).toBe(false);
+    expect(mp.includes('grid-cols-3')).toBe(false);
+    expect(mp.includes('grid-cols-4')).toBe(false);
+  });
+  it('3. live round renders answers with the shared .answer-button primitive', () => {
+    expect(mp.includes('multiplayer-answer-grid')).toBe(true);
+    expect(mp.includes("'answer-button'")).toBe(true);
+  });
+  it('5. multiplayer answer cards carry the shared cyan under-glow', () => {
+    expect(css.includes('.multiplayer-answer-grid .answer-button:not(.correct):not(.wrong)')).toBe(true);
+    expect(css.includes('hsla(203, 92%, 60%, 0.42)')).toBe(true);
+  });
+  it('6. correct/wrong states override the neutral cyan glow (scoped :not)', () => {
+    expect(css.includes('.multiplayer-answer-grid .answer-button:not(.correct):not(.wrong)')).toBe(true);
+  });
+  it('two players read as a balanced versus block, using only existing copy', () => {
+    expect(mp.includes('versus-seat')).toBe(true);
+    expect(mp.includes('copy.host')).toBe(true);
+    expect(mp.includes('copy.you')).toBe(true);
+  });
+  it('17/18. signed-out MP result keeps the account CTA; authenticated hides it', () => {
+    expect(mp.includes('!isAuthenticated && saveProgressLabel')).toBe(true);
+  });
+});
+
+describe('Stage 18 — additive head-to-head DB migration', () => {
+  const sql = read('database/012_multiplayer_head_to_head.sql');
+  it('8/9/16. default drops to 2 and a NOT VALID cap preserves legacy rows', () => {
+    expect(sql.includes('set default 2')).toBe(true);
+    expect(sql.includes('check (max_players <= 2) not valid')).toBe(true);
+  });
+});
+
+describe('Stage 18 — Solo unchanged; Admin untouched', () => {
+  const css = read('src/app/globals.css');
+  it('19/24. Solo keeps its game-active cyan under-glow rule', () => {
+    expect(css.includes('.game-active .answer-button:not(.correct):not(.wrong)')).toBe(true);
+  });
+});

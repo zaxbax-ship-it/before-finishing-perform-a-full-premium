@@ -553,20 +553,22 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
           <div className="multiplayer-loader" aria-hidden="true" />
           <h2>{copy.waiting}</h2>
           <p>{gameState.lobby.playerCount} / {gameState.lobby.maxPlayers} {copy.players}</p>
-          <div className="multiplayer-roster grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full max-w-4xl mx-auto my-6">
-            {gameState.lobby.players.map(player => {
+          <div className="multiplayer-versus">
+            {([0, 1] as const).map(seat => {
+              const player = gameState.lobby.players[seat];
+              if (!player) {
+                return <div key={`seat-${seat}`} className="versus-seat versus-seat-empty" aria-hidden="true"><div className="versus-avatar" /></div>;
+              }
               const isHost = player.id === gameState.lobby.hostPlayerId;
               const isMe = player.id === gameState.me?.id;
               return (
-                <div key={player.id} className={`roster-player-card glass p-4 rounded-[22px] flex flex-col items-center text-center relative ${isMe ? 'ring-1 ring-gold/50' : ''}`}>
+                <div key={player.id} className={`versus-seat glass ${isMe ? 'is-me' : ''}`}>
                   {isHost && (
-                    <span className="absolute top-3 right-3 text-gold" title={copy.host}>
+                    <span className="versus-host" title={copy.host}>
                       <PremiumIcon size={16} aria-hidden="true" />
                     </span>
                   )}
-                  <div className="avatar-placeholder h-12 w-12 rounded-2xl bg-gold/10 text-gold flex items-center justify-center text-lg font-black mb-3">
-                    {player.nickname.slice(0, 2).toUpperCase()}
-                  </div>
+                  <div className="versus-avatar">{player.nickname.slice(0, 2).toUpperCase()}</div>
                   <strong className="text-white block truncate w-full font-bold">{player.nickname}</strong>
                   {isMe && <span className="text-xs text-white/50 mt-2 block">({copy.you})</span>}
                 </div>

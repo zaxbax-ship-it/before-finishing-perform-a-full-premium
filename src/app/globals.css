@@ -1576,3 +1576,47 @@ html,body{overscroll-behavior-y:none}
 .leaderboard-you-name{color:#fff;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .leaderboard-you-score{font-size:1.7rem;color:#ffe9a6;font-weight:950;font-feature-settings:"tnum"}
 .leaderboard-you-rank{color:var(--gold);font-weight:900}
+
+
+/* ==========================================================================
+   Stage 18 — Multiplayer shares the Solo game-show visual language.
+   MP already renders answers with .answer-button; here it inherits the Solo
+   spotlight stage, question hero, and the signature cyan under-glow so both
+   modes read as ONE game. No markup or text changes required for answers.
+   ========================================================================== */
+.multiplayer-game, .multiplayer-results, .multiplayer-waiting {
+  border-color: transparent;
+  background:
+    radial-gradient(ellipse 82% 50% at 50% -6%, hsla(203, 90%, 55%, 0.10), transparent 60%),
+    linear-gradient(180deg, hsla(0, 0%, 100%, 0.03), hsla(0, 0%, 100%, 0.012));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+}
+.multiplayer-game h2 {
+  font-size: 1.5rem;
+  line-height: 1.34;
+  font-weight: 900;
+  color: #fff;
+  text-align: center;
+  letter-spacing: -0.01em;
+  margin-bottom: 1.25rem;
+  text-wrap: balance;
+}
+@media (min-width: 768px) { .multiplayer-game h2 { font-size: 2.2rem; } }
+
+.multiplayer-answer-grid { display: grid; gap: 14px; }
+.multiplayer-answer-grid .answer-button:not(.correct):not(.wrong) {
+  border-color: hsla(0, 0%, 100%, 0.09);
+  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.052), hsla(0, 0%, 100%, 0.018));
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.30), 0 3px 12px -4px hsla(203, 92%, 60%, 0.42);
+}
+.multiplayer-answer-grid .answer-button:not(:disabled):hover { border-color: hsla(41, 90%, 69%, 0.40); }
+.multiplayer-answer-grid .answer-button > span:first-child { color: var(--gold); font-weight: 900; }
+
+/* Head-to-head waiting room: exactly two balanced seats (host + opponent). */
+.multiplayer-versus { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 520px; margin: 1.25rem auto; }
+.versus-seat { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; padding: 1rem; border-radius: 22px; min-height: 132px; }
+.versus-seat.is-me { border-color: hsla(41, 90%, 69%, 0.5); }
+.versus-seat-empty { border: 1px dashed hsla(0, 0%, 100%, 0.14); background: hsla(0, 0%, 100%, 0.02); border-radius: 22px; display: grid; place-items: center; min-height: 132px; }
+.versus-host { position: absolute; top: 12px; inset-inline-end: 12px; }
+.versus-avatar { height: 48px; width: 48px; border-radius: 16px; background: hsla(41, 90%, 69%, 0.10); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; margin-bottom: 0.75rem; }
+.versus-seat-empty .versus-avatar { background: hsla(0, 0%, 100%, 0.04); color: transparent; margin-bottom: 0; }
