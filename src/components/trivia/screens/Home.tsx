@@ -8,18 +8,18 @@ export function Home({ t, soloLabel, multiplayerLabel, journeyVisible, start, op
   return (
     <section className="home-landing mx-auto w-full max-w-[1680px] px-5 pb-16 lg:px-8">
       {/* Hero: brand statement through the two primary action cards below. */}
-      <div className="grid items-center gap-12 lg:grid-cols-[.86fr_1fr]">
-        <div className="home-hero-prize-card relative min-h-[280px] overflow-hidden rounded-[36px] p-8 lg:min-h-[440px]">
-          <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
-          <div className="relative grid h-full place-items-center text-center">
-            <div className="home-hero-million">
-              {/* Stage 25 — the official 3D one-million-dollar hero asset, used
-                  exactly as supplied (only scaled + positioned, never redrawn). */}
-              <img src={ASSETS.million3d} alt="$1,000,000" width={1024} height={334} className="home-million-img" />
-              {/* The existing crown, reused and resting naturally (slight right
-                  tilt, subtle overlap) on the final zero — never rigidly centred. */}
-              <span className="home-million-crown" aria-hidden="true"><PremiumIcon size={34} /></span>
-            </div>
+      <div className="home-hero-grid grid items-center lg:grid-cols-[.86fr_1fr]">
+        {/* Container removed — the 3D icon + crown now float free on the page
+            background, over a soft embedded premium halo. */}
+        <div className="home-hero-stage">
+          <div className="home-hero-million">
+            {/* The official 3D one-million-dollar hero asset, used exactly as
+                supplied (only scaled + positioned, never redrawn). */}
+            <span className="home-hero-halo" aria-hidden="true" />
+            <img src={ASSETS.million3d} alt="$1,000,000" width={1024} height={334} className="home-million-img" />
+            {/* The existing crown, reused and resting naturally (slight right
+                tilt, subtle overlap) on the final zero — never rigidly centred. */}
+            <span className="home-million-crown" aria-hidden="true"><PremiumIcon size={34} /></span>
           </div>
         </div>
         <div className="text-center">
