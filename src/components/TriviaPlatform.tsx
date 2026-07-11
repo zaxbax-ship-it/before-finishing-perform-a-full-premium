@@ -77,7 +77,7 @@ const COMMUNITY_KEY = 'premium-trivia-community-submissions-v1';
 const AUDIT_KEY = 'premium-trivia-audit-log-v1';
 const NICKNAME_KEY = 'premium-trivia-public-nickname-v1';
 const LOCALE_KEY = 'premium-trivia-locale-v1';
-const SUPPORTED_LOCALES: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
+const SUPPORTED_LOCALES: Locale[] = ['he', 'en', 'ar', 'ru'];
 const SCREEN_MEMORY_KEY = 'premium-trivia-screen-v1';
 // Screens that can be restored after back/forward navigation. Live-state
 // screens (game, result) cannot be resurrected after a reload.
@@ -416,7 +416,7 @@ export default function TriviaPlatform({
   }
 
   // Reflect the active locale on the document root so screen readers and search
-  // engines get the correct language + direction (LTR for en/ru/am, RTL for
+  // engines get the correct language + direction (LTR for en/ru, RTL for
   // he/ar) instead of the SSR Hebrew/RTL default, and persist the choice.
   useEffect(() => {
     try { localStorage.setItem(LOCALE_KEY, JSON.stringify(locale)); } catch { /* storage may be unavailable */ }

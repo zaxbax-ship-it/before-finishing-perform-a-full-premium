@@ -10,7 +10,7 @@ export function StructuredData() {
         name: SITE_NAME,
         url: getAbsoluteUrl('/'),
         description: SITE_DESCRIPTION,
-        inLanguage: ['he', 'en', 'ar', 'ru', 'am']
+        inLanguage: ['he', 'en', 'ar', 'ru']
       },
       {
         '@type': 'WebApplication',

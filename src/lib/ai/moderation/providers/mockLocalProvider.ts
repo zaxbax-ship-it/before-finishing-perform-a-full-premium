@@ -21,7 +21,6 @@ function explanationFor(correctAnswer: string, language: string): string {
   if (language === 'he') return `התשובה הנכונה היא ${answer}.`;
   if (language === 'ar') return `الإجابة الصحيحة هي ${answer}.`;
   if (language === 'ru') return `Правильный ответ — ${answer}.`;
-  if (language === 'am') return `ትክክለኛው መልስ ${answer} ነው።`;
   return `The correct answer is ${answer}.`;
 }
 

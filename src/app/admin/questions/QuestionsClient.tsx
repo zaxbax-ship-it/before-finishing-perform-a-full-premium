@@ -18,7 +18,7 @@ type Usage = { featuredInRecentGames: number; answers: number; correct: number; 
 
 const EMPTY_EDITOR: Editor = { question: '', options: ['', '', '', ''], correctIndex: 0, category: '', difficulty: 'בינוני', explanation: '', status: 'draft' };
 const STATUS_LABEL: Record<QuestionStatus, string> = { draft: 'טיוטה', published: 'מפורסמת', archived: 'בארכיון' };
-const ALL_LOCALES = ['he', 'en', 'ar', 'ru', 'am'];
+const ALL_LOCALES = ['he', 'en', 'ar', 'ru'];
 
 /**
  * Question CMS console: server-persisted CRUD with draft/publish/archive,

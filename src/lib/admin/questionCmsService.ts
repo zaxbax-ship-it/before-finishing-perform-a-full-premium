@@ -59,7 +59,7 @@ export type CmsQuestionDraft = {
   status?: QuestionStatus;
 };
 
-const LOCALES: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
+const LOCALES: Locale[] = ['he', 'en', 'ar', 'ru'];
 
 export function statusOf(question: ApprovedQuestion): QuestionStatus {
   return question.status || (question.isActive ? 'published' : 'archived');

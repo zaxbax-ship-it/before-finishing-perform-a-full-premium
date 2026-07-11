@@ -17,8 +17,7 @@ export const MULTIPLAYER_OPTION_LETTERS: Record<Locale, string[]> = {
   he: ['א', 'ב', 'ג', 'ד'],
   en: ['A', 'B', 'C', 'D'],
   ar: ['أ', 'ب', 'ج', 'د'],
-  ru: ['А', 'Б', 'В', 'Г'],
-  am: ['ሀ', 'ለ', 'ሐ', 'መ']
+  ru: ['А', 'Б', 'В', 'Г']
 };
 
 export function multiplayerOptionLetter(locale: Locale, index: number): string {

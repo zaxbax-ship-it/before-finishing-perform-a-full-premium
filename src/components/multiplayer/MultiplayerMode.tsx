@@ -830,7 +830,7 @@ function money(value: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
 
-const LANGUAGE_NAMES: Record<string, string> = { he: 'עברית', en: 'English', ar: 'العربية', ru: 'Русский', am: 'አማርኛ' };
+const LANGUAGE_NAMES: Record<string, string> = { he: 'עברית', en: 'English', ar: 'العربية', ru: 'Русский' };
 
 function inviteLink(lobbyId: string) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';

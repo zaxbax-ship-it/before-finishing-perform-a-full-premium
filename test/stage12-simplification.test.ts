@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
-const LOCALES = ['he', 'en', 'ar', 'ru', 'am'];
+const LOCALES = ['he', 'en', 'ar', 'ru'];
 
 describe('Stage 12 — Home hero simplification', () => {
   const home = read('src/components/trivia/screens/Home.tsx');

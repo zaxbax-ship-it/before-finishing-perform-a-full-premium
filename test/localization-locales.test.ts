@@ -10,7 +10,7 @@ import { getCommunityUi, getInfoUi, getMarketingQuestions, getTriviaUi } from '@
 import { getMultiplayerCopy } from '@/lib/multiplayer/localization';
 import type { Locale } from '@/lib/types';
 
-const locales: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
+const locales: Locale[] = ['he', 'en', 'ar', 'ru'];
 
 describe('per-locale localization modules', () => {
   it('bundles Hebrew eagerly as the base locale', () => {

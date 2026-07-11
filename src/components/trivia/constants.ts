@@ -13,16 +13,14 @@ export const OPTION_LETTERS: Record<Locale, string[]> = {
   he: LETTERS,
   en: ['A', 'B', 'C', 'D'],
   ar: ['أ', 'ب', 'ج', 'د'],
-  ru: ['А', 'Б', 'В', 'Г'],
-  am: ['ሀ', 'ለ', 'ሐ', 'መ']
+  ru: ['А', 'Б', 'В', 'Г']
 };
 
 export const LANGUAGE_OPTIONS: Array<{ value: Locale; label: string; native: string }> = [
   { value: 'he', label: 'עברית', native: 'עברית' },
   { value: 'en', label: 'English', native: 'English' },
   { value: 'ar', label: 'Arabic', native: 'العربية' },
-  { value: 'ru', label: 'Russian', native: 'Русский' },
-  { value: 'am', label: 'Amharic', native: 'አማርኛ' }
+  { value: 'ru', label: 'Russian', native: 'Русский' }
 ];
 
 export const MONEY = [1000, 2000, 5000, 10000, 20000, 40000, 80000, 150000, 250000, 400000, 550000, 700000, 850000, 1000000, 1000000];

@@ -1831,8 +1831,8 @@ const resources: LocaleResources = {
   },
   "multiplayer": {
     "nav": "اللعب الجماعي",
-    "solo": "لعب فردي",
-    "multiplayer": "لعب جماعي",
+    "solo": "لعبة شخصية",
+    "multiplayer": "وجهاً لوجه",
     "title": "ساحة المباريات المباشرة",
     "subtitle": "انضم إلى لاعبين آخرين في مباراة تريفيا سريعة وآمنة.",
     "create": "إنشاء لعبة",

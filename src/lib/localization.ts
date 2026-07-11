@@ -23,8 +23,7 @@ const loaders: Record<Locale, () => Promise<{ default: LocaleResources }>> = {
   he: () => import('./localization/locales/he'),
   en: () => import('./localization/locales/en'),
   ar: () => import('./localization/locales/ar'),
-  ru: () => import('./localization/locales/ru'),
-  am: () => import('./localization/locales/am')
+  ru: () => import('./localization/locales/ru')
 };
 
 const pendingLoads: Partial<Record<Locale, Promise<void>>> = {};

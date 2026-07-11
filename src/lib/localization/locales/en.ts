@@ -1959,8 +1959,8 @@ const resources: LocaleResources = {
   },
   "multiplayer": {
     "nav": "Multiplayer",
-    "solo": "Play Solo",
-    "multiplayer": "Play Multiplayer",
+    "solo": "Personal Game",
+    "multiplayer": "Head-to-Head",
     "title": "Live Match Arena",
     "subtitle": "Join other players in a fast, polished and server-validated trivia match.",
     "create": "Create Game",

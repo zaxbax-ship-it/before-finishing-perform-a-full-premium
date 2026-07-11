@@ -20,7 +20,7 @@ type MultiplayerLobbyBody = {
   category?: unknown;
 };
 
-const LOCALES: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
+const LOCALES: Locale[] = ['he', 'en', 'ar', 'ru'];
 
 export async function GET() {
   try {

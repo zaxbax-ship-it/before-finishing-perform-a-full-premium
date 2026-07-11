@@ -32,8 +32,7 @@ const resources: LocaleResources = {
     "he": "",
     "en": "",
     "ar": "",
-    "ru": "",
-    "am": ""
+    "ru": ""
   },
   "prefix": [
     "",

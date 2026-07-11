@@ -8,7 +8,7 @@ import { guardApiPermission } from '@/lib/auth/guards';
 import { getClientIdentity, internalServerError, publicJsonError, readLimitedJson, redactSubmissionForClient } from '@/lib/api/communitySecurity';
 import { checkRateLimit, getAiModerationRateLimit, getCommunitySubmissionRateLimit } from '@/lib/infrastructure/rateLimit';
 
-const LOCALES: Locale[] = ['he', 'en', 'ar', 'ru', 'am'];
+const LOCALES: Locale[] = ['he', 'en', 'ar', 'ru'];
 
 // Reading the moderation queue and audit logs is an admin-only capability.
 export async function GET() {

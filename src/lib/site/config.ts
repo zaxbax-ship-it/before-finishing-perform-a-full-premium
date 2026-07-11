@@ -7,7 +7,7 @@ export const SITE_DESCRIPTION =
 export const DEFAULT_SITE_ORIGIN = 'http://localhost:3000';
 export const LEGAL_LAST_UPDATED = 'July 5, 2026';
 
-export const SUPPORTED_PUBLIC_LOCALES = ['he', 'en', 'ar', 'ru', 'am'] as const;
+export const SUPPORTED_PUBLIC_LOCALES = ['he', 'en', 'ar', 'ru'] as const;
 
 function normalizeOrigin(value: string): string {
   const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
