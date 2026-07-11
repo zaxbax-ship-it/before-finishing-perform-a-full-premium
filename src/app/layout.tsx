@@ -8,6 +8,7 @@ import { readEnv } from '@/lib/infrastructure/environment';
 import { getAbsoluteUrl, getSiteOrigin, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '@/lib/site/config';
 import '@/design/public/tokens.css';
 import './globals.css';
+import '@/design/public/buttons.css';
 import './language-menu.css';
 import './ads.css';
 import './auth.css';

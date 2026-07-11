@@ -23,6 +23,7 @@ the one source of truth for that language.
 | `tokens.ts` | The TypeScript view of the tokens + the approved canonical class names (`PUBLIC_TOKENS`, `PUBLIC_CLASSES`). |
 | `primitives.tsx` | The approved React primitives (server-safe). |
 | `PublicModal.tsx` | The one approved public dialog (backdrop + glass card + focus trap + dismiss). |
+| `buttons.css` | Public button surface transparency (~78% fill for a subtle premium-glass look; colours/borders/shadows/hover unchanged). Imported after globals; public-scoped. |
 | `index.ts` | Barrel — import everything from `@/design/public`. |
 
 ## Primitives

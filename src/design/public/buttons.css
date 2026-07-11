@@ -1,0 +1,30 @@
+/**
+ * PUBLIC DESIGN SYSTEM — button surface transparency (Stage 29).
+ *
+ * Every public button (the shared premium + ghost families that PublicButton and
+ * all public screens render) is filled to ~78% for a subtle premium-glass look.
+ * Its colours, gradient, border, shadow, glow, hover, pressed and focus behaviour
+ * are ALL unchanged — only the resting fill opacity is reduced, so the button sits
+ * a little more inside the navy stage without looking faded, washed out or disabled.
+ *
+ * Scoped to the public app (never Admin, which also uses these classes). The main
+ * menu button, site logo, language selector and pure icon-only controls use
+ * different classes (.app-brand, .language-trigger, .icon-button) and are
+ * intentionally untouched, as is the branded Google auth button (.google-button).
+ */
+
+/* Primary / CTA — the gold premium button, ~78% filled (deepens over navy, not faded). */
+.app-shell:not(.admin-active) .premium-button {
+  background: linear-gradient(135deg, rgba(255, 247, 201, 0.78), rgba(248, 211, 111, 0.78) 36%, rgba(217, 155, 56, 0.78) 68%, rgba(159, 100, 31, 0.78));
+}
+
+/* Secondary — the dark-glass ghost button, resting fill reduced ~25%. */
+.app-shell:not(.admin-active) .ghost-button {
+  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.083), hsla(0, 0%, 100%, 0.034));
+}
+
+/* Hover behaviour is preserved exactly: the ghost azure tint is re-applied so it
+   still reads as the same hover state over the lighter resting fill. */
+.app-shell:not(.admin-active) .ghost-button:hover {
+  background: linear-gradient(145deg, rgba(69, 194, 255, 0.16), hsla(0, 0%, 100%, 0.075));
+}
