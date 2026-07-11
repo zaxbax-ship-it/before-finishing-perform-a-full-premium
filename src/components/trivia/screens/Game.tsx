@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, HomeIcon, PhoneFriendIcon, SwapQuestionIcon, WalletIcon } from '@/lib/design/icons';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WalletIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { lifelineAvailability, lifelinePrice, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { timerProgress } from '@/lib/gameplay/timer';
@@ -13,7 +14,10 @@ import { getInfoUi } from '../i18n';
 import { MilestoneLadder } from './MilestoneLadder';
 import type { GameQuestion, Lifeline } from '../types';
 
-export type GamePhase = 'intro' | 'question' | 'feedback' | 'milestone';
+// Stage 22 — 'milestone-exit' is the calm out-phase of the milestone transition:
+// the ladder is still visible (so the whole transition lasts >=2.5s) while it
+// gently sinks away before the next question resumes.
+export type GamePhase = 'intro' | 'question' | 'feedback' | 'milestone' | 'milestone-exit';
 
 export function Game(props: {
   t: Record<string, string>;
@@ -37,7 +41,8 @@ export function Game(props: {
   requestExit: () => void;
 }) {
   const { t, locale, current, round, order, selected, hiddenAnswers, timer, currentPrize, chances, lifelineUses, lifelineUsedThisQuestion, advice, notice, gamePhase, ladderCorrect, chooseAnswer, triggerLifeline, requestExit } = props;
-  const showLadder = gamePhase === 'intro' || gamePhase === 'milestone';
+  // The ladder overlay owns the whole intro + milestone transition (enter/hold/exit).
+  const showLadder = gamePhase === 'intro' || gamePhase === 'milestone' || gamePhase === 'milestone-exit';
   // Presentation-only: the pot eases between real values; logic sees exact numbers.
   const animatedPot = useCountUp(currentPrize, 650);
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
@@ -55,12 +60,20 @@ export function Game(props: {
   const timerColor = `hsl(${Math.round(hue)}, ${sat}%, ${light}%)`;
   const timerCritical = timer <= 4;
   const infoUi = getInfoUi(locale);
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  // Return focus to the gameplay stage as each question becomes active (keyboard
-  // clarity replaces the removed Next button; the flow auto-advances).
+  // Stage 22 — as each question becomes active, focus moves to the QUESTION
+  // HEADING (a neutral element with no focus-ring), never to an answer. This
+  // announces the question to screen readers and guarantees no answer wears the
+  // gold focus ring before the player interacts. Genuine keyboard Tab still
+  // rings the focused answer exactly as expected.
+  const questionRef = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
-    if (gamePhase === 'question') stageRef.current?.focus();
+    if (gamePhase === 'question') questionRef.current?.focus();
   }, [gamePhase, current.id]);
+  // Stage 22 — the ladder overlay is PORTALLED to <body> so its fixed, viewport-
+  // centred position is never trapped by an ancestor transform (the keyed
+  // .screen-section entrance animation establishes a containing block).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const answerInfo = selected !== null ? {
     correct: selected === current.correctIndex,
     answer: current.correctAnswer || current.answers[current.correctIndex]
@@ -68,19 +81,27 @@ export function Game(props: {
   const answersLocked = selected !== null || gamePhase !== 'question';
   return (
     <section className="compact-game-shell game-priority-layout mx-auto w-full max-w-3xl px-4 pb-10">
-      <section className="glass question-priority rounded-[32px] p-5 md:p-8">
-        <div className="game-topline game-topline-slim">
-          <button type="button" className="game-topline-home focus-ring" aria-label={t.exitHomeAria} title={t.exitHomeAria} onClick={requestExit}><HomeIcon size={18} aria-hidden="true" /></button>
-          <span className="game-topline-info">{round + 1}/15 · {current.category}</span>
+      {/* Stage 22 — during the ladder, the card clears to the Home stage so the
+          milestone view sits on the identical navy + azure + gold background. */}
+      <section className={`glass question-priority rounded-[32px] p-5 md:p-8 ${showLadder ? 'stage-clear' : ''}`}>
+        {/* Stage 22 — the gameplay header is the shared site logo (no question
+            counter, no separate Home button). The logo is the Home control and
+            routes through the protected exit/cash-out flow. */}
+        <div className={`game-topline game-topline-slim ${showLadder ? 'stage-hidden' : ''}`}>
+          <button type="button" className="app-brand focus-ring" onClick={requestExit} aria-label={t.exitHomeAria} title={t.exitHomeAria}>
+            <span className="app-brand-mark"><PremiumIcon size={22} aria-hidden="true" /></span>
+            <span className="app-brand-text"><strong>{t.headline}</strong></span>
+          </button>
         </div>
         <span className="sr-only" role="timer" aria-live="off">{fmt(t.timerRemaining, { seconds: timerModel.remaining })}</span>
-        <h2 key={`q-${current.id}`} className="question-text stage-enter mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl">{current.question}</h2>
+        <h2 ref={questionRef} tabIndex={-1} key={`q-${current.id}`} className={`question-text stage-enter mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl ${showLadder ? 'stage-hidden' : ''}`}>{current.question}</h2>
 
-        <div className="game-stage-wrap" ref={stageRef} tabIndex={-1}>
-          {showLadder && (
+        <div className="game-stage-wrap">
+          {mounted && showLadder && createPortal(
             <div className={`milestone-focus milestone-focus-${gamePhase}`}>
               <MilestoneLadder t={t} correct={ladderCorrect} />
-            </div>
+            </div>,
+            document.body
           )}
           <div className={`gameplay-stage ${showLadder ? 'is-receded' : ''}`} aria-hidden={showLadder ? 'true' : undefined}>
             <div key={`a-${current.id}`} className="answers-grid grid gap-4">
@@ -151,8 +172,9 @@ export function Game(props: {
         {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}
         {notice && <div className="mt-6 rounded-3xl border border-gold/40 bg-gold/10 p-5 text-lg leading-8 text-gold">{notice}</div>}
 
-        {/* Stage 20C — bottom status: only remaining chances + current winnings. */}
-        <div className="game-bottom-status">
+        {/* Stage 22 — bottom status: a centred stack of the remaining chances with
+            the larger current winnings directly below them. */}
+        <div className={`game-bottom-status ${showLadder ? 'stage-hidden' : ''}`}>
           <ChanceMeter total={SOLO_INITIAL_LIVES} remaining={chances} label={fmt(t.chancesStatus, { count: chances, total: SOLO_INITIAL_LIVES })} />
           <span className="game-bottom-pot" aria-label={`${t.currentPot}: ${money(currentPrize)}`}>{money(animatedPot)}</span>
         </div>

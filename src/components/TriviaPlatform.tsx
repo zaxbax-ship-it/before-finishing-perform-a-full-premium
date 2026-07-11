@@ -63,7 +63,7 @@ import { PaidModal } from '@/components/trivia/modals/PaidModal';
 import { Game, type GamePhase } from '@/components/trivia/screens/Game';
 import { completesMilestone } from '@/components/trivia/milestones';
 import { RewardsProfile } from '@/components/trivia/screens/RewardsProfile';
-import { LETTERS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS } from '@/components/trivia/constants';
+import { CORRECT_FEEDBACK_MS, LETTERS, MILESTONE_EXIT_MS, MILESTONE_FEEDBACK_MS, MILESTONE_HOLD_MS, MONEY, OPTION_LETTERS, SAFE_STEPS, SOLO_TIMER_SECONDS, WRONG_FEEDBACK_MS } from '@/components/trivia/constants';
 
 const AUTO_ADVANCE_MS = 2200;
 const STATS_KEY = 'premium-trivia-stats-v3';
@@ -845,21 +845,27 @@ export default function TriviaPlatform({
     clearSeq();
     const nextCorrect = round + 1;
     if (correct && nextCorrect < 15 && completesMilestone(nextCorrect)) {
+      // Stage 22 — blue verdict stays readable, then a calm >=2.5s cinematic
+      // milestone sequence: rise (enter) -> readable hold -> sink (exit) -> advance.
       seq(() => {
         setMilestoneCorrect(nextCorrect);
         setGamePhase('milestone');
         if (SAFE_STEPS.includes(round)) playAudioEvent('prize.milestone');
         seq(() => {
-          setMilestoneCorrect(null);
-          setGamePhase('question');
-          resolveAnswer(index);
-        }, 1400);
-      }, 500);
+          setGamePhase('milestone-exit');
+          seq(() => {
+            setMilestoneCorrect(null);
+            setGamePhase('question');
+            resolveAnswer(index);
+          }, MILESTONE_EXIT_MS);
+        }, MILESTONE_HOLD_MS);
+      }, MILESTONE_FEEDBACK_MS);
     } else {
+      // Stage 22 — hold the blue/red verdict ~1.5s longer for comprehension.
       seq(() => {
         setGamePhase('question');
         resolveAnswer(index);
-      }, correct ? 500 : 750);
+      }, correct ? CORRECT_FEEDBACK_MS : WRONG_FEEDBACK_MS);
     }
   }
 

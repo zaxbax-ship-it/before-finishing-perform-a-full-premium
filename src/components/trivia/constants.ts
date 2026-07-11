@@ -35,3 +35,17 @@ export const SOLO_TIMER_SECONDS = 25;
 
 // Lifeline pricing lives in src/lib/gameplay/economy.ts (lifelinePrice) — the
 // single source of truth for every client. No component prices lifelines.
+
+/**
+ * Stage 22 — post-answer feedback timing (ms), defined once so the gameplay
+ * screen and orchestrator agree. The player must read the blue/red verdict
+ * before the next state, so the old ~0.5s/0.75s holds grow by ~1.5s. The
+ * milestone transition is a calm cinematic sequence — a readable feedback beat,
+ * then the ladder RISES in, HOLDS, and SINKS out — whose visible span
+ * (HOLD + EXIT) is guaranteed to be at least 2.5 seconds.
+ */
+export const CORRECT_FEEDBACK_MS = 2000;
+export const WRONG_FEEDBACK_MS = 2250;
+export const MILESTONE_FEEDBACK_MS = 600;
+export const MILESTONE_HOLD_MS = 1850;
+export const MILESTONE_EXIT_MS = 700;
