@@ -2,11 +2,13 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { Particles } from '@/components/trivia/chrome/Particles';
 
 /** Shared premium auth layout, reusing the app's existing design tokens. */
 export function AuthShell({ title, subtitle, onBack, children }: { title: string; subtitle?: string; onBack?: () => void; children: ReactNode }) {
   return (
     <main className="app-shell font-hebrew premium-typography" dir="rtl">
+      <Particles />
       <section className="auth-shell">
         <div className="glass auth-card">
           {onBack && (

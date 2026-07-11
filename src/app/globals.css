@@ -1826,3 +1826,21 @@ html,body{overscroll-behavior-y:none}
   .milestone-rung.is-current .milestone-amount { font-size: 0.98rem; }
   .milestone-rung.is-current { transform: scale(1.03); }
 }
+
+
+/* ===================== Stage 24 — public design-language consistency ===================== */
+
+/* One premium surface, never card-in-card. The ranking table was a second full
+   card (lighter .13 edge, 22px radius, weaker 0 18px 46px shadow) nested inside
+   the shared glass Panel. Inside a glass Panel it becomes a flat content region
+   so there is a single master surface, matching the Solo gameplay language. */
+.app-shell:not(.admin-active):not(.game-active) .glass .leaderboard-table-card {
+  border: none;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* Any standalone leaderboard sub-card matches the master glass edge weight (.16). */
+.leaderboard-profile-card { border-color: hsla(0, 0%, 100%, 0.16); }
