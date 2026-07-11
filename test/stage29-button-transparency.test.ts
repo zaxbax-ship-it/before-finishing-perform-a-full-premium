@@ -11,9 +11,14 @@ describe('Stage 29 — subtle premium button transparency', () => {
   it('reduces the resting fill of the shared button families to ~78%', () => {
     expect(buttons).toContain('.premium-button');
     expect(buttons).toContain('.ghost-button');
-    expect(buttons).toContain('rgba(255, 247, 201, 0.78)');
-    expect(buttons).toContain('rgba(159, 100, 31, 0.78)');
-    expect(buttons).toContain('hsla(0, 0%, 100%, 0.083)');
+    expect(buttons).toContain('rgba(255, 247, 201, 0.72)');
+    expect(buttons).toContain('rgba(159, 100, 31, 0.74)');
+    expect(buttons).toContain('hsla(0, 0%, 100%, 0.055)');
+    // genuinely translucent: a frosted backdrop pulls the stage through the fill
+    expect(buttons).toContain('backdrop-filter: blur(');
+    // Home play cards (the buttons Stage 29 missed) are now included
+    expect(buttons).toContain('.primary-action-card.is-solo.stage-interactive');
+    expect(buttons).toContain('rgba(16, 40, 92, 0.58)');
   });
   it('preserves the ghost hover state exactly (azure tint unchanged)', () => {
     expect(buttons).toContain('.ghost-button:hover');

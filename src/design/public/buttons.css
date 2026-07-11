@@ -1,30 +1,55 @@
 /**
- * PUBLIC DESIGN SYSTEM — button surface transparency (Stage 29).
+ * PUBLIC DESIGN SYSTEM — button surface transparency (Stage 29B).
  *
- * Every public button (the shared premium + ghost families that PublicButton and
- * all public screens render) is filled to ~78% for a subtle premium-glass look.
- * Its colours, gradient, border, shadow, glow, hover, pressed and focus behaviour
- * are ALL unchanged — only the resting fill opacity is reduced, so the button sits
- * a little more inside the navy stage without looking faded, washed out or disabled.
+ * Smoked-glass public buttons: the fill is genuinely translucent (~72%) AND a
+ * restrained backdrop blur pulls the navy stage / particles through the body so
+ * the transparency is clearly visible — not just a lower alpha that composites
+ * back to opaque. Text, icons, borders, focus ring, shadows and glow stay fully
+ * opaque (only the background/fill layer is translucent).
  *
- * Scoped to the public app (never Admin, which also uses these classes). The main
- * menu button, site logo, language selector and pure icon-only controls use
- * different classes (.app-brand, .language-trigger, .icon-button) and are
- * intentionally untouched, as is the branded Google auth button (.google-button).
+ * Why Stage 29 was invisible: (1) Home's primary play buttons are
+ * .primary-action-card / .stage-interactive — NOT .premium-button/.ghost-button —
+ * so they were never touched; (2) a bare 0.78 alpha over the light glass cards
+ * these buttons sit on barely shifted the colour. This layer fixes both.
+ *
+ * Scoped to the public app (never Admin). The menu button, site logo, language
+ * selector, icon-only controls and the branded Google button use different
+ * classes and are untouched; gameplay answer cards (.answer-button) and lifeline
+ * tiles are deliberately excluded.
  */
 
-/* Primary / CTA — the gold premium button, ~78% filled (deepens over navy, not faded). */
+/* Primary / CTA — smoked gold glass (Login submit, Result play-again, Contact/
+   Settings submit, all dialog primaries). */
 .app-shell:not(.admin-active) .premium-button {
-  background: linear-gradient(135deg, rgba(255, 247, 201, 0.78), rgba(248, 211, 111, 0.78) 36%, rgba(217, 155, 56, 0.78) 68%, rgba(159, 100, 31, 0.78));
+  background: linear-gradient(135deg, rgba(255, 247, 201, 0.72), rgba(248, 211, 111, 0.72) 36%, rgba(217, 155, 56, 0.72) 68%, rgba(159, 100, 31, 0.74));
+  -webkit-backdrop-filter: blur(6px) saturate(1.12);
+  backdrop-filter: blur(6px) saturate(1.12);
 }
 
-/* Secondary — the dark-glass ghost button, resting fill reduced ~25%. */
+/* Secondary — smoked dark glass. */
 .app-shell:not(.admin-active) .ghost-button {
-  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.083), hsla(0, 0%, 100%, 0.034));
+  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.055), hsla(0, 0%, 100%, 0.02));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
-
-/* Hover behaviour is preserved exactly: the ghost azure tint is re-applied so it
-   still reads as the same hover state over the lighter resting fill. */
+/* Hover increases clarity slightly (the azure tint returns, unchanged). */
 .app-shell:not(.admin-active) .ghost-button:hover {
   background: linear-gradient(145deg, rgba(69, 194, 255, 0.16), hsla(0, 0%, 100%, 0.075));
+}
+
+/* Home primary/secondary play actions — the big navy cards + the leaderboard
+   pill. Reduce the answer-card navy fill so the deep-navy stage + gold/azure
+   particles show through, frosted. Matches the Stage-24B selector specificity
+   and wins by source order (this layer is imported after globals). The gold
+   (Solo) / azure (Multiplayer) identity glow at the top is preserved. */
+.app-shell:not(.admin-active) .primary-action-card,
+.app-shell:not(.admin-active) .home-leaderboard-card {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-solo.stage-interactive {
+  background: radial-gradient(circle at 50% -12%, hsla(41, 90%, 69%, 0.3), transparent 55%), linear-gradient(135deg, rgba(16, 40, 92, 0.58), rgba(4, 10, 26, 0.46));
+}
+.app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-multi.stage-interactive {
+  background: radial-gradient(circle at 50% -12%, rgba(69, 194, 255, 0.3), transparent 55%), linear-gradient(135deg, rgba(16, 40, 92, 0.58), rgba(4, 10, 26, 0.46));
 }
