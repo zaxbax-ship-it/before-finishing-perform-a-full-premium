@@ -1,7 +1,7 @@
 import { AdSlot } from '@/components/ads/AdSlot';
 import { CelebrationIcon, ForwardIcon, LeaderboardIcon, MultiplayerIcon, PremiumIcon, SinglePlayerIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
-import { money } from '../format';
+import { ASSETS } from '@/lib/assets';
 import type { Screen } from '../types';
 
 export function Home({ t, soloLabel, multiplayerLabel, journeyVisible, start, open }: { t: Record<string, string>; locale: Locale; soloLabel: string; multiplayerLabel: string; journeyVisible?: boolean; start: () => void; open: (screen: Screen) => void }) {
@@ -12,9 +12,13 @@ export function Home({ t, soloLabel, multiplayerLabel, journeyVisible, start, op
         <div className="home-hero-prize-card relative min-h-[280px] overflow-hidden rounded-[36px] p-8 lg:min-h-[440px]">
           <div className="absolute inset-8 rounded-full bg-gold/20 blur-3xl" />
           <div className="relative grid h-full place-items-center text-center">
-            <div>
-              <div className="mb-5 text-6xl text-gold drop-shadow-[0_0_26px_rgba(247,202,103,.55)]"><PremiumIcon size={56} aria-hidden="true" /></div>
-              <div className="home-prize-amount text-6xl font-black md:text-7xl">{money(1000000)}</div>
+            <div className="home-hero-million">
+              {/* Stage 25 — the official 3D one-million-dollar hero asset, used
+                  exactly as supplied (only scaled + positioned, never redrawn). */}
+              <img src={ASSETS.million3d} alt="$1,000,000" width={1024} height={334} className="home-million-img" />
+              {/* The existing crown, reused and resting naturally (slight right
+                  tilt, subtle overlap) on the final zero — never rigidly centred. */}
+              <span className="home-million-crown" aria-hidden="true"><PremiumIcon size={34} /></span>
             </div>
           </div>
         </div>

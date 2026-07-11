@@ -1962,3 +1962,28 @@ html,body{overscroll-behavior-y:none}
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
 }
 .reward-confetti.is-reduced .cf { box-shadow: none; }
+
+
+/* ===================== Stage 25 — Home hero 3D million-dollar asset ===================== */
+.home-hero-million { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
+.home-million-img {
+  display: block;
+  width: 100%;
+  max-width: min(440px, 82vw);
+  height: auto;
+  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.45));
+}
+/* Reused crown over the final zero (right side): casually tilted, slightly
+   overlapping its top — intentionally not perfectly aligned. */
+.home-million-crown {
+  position: absolute;
+  left: 83%;
+  top: -8%;
+  width: 12%; /* scales with the icon so it stays proportional to the final zero */
+  color: var(--gold);
+  transform: rotate(12deg);
+  transform-origin: bottom center;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+.home-million-crown svg { display: block; width: 100%; height: auto; }
