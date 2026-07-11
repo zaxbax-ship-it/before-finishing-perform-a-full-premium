@@ -1153,7 +1153,7 @@ export default function TriviaPlatform({
       <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} journeyVisible={journeyVisible} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} startError={startError} clearStartError={() => setStartError('')} />}
-      {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} />}
+      {screen === 'multiplayer' && <MultiplayerMode locale={locale} initialNickname={nickname} isAuthenticated={Boolean(authUser)} saveProgressLabel={authT.saveProgress} />}
       {screen === 'journey' && <Journey t={t} locale={locale} />}
       {screen === 'rules' && <Rules t={t} start={() => open('categories')} />}
       {screen === 'submit' && (
@@ -1224,10 +1224,13 @@ export default function TriviaPlatform({
           t={t}
           entries={leaderboardEntries}
           status={leaderboardStatus}
+          isAuthenticated={Boolean(authUser)}
+          personalBest={stats.bestPrize}
+          displayName={authUser?.displayName || ''}
         />
       )}
       {screen === 'profile' && <RewardsProfile t={t} locale={locale} displayName={nickname || authUser?.displayName || ''} />}
-      {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} nickname={nickname} saveNickname={saveNickname} leaderboardStatus={leaderboardStatus} authUi={authT} />}
+      {screen === 'settings' && <SettingsPanel t={t} settings={settings} setSettings={setSettings} reset={() => { localStorage.clear(); location.reload(); }} />}
       </div>
       {pendingPaid && <PaidModal t={t} pending={pendingPaid} pot={currentPrize} cancel={() => { pendingPaidRef.current = null; setPendingPaid(null); }} confirm={() => applyLifeline(pendingPaid.type, pendingPaid.price)} />}
       {lifeOffer && <LifeOfferModal t={t} cost={lifeOffer.cost} accept={acceptLifeOffer} decline={declineLifeOffer} />}

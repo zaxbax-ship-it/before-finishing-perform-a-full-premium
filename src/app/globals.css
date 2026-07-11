@@ -1565,3 +1565,14 @@ html,body{overscroll-behavior-y:none}
 .app-shell:not(.admin-active):not(.game-active) .category-card:hover {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), 0 5px 16px -4px hsla(203, 92%, 62%, 0.50);
 }
+
+
+/* Stage 17B — authenticated read-only personal-best card (navy/gold, calm,
+   azure edge-light signature). Shown only for the current authenticated
+   session; contains no editable controls. */
+.leaderboard-you{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-bottom:1rem;padding:1rem 1.25rem;border-radius:20px;border:1px solid hsla(41,90%,69%,0.28);background:linear-gradient(135deg,hsla(41,90%,69%,0.12),hsla(0,0%,100%,0.02));box-shadow:0 14px 34px rgba(0,0,0,0.28),0 3px 12px -4px hsla(203,92%,60%,0.30)}
+.leaderboard-you-head{display:flex;flex-direction:column;gap:2px;min-width:0}
+.leaderboard-you-label{font-size:.78rem;color:hsla(0,0%,100%,0.62);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.leaderboard-you-name{color:#fff;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leaderboard-you-score{font-size:1.7rem;color:#ffe9a6;font-weight:950;font-feature-settings:"tnum"}
+.leaderboard-you-rank{color:var(--gold);font-weight:900}

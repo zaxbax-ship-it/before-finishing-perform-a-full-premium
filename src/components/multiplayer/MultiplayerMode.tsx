@@ -29,6 +29,8 @@ import type { Locale } from '@/lib/types';
 type MultiplayerModeProps = {
   locale: Locale;
   initialNickname: string;
+  isAuthenticated?: boolean;
+  saveProgressLabel?: string;
 };
 
 const ANON_KEY = 'premium-trivia-multiplayer-anonymous-id-v1';
@@ -41,7 +43,7 @@ type StoredSession = MultiplayerPlayerCredentials & {
   gameId?: string;
 };
 
-export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProps) {
+export function MultiplayerMode({ locale, initialNickname, isAuthenticated, saveProgressLabel }: MultiplayerModeProps) {
   const copy = getMultiplayerCopy(locale);
   const [nickname, setNickname] = useState(initialNickname || '');
   const [maxPlayers, setMaxPlayers] = useState<2 | 3 | 4>(2);
@@ -667,6 +669,11 @@ export function MultiplayerMode({ locale, initialNickname }: MultiplayerModeProp
             <div className="multiplayer-personal-result">
               <span>{copy.rank}: {myResult.rank}</span>
               <strong>{money(myResult.totalPrize)}</strong>
+            </div>
+          )}
+          {!isAuthenticated && saveProgressLabel && (
+            <div className="guest-progress-cta" role="note">
+              <a className="premium-button focus-ring" href="/login">{saveProgressLabel}</a>
             </div>
           )}
           <button className="premium-button focus-ring inline-flex items-center justify-center gap-2" onClick={leave}><PlayIcon size={16} />{copy.playAgain}</button>
