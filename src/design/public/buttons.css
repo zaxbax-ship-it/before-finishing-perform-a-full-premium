@@ -1,55 +1,80 @@
 /**
- * PUBLIC DESIGN SYSTEM — button surface transparency (Stage 29B).
+ * PUBLIC DESIGN SYSTEM — uniform button transparency (Stage 30).
  *
- * Smoked-glass public buttons: the fill is genuinely translucent (~72%) AND a
- * restrained backdrop blur pulls the navy stage / particles through the body so
- * the transparency is clearly visible — not just a lower alpha that composites
- * back to opaque. Text, icons, borders, focus ring, shadows and glow stay fully
- * opaque (only the background/fill layer is translucent).
+ * Every rectangular / square button across the public site now carries a
+ * uniform ~70% opaque fill (≈30% transparent) plus a restrained backdrop blur,
+ * so each button merges gently with the animated navy stage behind it. Text,
+ * icons, borders, focus rings, shadows and glows stay fully opaque — only the
+ * fill layer is translucent, so legibility is never reduced.
  *
- * Why Stage 29 was invisible: (1) Home's primary play buttons are
- * .primary-action-card / .stage-interactive — NOT .premium-button/.ghost-button —
- * so they were never touched; (2) a bare 0.78 alpha over the light glass cards
- * these buttons sit on barely shifted the colour. This layer fixes both.
+ * Covered families:
+ *   • Gold primary  — .premium-button (all CTA/submit/dialog primaries) + the
+ *                     .play-all-banner ("Play all categories").
+ *   • Navy neutral  — .ghost-button (all secondaries) + .category-card tiles +
+ *                     .drawer-item (the 5 menu buttons: Profile / How-to-play /
+ *                     Submit / Settings / Contact).
+ *   • Home cards    — .primary-action-card.is-solo / .is-multi
+ *                     (Personal Game / Head-to-Head), identity halo preserved.
  *
- * Scoped to the public app (never Admin). The menu button, site logo, language
- * selector, icon-only controls and the branded Google button use different
- * classes and are untouched; gameplay answer cards (.answer-button) and lifeline
- * tiles are deliberately excluded.
+ * Excluded by design: round / icon-only controls (menu, language, close, the
+ * brand logo), the branded Google button, and the in-play quiz answer +
+ * lifeline tiles (kept opaque for gameplay readability). Admin is never
+ * affected (every rule is scoped to .app-shell:not(.admin-active)).
+ *
+ * Imported after globals.css, so these fills win by source order; the explicit
+ * .app-shell descendant selectors also out-specify the base component rules.
  */
 
-/* Primary / CTA — smoked gold glass (Login submit, Result play-again, Contact/
-   Settings submit, all dialog primaries). */
-.app-shell:not(.admin-active) .premium-button {
-  background: linear-gradient(135deg, rgba(255, 247, 201, 0.72), rgba(248, 211, 111, 0.72) 36%, rgba(217, 155, 56, 0.72) 68%, rgba(159, 100, 31, 0.74));
+/* ---- Gold primary: CTA buttons + the play-all banner (70% gold glass) ---- */
+.app-shell:not(.admin-active) .premium-button,
+.app-shell:not(.admin-active) .play-all-banner {
+  background: linear-gradient(135deg, rgba(255, 247, 201, 0.70), rgba(248, 211, 111, 0.70) 36%, rgba(217, 155, 56, 0.70) 68%, rgba(159, 100, 31, 0.72));
   -webkit-backdrop-filter: blur(6px) saturate(1.12);
   backdrop-filter: blur(6px) saturate(1.12);
 }
 
-/* Secondary — smoked dark glass. */
+/* ---- Secondary buttons (also live inside in-play dialogs, so scoped only to
+   :not(.admin-active) — they stay translucent during gameplay too). --------- */
 .app-shell:not(.admin-active) .ghost-button {
-  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.055), hsla(0, 0%, 100%, 0.02));
+  background: linear-gradient(145deg, rgba(16, 40, 92, 0.70), rgba(4, 10, 26, 0.70));
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
-/* Hover increases clarity slightly (the azure tint returns, unchanged). */
+/* ---- Menu items: the base design layer sets --stage-glass-quiet at
+   :not(.game-active) specificity, so match it to land the uniform 70% fill. -- */
+.app-shell:not(.admin-active):not(.game-active) .drawer-item {
+  background: linear-gradient(145deg, rgba(16, 40, 92, 0.70), rgba(4, 10, 26, 0.70));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+/* Category tiles also carry .stage-interactive (whose :not(.game-active) rule
+   sets an opaque --stage-glass), so this needs the same specificity to win.
+   The signature azure top-light is preserved over the new 70% navy fill. */
+.app-shell:not(.admin-active):not(.game-active) .category-card {
+  background: linear-gradient(145deg, rgba(16, 40, 92, 0.70), rgba(4, 10, 26, 0.70)), radial-gradient(circle at 18% 0, rgba(69, 194, 255, 0.16), transparent 40%);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+/* Preserve each surface's hover identity over the new 70% resting fill. */
 .app-shell:not(.admin-active) .ghost-button:hover {
-  background: linear-gradient(145deg, rgba(69, 194, 255, 0.16), hsla(0, 0%, 100%, 0.075));
+  background: linear-gradient(145deg, rgba(69, 194, 255, 0.30), rgba(16, 40, 92, 0.72));
+}
+.app-shell:not(.admin-active):not(.game-active) .drawer-item:hover {
+  background: linear-gradient(145deg, rgba(24, 54, 116, 0.76), rgba(6, 14, 34, 0.72));
+}
+.app-shell:not(.admin-active):not(.game-active) .category-card:hover {
+  background: linear-gradient(145deg, rgba(22, 52, 112, 0.76), rgba(6, 14, 34, 0.72)), radial-gradient(circle at 18% 0, rgba(69, 194, 255, 0.22), transparent 40%);
 }
 
-/* Home primary/secondary play actions — the big navy cards + the leaderboard
-   pill. Reduce the answer-card navy fill so the deep-navy stage + gold/azure
-   particles show through, frosted. Matches the Stage-24B selector specificity
-   and wins by source order (this layer is imported after globals). The gold
-   (Solo) / azure (Multiplayer) identity glow at the top is preserved. */
-.app-shell:not(.admin-active) .primary-action-card,
-.app-shell:not(.admin-active) .home-leaderboard-card {
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+/* ---- Home play cards — 70% navy fill; the gold (Solo) / azure (Head-to-Head)
+   identity halo at the top edge is preserved. Also frost the surfaces. ------ */
+.app-shell:not(.admin-active) .primary-action-card {
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 .app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-solo.stage-interactive {
-  background: radial-gradient(circle at 50% -12%, hsla(41, 90%, 69%, 0.3), transparent 55%), linear-gradient(135deg, rgba(16, 40, 92, 0.58), rgba(4, 10, 26, 0.46));
+  background: radial-gradient(circle at 50% -12%, hsla(41, 90%, 69%, 0.30), transparent 55%), linear-gradient(135deg, rgba(16, 40, 92, 0.70), rgba(4, 10, 26, 0.70));
 }
 .app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-multi.stage-interactive {
-  background: radial-gradient(circle at 50% -12%, rgba(69, 194, 255, 0.3), transparent 55%), linear-gradient(135deg, rgba(16, 40, 92, 0.58), rgba(4, 10, 26, 0.46));
+  background: radial-gradient(circle at 50% -12%, rgba(69, 194, 255, 0.30), transparent 55%), linear-gradient(135deg, rgba(16, 40, 92, 0.70), rgba(4, 10, 26, 0.70));
 }
