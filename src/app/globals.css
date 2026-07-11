@@ -1620,3 +1620,64 @@ html,body{overscroll-behavior-y:none}
 .versus-host { position: absolute; top: 12px; inset-inline-end: 12px; }
 .versus-avatar { height: 48px; width: 48px; border-radius: 16px; background: hsla(41, 90%, 69%, 0.10); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; margin-bottom: 0.75rem; }
 .versus-seat-empty .versus-avatar { background: hsla(0, 0%, 100%, 0.04); color: transparent; margin-bottom: 0; }
+
+
+/* ==========================================================================
+   STAGE 19 — One unified premium gameplay stage (Solo + Multiplayer share it).
+   The four answers, the lifelines and the single countdown bar live inside one
+   glass surface with a soft cyan edge-light — matching the approved reference.
+   One soft depth shadow + one cyan edge-light per surface; hairline borders.
+   ========================================================================== */
+.gameplay-stage {
+  margin-top: 1.4rem;
+  padding: 1.1rem;
+  border-radius: 28px;
+  border: 1px solid hsla(203, 90%, 62%, 0.22);
+  background: linear-gradient(160deg, hsla(0, 0%, 100%, 0.045), hsla(0, 0%, 100%, 0.015));
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38), 0 0 30px -6px hsla(203, 92%, 60%, 0.35);
+}
+@media (min-width: 768px) { .gameplay-stage { padding: 1.4rem; } }
+
+/* Lifelines live inside the stage now — a single quiet row under the answers. */
+.stage-lifelines { margin-top: 1.25rem; }
+.stage-lifelines-title {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: hsla(0, 0%, 100%, 0.6);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.75rem;
+}
+.stage-lifelines .lifeline-help { justify-content: center; margin-top: 0.6rem; }
+
+/* Stronger, reference-matching cyan under-glow on the answer cards in the stage. */
+.game-active .gameplay-stage .answer-button:not(.correct):not(.wrong) {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30), 0 4px 16px -4px hsla(203, 95%, 62%, 0.55);
+}
+
+/* Single premium countdown — one thin line, no nested track, no capsule. */
+.gameplay-timer {
+  margin-top: 1.25rem;
+  height: 6px;
+  border-radius: 999px;
+  background: hsla(0, 0%, 100%, 0.06);
+  overflow: hidden;
+}
+.gameplay-timer-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #45c2ff, #38e0ff);
+  box-shadow: 0 0 12px hsla(203, 92%, 60%, 0.5);
+  transition: width var(--duration-clock-tick, 1s) linear, background var(--duration-normal) var(--ease-default);
+}
+.gameplay-timer-fill.next-warning { background: linear-gradient(90deg, #38e0ff, #ff9d3d); box-shadow: 0 0 12px hsla(35, 100%, 60%, 0.5); }
+.gameplay-timer-fill.next-danger { background: linear-gradient(90deg, #ff9d3d, #ff5a5a); box-shadow: 0 0 14px hsla(4, 92%, 62%, 0.55); }
+@media (prefers-reduced-motion: reduce) { .gameplay-timer-fill { transition: none; } }
+
+/* Multiplayer inherits the same unified-stage frame (its .multiplayer-game glass
+   already holds question + answers + lifelines + timer as one composition). */
+.multiplayer-game {
+  border-color: hsla(203, 90%, 62%, 0.22);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38), 0 0 30px -6px hsla(203, 92%, 60%, 0.35);
+}

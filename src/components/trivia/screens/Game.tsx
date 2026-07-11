@@ -36,17 +36,18 @@ export function Game(props: {
   quit: () => void;
   requestExit: () => void;
 }) {
-  const { t, locale, current, round, order, selected, hiddenAnswers, timer, progress, currentPrize, guaranteedPrize, chances, lifelineUses, lifelineUsedThisQuestion, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
+  const { t, locale, current, round, order, selected, hiddenAnswers, timer, currentPrize, guaranteedPrize, chances, lifelineUses, lifelineUsedThisQuestion, advice, notice, chooseAnswer, advanceAfterAnswer, triggerLifeline, quit, requestExit } = props;
   // Presentation-only: the pot eases between real values; logic sees exact numbers.
   const animatedPot = useCountUp(currentPrize, 650);
   const [reuseHelpOpen, setReuseHelpOpen] = useState(false);
   const optionLetters = OPTION_LETTERS[locale] || LETTERS;
-  // Countdown presentation — the standalone ring is gone; the same clock now
-  // drains a progress layer behind the Next button (see timerProgress).
+  // Stage 19 — the countdown is the single premium bar at the base of the unified
+  // gameplay stage (below the lifelines). No standalone ring, no timer behind Next.
   const timerModel = timerProgress(SOLO_TIMER_SECONDS, timer);
   const infoUi = getInfoUi(locale);
   const nextButtonRef = useRef<HTMLButtonElement | null>(null);
-  // Keyboard flow: focus moves to the continue button once an answer locks in.
+  // Keyboard flow: focus moves to the continue button once an answer locks in
+  // (the button only exists after the answer resolves).
   useEffect(() => {
     if (selected !== null) nextButtonRef.current?.focus();
   }, [selected]);
@@ -64,10 +65,6 @@ export function Game(props: {
           <span className="game-topline-chances">
             <ChanceMeter total={SOLO_INITIAL_LIVES} remaining={chances} label={fmt(t.chancesStatus, { count: chances, total: SOLO_INITIAL_LIVES })} />
           </span>
-          {/* Standalone visible timer removed — the countdown now drains behind
-              the Next button. Keep an accessible timer status: remaining seconds
-              are exposed (role="timer") but not announced every second
-              (aria-live off), so screen readers can query without being spammed. */}
           <span className="sr-only" role="timer" aria-live="off">{fmt(t.timerRemaining, { seconds: timerModel.remaining })}</span>
           <span className="game-topline-pot" title={money(currentPrize)} aria-label={`${t.currentPot}: ${money(currentPrize)}`}>{money(animatedPot)}</span>
         </div>
@@ -77,118 +74,115 @@ export function Game(props: {
           </div>
         )}
         <h2 key={`q-${current.id}`} className="question-text stage-enter mb-6 max-w-5xl text-3xl font-black leading-[1.22] text-white drop-shadow-[0_0_18px_rgba(255,255,255,.12)] md:text-5xl">{current.question}</h2>
-        <div key={`a-${current.id}`} className="answers-grid grid gap-4 md:grid-cols-2">
-          {order.map((answerIndex, displayIndex) => {
-            const state = selected === null ? '' : answerIndex === current.correctIndex ? 'correct' : selected === answerIndex ? 'wrong' : '';
-            return (
-              <button key={answerIndex} disabled={selected !== null || hiddenAnswers.includes(answerIndex)} onClick={() => chooseAnswer(answerIndex)} className={['answer-button focus-ring', state, hiddenAnswers.includes(answerIndex) ? 'eliminated' : ''].join(' ')} style={{ ['--enter-delay' as string]: `${displayIndex * 70}ms` }}>
-                <span className="answer-letter inline-grid h-9 w-9 place-items-center rounded-full font-black">{optionLetters[displayIndex]}</span>
-                <span className="text-xl font-bold">{current.answers[answerIndex]}</span>
+
+        {/* Stage 19 — ONE unified gameplay stage: the four answers, the lifelines
+            and the single countdown bar share one premium surface. */}
+        <div className="gameplay-stage">
+          <div key={`a-${current.id}`} className="answers-grid grid gap-4">
+            {order.map((answerIndex, displayIndex) => {
+              const state = selected === null ? '' : answerIndex === current.correctIndex ? 'correct' : selected === answerIndex ? 'wrong' : '';
+              return (
+                <button key={answerIndex} disabled={selected !== null || hiddenAnswers.includes(answerIndex)} onClick={() => chooseAnswer(answerIndex)} className={['answer-button focus-ring', state, hiddenAnswers.includes(answerIndex) ? 'eliminated' : ''].join(' ')} style={{ ['--enter-delay' as string]: `${displayIndex * 70}ms` }}>
+                  <span className="answer-letter inline-grid h-9 w-9 place-items-center rounded-full font-black">{optionLetters[displayIndex]}</span>
+                  <span className="text-xl font-bold">{current.answers[answerIndex]}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="stage-lifelines">
+            <h3 className="stage-lifelines-title">{t.lifelines}</h3>
+            <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
+              const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
+              const price = lifelinePrice(currentPrize, lifelineUses[type]);
+              const availability = lifelineAvailability(lifelineUses[type], lifelineUsedThisQuestion !== null, currentPrize);
+              const disabled = availability !== 'free' && availability !== 'paid';
+              const usedHere = availability === 'locked-question' && lifelineUsedThisQuestion === type;
+              const statusLabel =
+                availability === 'exhausted' ? t.lifelineExhausted
+                : availability === 'insufficient-pot' ? t.lifelineNeedsPot
+                : availability === 'locked-question' ? (usedHere ? t.lifelineUsedThisQuestion : t.lifelineLockedThisQuestion)
+                : availability === 'paid' ? money(price as number)
+                : t.free;
+              const stateClass =
+                availability === 'exhausted' ? 'exhausted'
+                : availability === 'insufficient-pot' ? 'needs-pot'
+                : availability === 'locked-question' ? 'locked'
+                : availability === 'paid' ? 'paid' : '';
+              return (
+                <button
+                  key={type}
+                  className={`lifeline-tile focus-ring ${stateClass}`}
+                  onClick={() => triggerLifeline(type)}
+                  disabled={disabled}
+                  aria-disabled={disabled}
+                  aria-label={`${t[type]} — ${statusLabel}`}
+                  title={disabled ? statusLabel : t[type]}
+                >
+                  <span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span>
+                  <span className="sr-only">{t[type]}</span>
+                  <small className="lifeline-status" aria-hidden="true">
+                    {availability === 'paid'
+                      ? money(price as number)
+                      : availability === 'insufficient-pot'
+                        ? <WalletIcon size={12} />
+                        : usedHere
+                          ? <ConfirmIcon size={12} />
+                          : ''}
+                  </small>
+                </button>
+              );
+            })}</div>
+            <div className="lifeline-help">
+              <button
+                type="button"
+                className="lifeline-help-btn focus-ring"
+                aria-label={t.lifelines}
+                aria-describedby="reuse-help-text"
+                aria-expanded={reuseHelpOpen}
+                title={t.reuseHint}
+                onClick={() => setReuseHelpOpen(value => !value)}
+                onKeyDown={event => { if (event.key === 'Escape') setReuseHelpOpen(false); }}
+              >
+                <HintsIcon size={15} aria-hidden="true" />
               </button>
-            );
-          })}
+              <span id="reuse-help-text" className="sr-only">{t.reuseHint}</span>
+              {reuseHelpOpen && <div className="lifeline-help-pop" role="tooltip">{t.reuseHint}</div>}
+            </div>
+          </div>
+
+          {/* Single premium countdown bar — the only visible timer. Full at the
+              question start, shrinking continuously; azure -> cyan -> orange -> red
+              with rising urgency. Keyed per question so it resets without rewinding. */}
+          <div className="gameplay-timer" aria-hidden="true">
+            <span key={`timer-${current.id}`} className={`gameplay-timer-fill next-${timerModel.urgency}`} style={{ width: `${timerModel.progress * 100}%` }} />
+          </div>
         </div>
-        {/* Player-paced continue: always present, disabled until an answer is
-            locked in, then armed with the activation pulse. No auto-advance —
-            the player controls the pace. */}
-        <div className="game-next-row">
-          <button
-            ref={nextButtonRef}
-            type="button"
-            className={`game-next-button focus-ring next-${timerModel.urgency} ${answerInfo ? 'ready' : ''}`}
-            disabled={!answerInfo}
-            onClick={advanceAfterAnswer}
-          >
-            {/* Countdown drains behind the label: full at question start, empty
-                exactly at expiry; calm -> warning -> danger. Keyed per question so
-                it resets without an animated rewind. aria-hidden — the role="timer"
-                status carries the value for assistive tech. */}
-            <span
-              key={`timer-${current.id}`}
-              className="game-next-progress"
-              aria-hidden="true"
-              style={{ width: `${timerModel.progress * 100}%` }}
-            />
-            <span className="game-next-label">
-              {infoUi.action}
-              <ForwardIcon size={18} aria-hidden="true" />
-            </span>
-          </button>
-        </div>
+
+        {/* The continue control does not exist while the player is thinking — it
+            appears only once the answer has resolved. */}
+        {answerInfo && (
+          <div className="game-next-row">
+            <button
+              ref={nextButtonRef}
+              type="button"
+              className="game-next-button focus-ring ready"
+              onClick={advanceAfterAnswer}
+            >
+              <span className="game-next-label">
+                {infoUi.action}
+                <ForwardIcon size={18} aria-hidden="true" />
+              </span>
+            </button>
+          </div>
+        )}
         <span className="sr-only" role="status" aria-live="assertive">
           {answerInfo ? `${answerInfo.correct ? infoUi.correct : infoUi.wrong}. ${infoUi.answer}: ${answerInfo.answer}` : ''}
         </span>
         {advice && <div className="mt-6 rounded-3xl border border-azure/35 bg-azure/10 p-5 text-lg leading-8 text-white/82">{advice}</div>}
         {notice && <div className="mt-6 rounded-3xl border border-gold/40 bg-gold/10 p-5 text-lg leading-8 text-gold">{notice}</div>}
-        {/* Progress toward question 15 — the ladder + topline pot carry the money,
-            so no duplicate prize labels compete with the timer here. */}
-        <div className="mt-6 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-l from-gold to-azure transition-all duration-500" style={{ width: `${progress}%` }} /></div>
       </section>
       <aside className="space-y-5">
-        <div className="glass rounded-[28px] p-5">
-          <h3 className="mb-4 text-xl font-extrabold">{t.lifelines}</h3>
-          <div className="grid grid-cols-4 gap-3">{(['fifty', 'swap', 'phone', 'audience'] as Lifeline[]).map(type => {
-            const LifelineIcon = type === 'fifty' ? FiftyFiftyIcon : type === 'swap' ? SwapQuestionIcon : type === 'phone' ? PhoneFriendIcon : AudienceIcon;
-            const price = lifelinePrice(currentPrize, lifelineUses[type]);
-            const availability = lifelineAvailability(lifelineUses[type], lifelineUsedThisQuestion !== null, currentPrize);
-            const disabled = availability !== 'free' && availability !== 'paid';
-            const usedHere = availability === 'locked-question' && lifelineUsedThisQuestion === type;
-            // Five distinct states, never one generic disabled look: free shows no
-            // label; paid shows its price; insufficient-pot shows a wallet hint;
-            // the question-lock shows a check on the tile that was used and a plain
-            // dim on the others; exhausted greys out. aria/title carry the words.
-            const statusLabel =
-              availability === 'exhausted' ? t.lifelineExhausted
-              : availability === 'insufficient-pot' ? t.lifelineNeedsPot
-              : availability === 'locked-question' ? (usedHere ? t.lifelineUsedThisQuestion : t.lifelineLockedThisQuestion)
-              : availability === 'paid' ? money(price as number)
-              : t.free;
-            const stateClass =
-              availability === 'exhausted' ? 'exhausted'
-              : availability === 'insufficient-pot' ? 'needs-pot'
-              : availability === 'locked-question' ? 'locked'
-              : availability === 'paid' ? 'paid' : '';
-            return (
-              <button
-                key={type}
-                className={`lifeline-tile focus-ring ${stateClass}`}
-                onClick={() => triggerLifeline(type)}
-                disabled={disabled}
-                aria-disabled={disabled}
-                aria-label={`${t[type]} — ${statusLabel}`}
-                title={disabled ? statusLabel : t[type]}
-              >
-                <span className="lifeline-icon-shell"><LifelineIcon size={20} aria-hidden="true" /></span>
-                <span className="sr-only">{t[type]}</span>
-                <small className="lifeline-status" aria-hidden="true">
-                  {availability === 'paid'
-                    ? money(price as number)
-                    : availability === 'insufficient-pot'
-                      ? <WalletIcon size={12} />
-                      : usedHere
-                        ? <ConfirmIcon size={12} />
-                        : ''}
-                </small>
-              </button>
-            );
-          })}</div>
-          <div className="lifeline-help">
-            <button
-              type="button"
-              className="lifeline-help-btn focus-ring"
-              aria-label={t.lifelines}
-              aria-describedby="reuse-help-text"
-              aria-expanded={reuseHelpOpen}
-              title={t.reuseHint}
-              onClick={() => setReuseHelpOpen(value => !value)}
-              onKeyDown={event => { if (event.key === 'Escape') setReuseHelpOpen(false); }}
-            >
-              <HintsIcon size={15} aria-hidden="true" />
-            </button>
-            <span id="reuse-help-text" className="sr-only">{t.reuseHint}</span>
-            {reuseHelpOpen && <div className="lifeline-help-pop" role="tooltip">{t.reuseHint}</div>}
-          </div>
-        </div>
         <div className="glass rounded-[28px] p-5">
           <h3 className="mb-4 text-xl font-extrabold">{t.ladder}</h3>
           <div className="prize-ladder">{MONEY.map((amount, index) => {
