@@ -482,8 +482,8 @@ const resources: LocaleResources = {
   },
   "multiplayer": {
     "nav": "משחק מרובה משתתפים",
-    "solo": "משחק יחיד",
-    "multiplayer": "משחק מרובה משתתפים",
+    "solo": "משחק אישי",
+    "multiplayer": "ראש בראש",
     "title": "זירת משחקים חיה",
     "subtitle": "הצטרפו לשחקנים אחרים בקרב טריוויה מהיר, נקי ומאובטח.",
     "create": "יצירת משחק",
