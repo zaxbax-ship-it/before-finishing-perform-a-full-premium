@@ -36,8 +36,8 @@ describe('Stage 22 — 2: enlarged, viewport-centred ladder', () => {
     expect(css).toContain('.milestone-focus { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center;');
   });
   it('the rungs are enlarged (clamped) and still cap to one frame', () => {
-    expect(css).toContain('.milestone-rungs { max-width: min(440px, 86vw);');
-    expect(css).toContain('.milestone-rung { min-height: clamp(30px, 6.8vh, 58px);');
+    expect(css).toContain('.milestone-rungs { max-width: min(468px, 90vw);');
+    expect(css).toContain('.milestone-rung { min-height: clamp(32px, 7.4vh, 64px);');
   });
 });
 
@@ -138,7 +138,7 @@ describe('Stage 22 — 11/22/23/24: state-machine & race safety preserved', () =
     expect(platform).toContain('if (advancingRef.current) return');
   });
   it('23: the sequence cleans up on exit/unmount', () => {
-    expect(platform).toContain("if (screen !== 'game') clearSeq(); return () => clearSeq();");
+    expect(platform).toContain("if (screen !== 'game') { clearSeq(); stopGameMusic(); } return () => clearSeq();");
   });
   it('24: the timer never ticks during feedback/milestone phases', () => {
     expect(platform).toContain("gamePhase !== 'question'");

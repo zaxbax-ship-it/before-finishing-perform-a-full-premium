@@ -1795,11 +1795,11 @@ html,body{overscroll-behavior-y:none}
    place-items:center, so the rungs' visual centre aligns with the viewport
    centre both axes. Sizes clamp so all 8 rungs ($1,000 .. $1,000,000) stay on
    one frame with no scroll down to 320x568. */
-.milestone-rungs { max-width: min(440px, 86vw); gap: clamp(4px, 1.1vh, 10px); }
-.milestone-rung { min-height: clamp(30px, 6.8vh, 58px); padding: clamp(6px, 1vh, 13px) clamp(14px, 4vw, 22px); border-radius: 14px; }
-.milestone-amount { font-size: clamp(1rem, 3.4vw, 1.3rem); }
-.milestone-rung.is-current .milestone-amount { font-size: clamp(1.1rem, 3.9vw, 1.44rem); }
-.milestone-dot { width: 10px; height: 10px; }
+.milestone-rungs { max-width: min(468px, 90vw); gap: clamp(4px, 1.3vh, 12px); }
+.milestone-rung { min-height: clamp(32px, 7.4vh, 64px); padding: clamp(6px, 1.1vh, 14px) clamp(14px, 4vw, 24px); border-radius: 15px; }
+.milestone-amount { font-size: clamp(1.05rem, 3.7vw, 1.42rem); }
+.milestone-rung.is-current .milestone-amount { font-size: clamp(1.16rem, 4.2vw, 1.56rem); }
+.milestone-dot { width: 11px; height: 11px; }
 
 /* 4/5. The gameplay header reads like the Home wordmark: flatten the pill so it
    is just the shared logo, aligned to the start (logical RTL/LTR). */

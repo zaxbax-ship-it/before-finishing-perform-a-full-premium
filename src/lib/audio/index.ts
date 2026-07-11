@@ -32,6 +32,8 @@ export type AudioEventName =
   | 'game.victory'        // the million — full fanfare
   | 'game.defeat'         // out of chances
   | 'lifeline.used'       // a lifeline activates
+  | 'reward.up'           // winnings increase — small elegant upward accent
+  | 'reward.down'         // winnings decrease (purchase) — soft downward accent
   | 'progression.levelUp' // player level increased
   | 'progression.achievement'; // achievement unlocked
 
@@ -130,6 +132,14 @@ const EVENT_VOICES: Record<AudioEventName, Voice[]> = {
     { freq: 1175, at: 0.06, hold: 0.04, peak: 0.045, release: 0.18 },
     { freq: 1568, at: 0.12, hold: 0.07, peak: 0.04, release: 0.3 }
   ],
+  'reward.up': [
+    { freq: 659, hold: 0.05, peak: 0.05, release: 0.2 },
+    { freq: 988, at: 0.08, hold: 0.08, peak: 0.042, release: 0.3 }
+  ],
+  'reward.down': [
+    { freq: 494, hold: 0.06, peak: 0.05, release: 0.22 },
+    { freq: 330, at: 0.09, hold: 0.12, peak: 0.04, release: 0.36 }
+  ],
   'progression.levelUp': [
     { freq: 392, hold: 0.08, peak: 0.07, release: 0.3 },
     { freq: 523, at: 0.1, hold: 0.09, peak: 0.075, release: 0.35 },
@@ -149,6 +159,9 @@ const DEFAULT_THROTTLE_MS = 80;
 let audioEnabled = false;
 let sharedContext: AudioContext | undefined;
 let masterGain: GainNode | undefined;
+// Stage 23B — a separate, quieter bus for the adaptive music bed so it always
+// sits UNDER the SFX (buttons, rewards, milestones) through the same warm filter.
+let musicBus: GainNode | undefined;
 const lastPlayed = new Map<AudioEventName, number>();
 
 /** Synced from the app's sound setting; components then just emit events. */
@@ -156,7 +169,7 @@ export function setAudioEnabled(enabled: boolean) {
   audioEnabled = enabled;
 }
 
-function ensureContext(): { ctx: AudioContext; master: GainNode } | undefined {
+function ensureContext(): { ctx: AudioContext; master: GainNode; music: GainNode } | undefined {
   if (typeof window === 'undefined') return undefined;
   const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctor) return undefined;
@@ -169,10 +182,25 @@ function ensureContext(): { ctx: AudioContext; master: GainNode } | undefined {
     masterGain = sharedContext.createGain();
     masterGain.gain.value = 0.9;
     masterGain.connect(filter);
+    musicBus = sharedContext.createGain();
+    musicBus.gain.value = 0.5; // music mixed clearly below the SFX master
+    musicBus.connect(filter);
     filter.connect(sharedContext.destination);
   }
   if (sharedContext.state === 'suspended') void sharedContext.resume();
-  return masterGain ? { ctx: sharedContext, master: masterGain } : undefined;
+  return masterGain && musicBus ? { ctx: sharedContext, master: masterGain, music: musicBus } : undefined;
+}
+
+/** Shared audio graph for the adaptive music director (creates/resumes the
+ * context — call only from a user gesture or once a game is already running). */
+export function getAudioGraph(): { ctx: AudioContext; music: GainNode; sfx: GainNode } | undefined {
+  const a = ensureContext();
+  return a ? { ctx: a.ctx, music: a.music, sfx: a.master } : undefined;
+}
+
+/** Whether sound is currently enabled (mirrors the app sound setting). */
+export function isAudioEnabled(): boolean {
+  return audioEnabled;
 }
 
 /** Plays a semantic audio event (no-op when sound is off or unsupported). */

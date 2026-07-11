@@ -104,6 +104,6 @@ describe('Stage 20C — 1/2/3/28/29/30 explicit state machine', () => {
   });
   it('29/30. rapid answers cannot double-advance; the sequence cleans up on exit/unmount', () => {
     expect(platform.includes('if (advancingRef.current) return')).toBe(true);
-    expect(platform.includes("if (screen !== 'game') clearSeq(); return () => clearSeq();")).toBe(true);
+    expect(platform.includes("if (screen !== 'game') { clearSeq(); stopGameMusic(); } return () => clearSeq();")).toBe(true);
   });
 });
