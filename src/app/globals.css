@@ -296,12 +296,20 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .drawer-head strong { font-size: 1.25rem; font-weight: 900; color: var(--gold); }
 .drawer-nav { display: flex; flex-direction: column; gap: var(--space-sm); }
 
-/* Homepage primary actions — the visual focal point. Icon-first premium cards. */
+/* Homepage primary actions — the three mode cards (approved depth reference).
+   Solo (gold), Head-to-head (blue), System challenge (locked gold->purple->blue).
+   Desktop: three side by side; mobile: stacked. The colored border is painted by
+   an ::after ring (mask trick) so it is independent of the interactive hover
+   rules that recolor the real border. ~70% translucent so the starfield shows
+   through (solo/multi fill comes from the design-system buttons.css layer). */
 .home-primary-actions {
   margin-top: var(--space-lg);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-lg);
+}
+@media (min-width: 768px) {
+  .home-primary-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .primary-action-card {
   position: relative;
@@ -310,47 +318,107 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-md);
-  min-height: 200px;
-  padding: var(--space-xl);
-  border-radius: var(--radius-4xl);
-  border: 1px solid hsla(0, 0%, 100%, 0.16);
-  background: linear-gradient(145deg, hsla(0, 0%, 100%, 0.12), hsla(0, 0%, 100%, 0.045));
-  box-shadow: var(--shadow-lg), inset 0 1px 0 hsla(0, 0%, 100%, 0.16);
+  gap: 12px;
+  min-height: 176px;
+  padding: 24px 22px;
+  border-radius: 24px;
+  border: 1px solid transparent;
+  background: linear-gradient(158deg, rgba(28, 40, 74, 0.68), rgba(14, 21, 42, 0.72));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -3px 10px rgba(0, 0, 0, 0.35);
   color: #fff;
-  transition: transform var(--duration-slow) var(--ease-spring), border-color var(--duration-slow) var(--ease-default), box-shadow var(--duration-slow) var(--ease-default), background var(--duration-slow) var(--ease-default);
+  transition: transform var(--duration-slow) var(--ease-spring), box-shadow var(--duration-slow) var(--ease-default);
 }
-.primary-action-card:hover { transform: translateY(-6px) scale(1.015); box-shadow: var(--shadow-xl); }
-.primary-action-card:active { transform: translateY(-1px) scale(0.995); }
+/* Top sheen. */
+.primary-action-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+/* Gradient border ring (neutral base; recolored per variant). */
+.primary-action-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
 .primary-action-icon {
+  position: relative;
   display: grid;
   place-items: center;
-  height: 96px;
-  width: 96px;
-  border-radius: var(--radius-full);
+  height: 66px;
+  width: 66px;
+  border-radius: 50%;
+  z-index: 1;
 }
-.primary-action-label { font-size: 1.5rem; font-weight: 900; letter-spacing: 0; }
-.primary-action-card.is-solo {
-  border-color: hsla(41, 90%, 69%, 0.46);
-  background: radial-gradient(circle at 50% 0, hsla(41, 90%, 69%, 0.24), transparent 60%),
-              linear-gradient(145deg, hsla(41, 90%, 69%, 0.16), rgba(9, 22, 52, 0.6));
+.primary-action-icon svg { position: relative; z-index: 1; }
+.primary-action-label { font-size: 1.35rem; font-weight: 900; letter-spacing: 0; position: relative; z-index: 1; }
+
+/* Solo — gold ring, gold gradient border, gold label. */
+.primary-action-card.is-solo::after { background: linear-gradient(150deg, #f7ecc4, #e0bd63 55%, #a8842e); }
+.primary-action-card.is-solo .primary-action-icon {
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #c79a3e); color: #0e1524;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.75), inset 0 -4px 7px rgba(120, 90, 20, 0.5), 0 6px 14px rgba(0, 0, 0, 0.45);
 }
-.primary-action-card.is-solo .primary-action-icon { background: var(--gold); color: #08101f; box-shadow: var(--shadow-gold-glow); }
-.primary-action-card.is-multi {
-  border-color: rgba(69, 194, 255, 0.46);
-  background: radial-gradient(circle at 50% 0, rgba(69, 194, 255, 0.22), transparent 60%),
-              linear-gradient(145deg, rgba(69, 194, 255, 0.14), rgba(9, 22, 52, 0.6));
+.primary-action-card.is-solo .primary-action-label {
+  background: linear-gradient(180deg, #f7ecc4, #e0bd63); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
+/* Head-to-head — blue ring, blue gradient border, blue label. */
+.primary-action-card.is-multi::after { background: linear-gradient(150deg, #9aa6ff, #6b7cff 55%, #8a6bff); }
 .primary-action-card.is-multi .primary-action-icon {
-  background: linear-gradient(135deg, var(--azure), var(--violet));
-  color: #04122b;
-  box-shadow: 0 0 40px rgba(69, 194, 255, 0.32);
+  background: linear-gradient(150deg, #8a97ff, #6b7cff 55%, #8a6bff); color: #fff;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.4), inset 0 -4px 7px rgba(50, 40, 140, 0.55), 0 6px 14px rgba(0, 0, 0, 0.45);
 }
-@media (max-width: 767.98px) {
-  .home-primary-actions { grid-template-columns: 1fr; gap: var(--space-md); }
-  .primary-action-card { min-height: 152px; }
-  .primary-action-icon { height: 78px; width: 78px; }
+.primary-action-card.is-multi .primary-action-label {
+  background: linear-gradient(120deg, #9aa6ff, #8a6bff); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
+/* System challenge — tri-color gradient border, conic ring, locked veil. */
+.primary-action-card.is-system {
+  background:
+    radial-gradient(120% 80% at 28% -12%, rgba(224, 189, 99, 0.08), transparent 55%),
+    radial-gradient(120% 80% at 82% -12%, rgba(107, 124, 255, 0.09), transparent 55%),
+    linear-gradient(158deg, rgba(28, 40, 74, 0.68), rgba(14, 21, 42, 0.72));
+  cursor: default;
+}
+.primary-action-card.is-system::after { background: linear-gradient(120deg, #e0bd63, #8a6bff 50%, #6b7cff); }
+.primary-action-card.is-system .primary-action-icon {
+  background: conic-gradient(from 210deg, #e0bd63, #8a6bff, #6b7cff, #e0bd63); color: #f0e6c8;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+.primary-action-card.is-system .primary-action-icon::after {
+  content: ""; position: absolute; inset: 3px; border-radius: 50%;
+  background: linear-gradient(150deg, #1c2748, #141d34); box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.primary-action-card.is-system .primary-action-label {
+  background: linear-gradient(100deg, #f3e2a8, #b9a6ff 55%, #9ab0ff); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* "AI" chip (top, inline-start). */
+.primary-action-chip {
+  position: absolute; top: 14px; inset-inline-start: 16px; z-index: 3;
+  font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #0e1524;
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63); padding: 3px 9px; border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+/* Reusable locked state — frosted veil + lock + "coming soon". */
+.primary-action-card.is-locked { pointer-events: none; }
+.primary-action-lock {
+  position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  background: rgba(10, 16, 30, 0.42); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  color: #f0e6c8; border-radius: inherit;
+}
+.primary-action-lock em { font-style: normal; font-weight: 850; font-size: 0.95rem; letter-spacing: 0.5px; }
 
 /* Category cards: simplified (no numeric count) + direction-aware alignment. */
 .category-card { min-height: 150px; justify-content: flex-start; text-align: start; gap: 0.3rem; }
@@ -1302,16 +1370,19 @@ html,body{overscroll-behavior-y:none}
 .setting-reset-actions button { flex: 1; }
 @media (prefers-reduced-motion: reduce) { .setting-row { transition: none; } }
 
-/* Stage 12C — compact leaderboard entry on Home (relocated from the drawer) */
+/* Compact leaderboard entry on Home — a small gold glass pill below the mode
+   cards, matching the dock/card depth language. */
 .home-leaderboard-card {
-  display: flex; align-items: center; gap: 0.7rem;
+  display: flex; align-items: center; gap: 0.6rem;
   width: fit-content; max-width: 100%; margin: 1.5rem auto 0;
-  padding: 0.7rem 1.25rem; border-radius: 999px; cursor: pointer;
-  border: 1px solid rgba(247,202,103,0.32); background: rgba(247,202,103,0.09);
-  color: #f7ca67; font-weight: 800; font-size: 1.02rem;
+  padding: 0.6rem 1.15rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(232, 206, 130, 0.32);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  color: #e8ce82; font-weight: 800; font-size: 1rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
-.home-leaderboard-card:hover { border-color: rgba(247,202,103,0.55); background: rgba(247,202,103,0.14); transform: translateY(-1px); }
+.home-leaderboard-card:hover { border-color: rgba(232, 206, 130, 0.6); background: linear-gradient(160deg, rgba(232, 206, 130, 0.14), rgba(255, 255, 255, 0.03)); transform: translateY(-1px); }
 .home-leaderboard-icon { display: grid; place-items: center; }
 .home-leaderboard-label { line-height: 1; }
 @media (prefers-reduced-motion: reduce) { .home-leaderboard-card { transition: none; } }
@@ -1840,17 +1911,11 @@ html,body{overscroll-behavior-y:none}
 }
 .app-shell:not(.admin-active):not(.game-active) .stage-interactive:active:not(:disabled) { transform: translateY(-1px); }
 
-/* Home keeps a whisper of gold (Solo) / azure (Multiplayer) identity at the top,
-   over the same navy answer-card body — so the two play choices read as larger
-   siblings of the answer cards. */
-.app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-solo.stage-interactive {
-  background: radial-gradient(circle at 50% -12%, hsla(41, 90%, 69%, 0.3), transparent 55%), var(--stage-glass);
-  border-color: hsla(41, 90%, 69%, 0.44);
-}
-.app-shell:not(.admin-active):not(.game-active) .primary-action-card.is-multi.stage-interactive {
-  background: radial-gradient(circle at 50% -12%, rgba(69, 194, 255, 0.3), transparent 55%), var(--stage-glass);
-  border-color: rgba(69, 194, 255, 0.5);
-}
+/* Home play cards (is-solo / is-multi) get their translucent navy fill from the
+   design-system buttons.css layer and their gold/blue identity from the redesign
+   card rules (gradient-border ::after ring). The old per-variant background/border
+   overrides were removed here as part of the Home restyle ("replace, not layer").
+   The shared .stage-interactive base (depth + hover) still applies. */
 
 /* 2. Shared PANEL — the glass Panel with a restrained cyan lower-edge signature,
    so every public page sits on a surface that echoes the gameplay stage without
@@ -1927,58 +1992,99 @@ html,body{overscroll-behavior-y:none}
 .reward-confetti.is-reduced .cf { box-shadow: none; }
 
 
-/* ===================== Stage 25 — Home hero 3D million-dollar asset ===================== */
-.home-hero-million { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
-.home-million-img {
-  display: block;
-  width: 100%;
-  max-width: min(496px, 82vw);
-  height: auto;
-  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.45));
-}
-/* Reused crown over the final zero (right side): casually tilted, slightly
-   overlapping its top — intentionally not perfectly aligned. */
-.home-million-crown {
-  position: absolute;
-  left: 83%;
-  top: -8%;
-  width: 12%; /* scales with the icon so it stays proportional to the final zero */
-  color: var(--gold);
-  transform: rotate(12deg);
-  transform-origin: bottom center;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
-  pointer-events: none;
-}
-.home-million-crown svg { display: block; width: 100%; height: auto; }
+/* ===================== Home redesign — depth-reference dock, prize & fog ===================== */
+/* The old 3D million-dollar image hero + crown were replaced by pure CSS: a
+   metallic-gold "$1,000,000" text prize and a compact glass dock. The image
+   asset (million3d) is no longer referenced on Home (still used by the launch
+   interstitial, so it is intentionally kept). */
 
+.home-landing { position: relative; text-align: center; }
 
-/* ===================== Home hero: free-floating icon + premium halo ===================== */
-/* The rounded prize-card container was removed; the 3D icon + crown now float
-   directly on the page background over a soft, embedded gold->azure halo. */
-.home-hero-stage { position: relative; display: grid; place-items: center; }
-/* Deliberate, responsive breathing space between the icon, title and cards
-   (replaces the old excessive 3rem gap; the removed container height did the
-   rest of the raise). */
-.home-hero-grid { gap: clamp(1.25rem, 3.5vw, 2.25rem); }
-/* A wide, feathered radial that reads as depth/integration, never a spotlight:
-   warm gold at very low opacity near the icon, a faint azure undertone,
-   dissolving into the navy page with no hard edge. Scales with the icon
-   (percentages of .home-hero-million) and paints behind it (source order). */
-.home-hero-halo {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 124%;
-  height: 230%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse 62% 54% at 50% 50%,
-    rgba(247, 202, 103, 0.17) 0%,
-    rgba(247, 202, 103, 0.07) 30%,
-    rgba(69, 194, 255, 0.045) 54%,
-    rgba(6, 14, 33, 0) 76%);
-  filter: blur(24px);
-  pointer-events: none;
+/* Live gold/blue fog — soft drifting blobs behind the Home content (the rising
+   stars are the shared <Particles /> layer). Kept at negative z-index. */
+.home-aurora { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.home-aurora span { position: absolute; border-radius: 50%; filter: blur(60px); }
+.home-aurora span:nth-child(1) { width: 320px; height: 320px; background: #2a3a72; top: -60px; inset-inline-end: -40px; opacity: 0.35; animation: home-fog-a 26s ease-in-out infinite; }
+.home-aurora span:nth-child(2) { width: 300px; height: 300px; background: #5a3f8a; bottom: -40px; inset-inline-start: -60px; opacity: 0.26; animation: home-fog-b 32s ease-in-out infinite; }
+.home-aurora span:nth-child(3) { width: 240px; height: 240px; background: #3a4d80; top: 42%; inset-inline-start: 30%; opacity: 0.2; animation: home-fog-a 38s ease-in-out infinite; }
+@keyframes home-fog-a { 50% { transform: translate(20px, 30px); } }
+@keyframes home-fog-b { 50% { transform: translate(-24px, -20px); } }
+@media (prefers-reduced-motion: reduce) { .home-aurora span { animation: none; } }
+
+/* Metallic-gold "$1,000,000" prize (CSS text, no image). */
+.home-prize { position: relative; text-align: center; margin: clamp(1.5rem, 5vw, 2.5rem) 0 clamp(1.4rem, 4vw, 2rem); }
+.home-prize-crown { display: block; width: 42px; height: auto; margin: 0 auto -6px; color: #e8ce82; fill: none; stroke: currentColor; stroke-width: 1.4; }
+.home-prize-amount {
+  direction: ltr;
+  font-weight: 900; font-style: italic; letter-spacing: -2.5px;
+  font-size: clamp(3rem, 11vw, 4.6rem); line-height: 1;
+  background: linear-gradient(180deg, #fbf1c8, #e7c766 44%, #b98b2f);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(2px 5px 0 rgba(90, 66, 14, 0.5)) drop-shadow(0 0 22px rgba(224, 189, 99, 0.35));
 }
+
+/* Compact centered glass dock (approved reference). Hugs its icons — never
+   full-width. RTL order: brand -> language -> account -> menu. */
+.home-dock-bar { display: flex; justify-content: center; padding-top: clamp(0.5rem, 2vw, 1rem); position: relative; z-index: 20; }
+.home-dock {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px; border-radius: 26px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -2px 6px rgba(0, 0, 0, 0.28);
+}
+.home-dock-sep { width: 1px; height: 22px; background: rgba(255, 255, 255, 0.16); margin: 0 2px; flex: 0 0 auto; }
+
+/* The uniform glass dock buttons (language / account / menu) + the solid-gold
+   brand. All 44px circles for consistent touch targets. */
+.home-dock-brand, .home-dock-menu,
+.home-dock .language-trigger,
+.home-dock .auth-link-button,
+.home-dock .public-user-trigger {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  border-radius: 50%; display: grid; place-items: center; padding: 0; border: none;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.home-dock-menu,
+.home-dock .language-trigger,
+.home-dock .auth-link-button,
+.home-dock .public-user-trigger {
+  color: #e8ce82;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 4px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+.home-dock-brand {
+  color: #0e1524;
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.7), inset 0 -3px 5px rgba(120, 90, 20, 0.45), 0 4px 10px rgba(224, 189, 99, 0.45);
+}
+.home-dock-brand:hover, .home-dock-menu:hover,
+.home-dock .language-trigger:hover,
+.home-dock .auth-link-button:hover,
+.home-dock .public-user-trigger:hover { transform: translateY(-1px); }
+.home-dock-brand:active, .home-dock-menu:active { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45); }
+
+/* Account button: force the uniform semi-transparent glass (overrides the gold
+   .auth-link-button.primary fill + the 48px .icon-only size from auth.css) so
+   language / account / menu read as one consistent set. */
+.home-dock .public-auth-corner .auth-link-button {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border: none;
+  color: #e8ce82;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 4px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Fit the reused real controls into the dock: icon-only, no labels/skeleton text. */
+.home-dock .language-menu, .home-dock .public-auth-corner { width: auto; min-width: 0; }
+.home-dock .language-globe { display: grid; place-items: center; color: inherit; }
+.home-dock .language-globe svg { width: 21px; height: 21px; }
+.home-dock .public-user-trigger > span { display: none; }
+.home-dock .public-user-trigger .avatar,
+.home-dock .public-user-trigger img { width: 30px; height: 30px; }
+.home-dock .public-auth-skeleton { width: 44px; height: 44px; border-radius: 50%; }
+/* Dropdowns open centered under their dock button. */
+.home-dock .language-panel { inset-inline-end: auto; inset-inline-start: 50%; transform: translateX(50%); }
+.home-dock .public-user-dropdown { inset-inline-end: 0; }
 
 
 /* ===================== Stage 27 — final public unification: inner surfaces to the gameplay language ===================== */

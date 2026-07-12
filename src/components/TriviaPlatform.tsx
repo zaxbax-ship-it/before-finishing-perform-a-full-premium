@@ -59,6 +59,7 @@ import type { EndState, GameQuestion, LeaderboardStatus, Lifeline, PublicAuthUse
 import { LanguageMenu } from '@/components/trivia/chrome/LanguageMenu';
 import { Particles } from '@/components/trivia/chrome/Particles';
 import { PublicAuthArea } from '@/components/trivia/chrome/PublicAuthArea';
+import { HomeDock } from '@/components/trivia/chrome/HomeDock';
 import { GameExitModal } from '@/components/trivia/modals/GameExitModal';
 import { LifeOfferModal } from '@/components/trivia/modals/LifeOfferModal';
 import { ProgressionToasts, type ProgressionToast } from '@/components/trivia/ProgressionToasts';
@@ -1195,31 +1196,53 @@ export default function TriviaPlatform({
       {settings.effects && <Particles />}
       <RewardConfetti burstId={confettiBurst} />
       {/* Single shared utility bar: language (physical left) and account (physical
-          right) live in one flex row, so they can never overlap on any device. */}
-      <div className="top-utility-bar" dir="ltr">
-        <div className="language-corner">
-          <LanguageMenu locale={locale} setLocale={changeLocale} />
-        </div>
-        {screen !== 'admin' && (
-          <div className="top-utility-auth" dir={dir}>
-            <PublicAuthArea
-              ui={authT}
-              user={authUser}
-              ready={authReady}
-              configured={authConfigured}
-              nickname={nickname}
-              leaderboardStatus={leaderboardStatus}
-              saveNickname={saveNickname}
-              open={open}
-              signOut={signOut}
-            />
+          right) live in one flex row, so they can never overlap on any device.
+          On Home it is replaced by the compact glass HomeDock (below). */}
+      {screen !== 'home' && (
+        <div className="top-utility-bar" dir="ltr">
+          <div className="language-corner">
+            <LanguageMenu locale={locale} setLocale={changeLocale} />
           </div>
-        )}
-      </div>
+          {screen !== 'admin' && (
+            <div className="top-utility-auth" dir={dir}>
+              <PublicAuthArea
+                ui={authT}
+                user={authUser}
+                ready={authReady}
+                configured={authConfigured}
+                nickname={nickname}
+                leaderboardStatus={leaderboardStatus}
+                saveNickname={saveNickname}
+                open={open}
+                signOut={signOut}
+              />
+            </div>
+          )}
+        </div>
+      )}
       {screen === 'admin' && adminHeader}
       {launching && <LaunchTransition />}
       {milestoneClimb !== null && <LaunchTransition mode="climb" climbTo={milestoneClimb} />}
-      {screen !== 'admin' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
+      {/* Home uses the consolidated glass dock; every other screen keeps the
+          shared Header. Both route through the same handlers. */}
+      {screen === 'home' && (
+        <HomeDock
+          t={t}
+          authUi={authT}
+          locale={locale}
+          setLocale={changeLocale}
+          submitLabel={communityT.submitNav}
+          open={open}
+          user={authUser}
+          authReady={authReady}
+          authConfigured={authConfigured}
+          nickname={nickname}
+          leaderboardStatus={leaderboardStatus}
+          saveNickname={saveNickname}
+          signOut={signOut}
+        />
+      )}
+      {screen !== 'admin' && screen !== 'home' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} journeyVisible={journeyVisible} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} startError={startError} clearStartError={() => setStartError('')} />}

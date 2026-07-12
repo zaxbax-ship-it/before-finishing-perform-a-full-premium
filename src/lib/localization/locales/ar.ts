@@ -1484,6 +1484,7 @@ const resources: LocaleResources = {
     "chooseText": "كل موضوع يحتوي على بنك أسئلة غني ومتوازن مع سلم الجوائز نفسه وأجواء الاستوديو الدرامية.",
     "all": "لعبة عشوائية",
     "soon": "قريباً",
+    "sysChallenge": "تحدي النظام",
     "launching": "نُجهّز الساحة…",
     "question": "سؤال",
     "currentPrize": "الجائزة الحالية",

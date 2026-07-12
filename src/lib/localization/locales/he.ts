@@ -134,6 +134,7 @@ const resources: LocaleResources = {
     "chooseText": "כל נושא כולל מאגר עשיר ומאוזן של שאלות בעברית טבעית, עם אותו סולם זכייה ואותה חוויית אולפן דרמטית.",
     "all": "משחק אקראי",
     "soon": "בקרוב",
+    "sysChallenge": "אתגר המערכת",
     "launching": "מכינים את הזירה…",
     "question": "שאלה",
     "currentPrize": "זכייה נוכחית",

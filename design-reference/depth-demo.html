@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>שפת העומק · הדגמה</title>
+<style>
+  :root{
+    --gold-100:#f7ecc4;--gold-300:#e8ce82;--gold-500:#e0bd63;--gold-700:#a8842e;
+    --blue:#6b7cff;--purple:#9a6bff;--ink:#0e1524;--txt:#eef2fb;--dim:#93a0bd;
+    --ui:-apple-system,BlinkMacSystemFont,"Segoe UI","Heebo","Assistant",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--ui);color:var(--txt);position:relative;overflow-x:hidden;
+    background:
+      radial-gradient(120% 80% at 78% 4%, #1b2748 0%, transparent 55%),
+      radial-gradient(100% 70% at 20% 100%, #141d3c 0%, transparent 55%),
+      linear-gradient(180deg,#0e1830 0%,#0a1122 55%,#080d1c 100%);
+    background-attachment:fixed;
+  }
+  .fog{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .fog span{position:absolute;border-radius:50%;filter:blur(60px);opacity:.35}
+  .fog .f1{width:320px;height:320px;background:#2a3a72;top:-60px;right:-40px;animation:drift1 26s ease-in-out infinite}
+  .fog .f2{width:300px;height:300px;background:#5a3f8a;bottom:-40px;left:-60px;opacity:.28;animation:drift2 32s ease-in-out infinite}
+  .fog .f3{width:240px;height:240px;background:#3a4d80;top:40%;left:30%;opacity:.2;animation:drift1 38s ease-in-out infinite}
+  @keyframes drift1{50%{transform:translate(20px,30px)}}
+  @keyframes drift2{50%{transform:translate(-24px,-20px)}}
+  .stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .star{position:absolute;bottom:-12px;border-radius:50%;opacity:0;animation:rise linear infinite}
+  @keyframes rise{
+    0%{transform:translateY(0) scale(1);opacity:0}
+    12%{opacity:var(--o)}
+    88%{opacity:var(--o)}
+    100%{transform:translateY(-108vh) scale(1);opacity:0}
+  }
+  .app{position:relative;z-index:2;min-height:100dvh;max-width:440px;margin:0 auto;
+    padding:14px 20px 32px;display:flex;flex-direction:column}
+  .statusbar{direction:ltr;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:#fff;padding:4px 4px 0;opacity:.9}
+  .statusbar .r i{width:16px;height:10px;border:1px solid #fff;border-radius:2px;display:inline-block;margin-inline-start:5px}
+  .dock{margin:16px auto 0;display:flex;align-items:center;gap:6px;padding:8px;border-radius:26px;
+    background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+    border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(16px);
+    box-shadow:0 10px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.22), inset 0 -2px 6px rgba(0,0,0,.28)}
+  .dbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer;border:none;
+    color:var(--gold-300);background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(0,0,0,.06));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -2px 4px rgba(0,0,0,.3), 0 2px 4px rgba(0,0,0,.25);
+    transition:transform .16s ease, box-shadow .16s ease}
+  .dbtn:hover{transform:translateY(-1px)}
+  .dbtn:active{transform:translateY(1px);box-shadow:inset 0 2px 5px rgba(0,0,0,.45)}
+  .dbtn:focus-visible{outline:2px solid var(--gold-300);outline-offset:3px}
+  .dbtn svg{width:21px;height:21px}
+  .dbtn.brand{background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#a8842e);color:var(--ink);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.7), inset 0 -3px 5px rgba(120,90,20,.45), 0 4px 10px rgba(224,189,99,.45)}
+  .dsep{width:1px;height:22px;background:rgba(255,255,255,.16);margin:0 2px}
+  .prizewrap{position:relative;text-align:center;margin:30px 0 26px}
+  .crn{width:38px;height:auto;color:var(--gold-300);fill:none;stroke:currentColor;stroke-width:1.4;margin-bottom:-6px}
+  .prize{font-weight:900;font-style:italic;letter-spacing:-2.5px;font-size:58px;line-height:1;
+    background:linear-gradient(180deg,#fbf1c8,#e7c766 44%,#b98b2f);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(2px 5px 0 rgba(90,66,14,.5)) drop-shadow(0 0 22px rgba(224,189,99,.35))}
+  .cards{display:flex;flex-direction:column;gap:16px;flex:1}
+  .card{position:relative;border-radius:24px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;
+    background:linear-gradient(158deg,rgba(38,52,92,.72),rgba(15,23,44,.78));
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 14px 30px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.14), inset 0 -3px 10px rgba(0,0,0,.35);
+    transition:transform .18s ease, box-shadow .18s ease;overflow:hidden}
+  .card:before{content:"";position:absolute;inset:0 0 auto;height:50%;
+    background:linear-gradient(180deg,rgba(255,255,255,.05),transparent);pointer-events:none}
+  .card:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.16)}
+  .card:active{transform:translateY(1px);box-shadow:0 8px 18px rgba(0,0,0,.5), inset 0 2px 8px rgba(0,0,0,.4)}
+  .card:focus-visible{outline:2px solid var(--gold-300);outline-offset:3px}
+  .card.solo{border:1.5px solid transparent;
+    background:
+      radial-gradient(130% 85% at 50% -12%,rgba(224,189,99,.10),transparent 60%) padding-box,
+      linear-gradient(158deg,rgba(28,40,74,.68),rgba(14,21,42,.72)) padding-box,
+      linear-gradient(150deg,#f7ecc4,#e0bd63 55%,#a8842e) border-box}
+  .card.duo{border:1.5px solid transparent;
+    background:
+      radial-gradient(130% 85% at 50% -12%,rgba(107,124,255,.11),transparent 60%) padding-box,
+      linear-gradient(158deg,rgba(28,40,74,.68),rgba(14,21,42,.72)) padding-box,
+      linear-gradient(150deg,#9aa6ff,#6b7cff 55%,#8a6bff) border-box}
+  .card.sys{border:1.5px solid transparent;
+    background:
+      radial-gradient(120% 80% at 28% -12%,rgba(224,189,99,.08),transparent 55%) padding-box,
+      radial-gradient(120% 80% at 82% -12%,rgba(107,124,255,.09),transparent 55%) padding-box,
+      linear-gradient(158deg,rgba(28,40,74,.68),rgba(14,21,42,.72)) padding-box,
+      linear-gradient(120deg,#e0bd63,#8a6bff 50%,#6b7cff) border-box}
+  .ring{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;position:relative}
+  .ring svg{width:30px;height:30px;position:relative;z-index:1}
+  .r-gold{background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#c79a3e);color:var(--ink);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.75), inset 0 -4px 7px rgba(120,90,20,.5), 0 6px 14px rgba(0,0,0,.45)}
+  .r-blue{background:linear-gradient(150deg,#8a97ff,#6b7cff 55%,#8a6bff);color:#fff;
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.4), inset 0 -4px 7px rgba(50,40,140,.55), 0 6px 14px rgba(0,0,0,.45)}
+  .r-sys{background:conic-gradient(from 210deg,#e0bd63,#8a6bff,#6b7cff,#e0bd63);color:#f0e6c8;box-shadow:0 6px 14px rgba(0,0,0,.45)}
+  .r-sys:after{content:"";position:absolute;inset:3px;border-radius:50%;background:linear-gradient(150deg,#1c2748,#141d34);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.5)}
+  .lbl{font-weight:800;font-size:20px}
+  .card.solo .lbl{background:linear-gradient(180deg,#f7ecc4,#e0bd63);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .card.duo .lbl{background:linear-gradient(120deg,#9aa6ff,#8a6bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sysname{background:linear-gradient(100deg,#f3e2a8,#b9a6ff 55%,#9ab0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .chip{position:absolute;top:14px;inset-inline-start:16px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--ink);
+    background:linear-gradient(150deg,#f7ecc4,#e0bd63);padding:3px 9px;border-radius:20px;
+    box-shadow:0 2px 5px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.6)}
+  @media (prefers-reduced-motion:reduce){.star,.fog span{animation:none}}
+</style>
+</head>
+<body>
+  <div class="fog"><span class="f1"></span><span class="f2"></span><span class="f3"></span></div>
+  <div class="stars" id="stars"></div>
+  <div class="app">
+    <div class="statusbar"><span>8:43</span><span class="r">100 <i></i></span></div>
+    <div class="dock">
+      <button class="dbtn brand" aria-label="בית"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/></svg></button>
+      <span class="dsep"></span>
+      <button class="dbtn" aria-label="שפה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></button>
+      <button class="dbtn" aria-label="חשבון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-6 7-6s7 2.1 7 6"/></svg></button>
+      <button class="dbtn" aria-label="תפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+    <div class="prizewrap">
+      <svg class="crn" viewBox="0 0 24 16"><path d="M2 5l5 5 5-8 5 8 5-5-2 13H4z"/></svg>
+      <div class="prize">$1,000,000</div>
+    </div>
+    <div class="cards">
+      <button class="card solo"><span class="ring r-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-6 7-6s7 2.1 7 6"/></svg></span><span class="lbl">משחק אישי</span></button>
+      <button class="card duo"><span class="ring r-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="3"/><path d="M3.5 19c0-3 2.5-4.5 5.5-4.5s5.5 1.5 5.5 4.5"/><circle cx="17.5" cy="10" r="2.3"/><path d="M16 14.6c2.6 0 4.5 1.4 4.5 4"/></svg></span><span class="lbl">ראש בראש</span></button>
+      <button class="card sys"><span class="chip">AI</span><span class="ring r-sys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="8" width="14" height="10" rx="3"/><path d="M12 8V5.4"/><circle cx="12" cy="3.6" r="1.3" fill="currentColor" stroke="none"/><circle cx="9.6" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13" r="1.2" fill="currentColor" stroke="none"/><path d="M3.2 12v3M20.8 12v3"/></svg></span><span class="lbl sysname">אתגר המערכת</span></button>
+    </div>
+  </div>
+  <script>
+    const box = document.getElementById('stars');
+    const COLORS = ['#e0bd63','#f7ecc4','#6b7cff','#9a6bff'];
+    for(let i=0;i<46;i++){
+      const s = document.createElement('span'); s.className='star';
+      const size=Math.random()*2.4+1.2, c=COLORS[Math.floor(Math.random()*COLORS.length)], o=(Math.random()*0.4+0.18).toFixed(2), dur=Math.random()*16+12;
+      s.style.cssText=`left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${c};--o:${o};animation-duration:${dur}s;animation-delay:${-Math.random()*dur}s;box-shadow:0 0 ${size*2}px ${c}`;
+      box.appendChild(s);
+    }
+  </script>
+</body>
+</html>

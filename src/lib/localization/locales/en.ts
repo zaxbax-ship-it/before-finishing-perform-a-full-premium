@@ -1612,6 +1612,7 @@ const resources: LocaleResources = {
     "chooseText": "Every topic includes a rich balanced question bank with the same prize ladder and studio feeling.",
     "all": "Random Game",
     "soon": "Coming soon",
+    "sysChallenge": "System Challenge",
     "launching": "Preparing the arena…",
     "question": "Question",
     "currentPrize": "Current Prize",
