@@ -2082,9 +2082,36 @@ html,body{overscroll-behavior-y:none}
 .home-dock .public-user-trigger .avatar,
 .home-dock .public-user-trigger img { width: 30px; height: 30px; }
 .home-dock .public-auth-skeleton { width: 44px; height: 44px; border-radius: 50%; }
-/* Dropdowns open centered under their dock button. */
-.home-dock .language-panel { inset-inline-end: auto; inset-inline-start: 50%; transform: translateX(50%); }
-.home-dock .public-user-dropdown { inset-inline-end: 0; }
+/* Language dropdown in the dock: a properly contained, opaque, on-screen panel
+   centered under the language button. Symmetric centering keeps it fully within
+   the viewport in both RTL (Hebrew/Arabic) and LTR (English/Russian) — it never
+   spills past an edge. Explicitly overrides the legacy <=900px rule that turned
+   the panel into a position:relative / full-width block (which overlapped the
+   dock on mobile). Background is opaque so nothing bleeds through. */
+.home-dock .language-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  right: auto;
+  margin-top: 0;
+  margin-left: calc(min(240px, 100vw - 24px) / -2);
+  width: min(240px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  z-index: 200;
+  background: linear-gradient(160deg, #1b2643 0%, #131b31 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Account dropdown in the dock: anchor to the button's inline-end and keep it
+   on-screen with the same opaque treatment. */
+.home-dock .public-user-dropdown {
+  inset-inline-end: 0;
+  inset-inline-start: auto;
+  max-width: calc(100vw - 24px);
+  z-index: 200;
+}
 
 
 /* ===================== Stage 27 — final public unification: inner surfaces to the gameplay language ===================== */
