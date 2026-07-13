@@ -1702,11 +1702,19 @@ html,body{overscroll-behavior-y:none}
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Category tiles — black-gold depth reference (design-reference/solo-path-
-   reference.html .cat .card): ~70% translucent navy padding-box + a thin
-   white gradient border-box, centered icon + white label, one soft dark
-   shadow + inner sheen. No azure edge (that was the old signature). */
+/* Category tiles — EXACT black-gold depth reference (design-reference/solo-path-
+   reference.html .cat .card + this test's spec): a content-sized centered card,
+   ~70% translucent navy padding-box + a thin white gradient border-box, centered
+   gold-tinted icon tile + centered white label. Replaces the old tall
+   azure/lit-from-below tiles (min-height / space-between / start-aligned). */
 .app-shell:not(.admin-active):not(.game-active) .category-card {
+  min-height: 0;
+  padding: 18px;
+  gap: 10px;
+  border-radius: 20px;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
   border: 1.5px solid transparent;
   background:
     linear-gradient(158deg, rgba(30, 43, 80, 0.42), rgba(14, 21, 42, 0.5)) padding-box,
@@ -1730,6 +1738,28 @@ html,body{overscroll-behavior-y:none}
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.06));
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+.app-shell:not(.admin-active):not(.game-active) .category-icon svg { width: 24px; height: 24px; }
+/* Label — reference .cat .lbl. */
+.app-shell:not(.admin-active):not(.game-active) .category-card h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+/* 2-column grid (reference .cat .grid), centered to a phone-like column so the
+   cards keep the reference proportions on desktop too. The ad slots are siblings
+   (never resized/moved). */
+.app-shell:not(.admin-active):not(.game-active) .category-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  max-width: 620px;
+  margin-inline: auto;
+}
+.app-shell:not(.admin-active):not(.game-active) .play-all-banner {
+  max-width: 620px;
+  margin-inline: auto;
 }
 
 
@@ -2619,12 +2649,15 @@ html,body{overscroll-behavior-y:none}
   100% { opacity: 0; }
 }
 
-/* Static ladder: all rungs already in place, gently fading up together. */
-.launch-ladder.is-static { position: relative; }
+/* Static ladder (post-correct climb): the rungs are now IDENTICAL in size to the
+   game-start deal ladder — same .launch-rung box (48px, padding 12). The old
+   height:42px/padding:0 override (which made the climb ladder look smaller than
+   the deal ladder) was removed so the two occurrences read the same. Only the
+   entrance is different (a gentle fade instead of the deal stagger) + the marker;
+   motion timing/curves are unchanged. The row pitch var keeps the climbing
+   marker locked to the (now taller) rungs so they can't drift apart. */
+.launch-ladder.is-static { position: relative; --launch-row-pitch: 58px; }
 .launch-ladder.is-static .launch-rung {
-  height: 42px;
-  padding-top: 0;
-  padding-bottom: 0;
   opacity: 0;
   transform: none;
   animation: launch-rung-fade 0.6s ease forwards;
@@ -2633,28 +2666,29 @@ html,body{overscroll-behavior-y:none}
 .launch-ladder.is-static .launch-rung.is-reached { animation: launch-rung-fade-bright 0.6s ease forwards; }
 @keyframes launch-rung-fade-bright { from { opacity: 0; } to { opacity: 1; } }
 
-/* The climbing marker: a gold highlight that slides from the previous rung to
-   the reached rung. Row pitch = 42px rung + 8px gap = 50px. */
+/* The climbing marker: a gold highlight that slides from the previous rung to the
+   reached rung. Sized to one full rung (48px) and stepped by the shared row pitch
+   (rung 48 + gap 8) so it overlays the rungs exactly. */
 .launch-climber {
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
-  height: 42px;
-  border-radius: 16px;
+  height: calc(var(--launch-row-pitch) - 8px);
+  border-radius: 14px;
   pointer-events: none;
   background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.34), hsla(41, 90%, 69%, 0.12));
   border: 1px solid hsla(41, 90%, 69%, 0.72);
   box-shadow: 0 0 26px hsla(41, 90%, 69%, 0.5), var(--stage-edge-cyan-strong);
-  transform: translateY(calc(var(--from-row) * 50px));
+  transform: translateY(calc(var(--from-row) * var(--launch-row-pitch)));
   animation: launch-climb 3s cubic-bezier(0.34, 0.1, 0.2, 1) both;
 }
 @keyframes launch-climb {
-  0% { transform: translateY(calc(var(--from-row) * 50px)); opacity: 0; }
+  0% { transform: translateY(calc(var(--from-row) * var(--launch-row-pitch))); opacity: 0; }
   16% { opacity: 1; }
-  38% { transform: translateY(calc(var(--from-row) * 50px)); }
-  72% { transform: translateY(calc(var(--to-row) * 50px)); opacity: 1; }
-  100% { transform: translateY(calc(var(--to-row) * 50px)); opacity: 1; }
+  38% { transform: translateY(calc(var(--from-row) * var(--launch-row-pitch))); }
+  72% { transform: translateY(calc(var(--to-row) * var(--launch-row-pitch))); opacity: 1; }
+  100% { transform: translateY(calc(var(--to-row) * var(--launch-row-pitch))); opacity: 1; }
 }
 /* (the current/target rung's amount uses the gold gradient text defined above,
    matching reference .lad .row.on .amt) */
@@ -2664,7 +2698,7 @@ html,body{overscroll-behavior-y:none}
     animation-duration: 0.01ms !important;
   }
   .launch-ladder.is-static .launch-rung { opacity: 1; }
-  .launch-climber { transform: translateY(calc(var(--to-row) * 50px)); opacity: 1; }
+  .launch-climber { transform: translateY(calc(var(--to-row) * var(--launch-row-pitch))); opacity: 1; }
 }
 
 
