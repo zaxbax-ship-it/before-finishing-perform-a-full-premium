@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AudienceIcon, ConfirmIcon, FiftyFiftyIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WalletIcon } from '@/lib/design/icons';
+import { AudienceIcon, CloseIcon, ConfirmIcon, FiftyFiftyIcon, PhoneFriendIcon, PremiumIcon, SwapQuestionIcon, WalletIcon } from '@/lib/design/icons';
 import type { Locale } from '@/lib/types';
 import { lifelineAvailability, lifelinePrice, SOLO_INITIAL_LIVES } from '@/lib/gameplay/economy';
 import { timerProgress } from '@/lib/gameplay/timer';
@@ -78,6 +78,13 @@ export function Game(props: {
     correct: selected === current.correctIndex,
     answer: current.correctAnswer || current.answers[current.correctIndex]
   } : null;
+  // Correct/Wrong feedback sheet: a presentation of the EXISTING feedback state
+  // (selected + verdict) during the feedback phase. It auto-dismisses when the
+  // phase advances — the auto-advance timing/scoring is untouched. The button is
+  // a local "read it, hide now" and never drives the game state machine.
+  const [feedbackDismissed, setFeedbackDismissed] = useState(false);
+  useEffect(() => { setFeedbackDismissed(false); }, [current.id, round]);
+  const showFeedbackSheet = mounted && gamePhase === 'feedback' && answerInfo !== null && !feedbackDismissed;
   const answersLocked = selected !== null || gamePhase !== 'question';
   return (
     <section className="compact-game-shell game-priority-layout mx-auto w-full max-w-3xl px-4 pb-10">
@@ -100,6 +107,19 @@ export function Game(props: {
           {mounted && showLadder && createPortal(
             <div className={`milestone-focus milestone-focus-${gamePhase}`}>
               <MilestoneLadder t={t} correct={ladderCorrect} />
+            </div>,
+            document.body
+          )}
+          {showFeedbackSheet && answerInfo && createPortal(
+            <div className="answer-modal" role="status" aria-live="polite">
+              <div className={`answer-sheet ${answerInfo.correct ? 'is-correct' : 'is-wrong'}`}>
+                <span className={`answer-sheet-icon ${answerInfo.correct ? 'is-correct' : 'is-wrong'}`} aria-hidden="true">
+                  {answerInfo.correct ? <ConfirmIcon size={34} /> : <CloseIcon size={34} />}
+                </span>
+                <h3 className={`answer-sheet-title ${answerInfo.correct ? 'is-correct' : 'is-wrong'}`}>{answerInfo.correct ? infoUi.correct : infoUi.wrong}</h3>
+                <p className="answer-sheet-text">{answerInfo.correct ? money(currentPrize) : `${infoUi.answer}: ${answerInfo.answer}`}</p>
+                <button type="button" className="answer-sheet-go focus-ring" onClick={() => setFeedbackDismissed(true)}>{infoUi.action}</button>
+              </div>
             </div>,
             document.body
           )}

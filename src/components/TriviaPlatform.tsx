@@ -1198,7 +1198,7 @@ export default function TriviaPlatform({
       {/* Single shared utility bar: language (physical left) and account (physical
           right) live in one flex row, so they can never overlap on any device.
           On Home + Categories it is replaced by the compact glass HomeDock (below). */}
-      {screen !== 'home' && screen !== 'categories' && (
+      {screen !== 'home' && screen !== 'categories' && screen !== 'result' && (
         <div className="top-utility-bar" dir="ltr">
           <div className="language-corner">
             <LanguageMenu locale={locale} setLocale={changeLocale} />
@@ -1242,7 +1242,7 @@ export default function TriviaPlatform({
           signOut={signOut}
         />
       )}
-      {screen !== 'admin' && screen !== 'home' && screen !== 'categories' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
+      {screen !== 'admin' && screen !== 'home' && screen !== 'categories' && screen !== 'result' && <Header t={t} submitLabel={communityT.submitNav} multiplayerLabel={multiplayerCopy.nav} open={open} start={() => open('categories')} />}
       <div key={screen} ref={screenSectionRef} tabIndex={-1} className="screen-section">
       {screen === 'home' && <Home t={t} locale={locale} soloLabel={multiplayerCopy.solo} multiplayerLabel={multiplayerCopy.multiplayer} journeyVisible={journeyVisible} start={() => open('categories')} open={open} />}
       {screen === 'categories' && <Categories t={t} locale={locale} categories={categories} startGame={startGame} startError={startError} clearStartError={() => setStartError('')} />}

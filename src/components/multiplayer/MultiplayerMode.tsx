@@ -598,7 +598,24 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
       )}
 
       {gameState && currentRound && (
-        <section key={currentRound.id} className="glass multiplayer-game multiplayer-round-enter stage-panel">
+        <section key={currentRound.id} data-mode="duo" className="glass multiplayer-game multiplayer-round-enter stage-panel">
+          {/* Head-to-head (blue) — game-screens-reference .duo: gold crown, a VS
+              row (my player gold, opponents blue), white question, blue answers. */}
+          <div className="duo-crown" aria-hidden="true"><PremiumIcon size={22} /></div>
+          <div className="duo-versus" role="group" aria-label={copy.results}>
+            {gameState.players.map((player, index) => {
+              const isMe = player.id === gameState.me?.id;
+              const score = gameState.answers.filter(answer => answer.playerId === player.id && answer.isCorrect).length;
+              return (
+                <div key={player.id} className={`duo-player ${isMe ? 'is-me' : ''}`} style={{ order: index * 2 }}>
+                  <span className="duo-avatar" aria-hidden="true">{player.nickname.slice(0, 2).toUpperCase()}</span>
+                  <span className="duo-name">{player.nickname}</span>
+                  <span className="duo-score">{score}</span>
+                </div>
+              );
+            })}
+            {gameState.players.length === 2 && <span className="duo-vsx" aria-hidden="true" style={{ order: 1 }}>VS</span>}
+          </div>
           {/* Question first, answers immediately below — same "single frame"
               philosophy as solo gameplay. Lifelines follow as a compact toolbar. */}
           <div className="multiplayer-round-meta">

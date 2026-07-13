@@ -1016,6 +1016,96 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .victory-burst span:nth-child(16){left:70%;animation-delay:.68s}
 @keyframes confetti-fall{0%{opacity:0;transform:translateY(-10%) rotate(0)}8%{opacity:1}100%{opacity:0;transform:translateY(118vh) rotate(660deg)}}
 @media (max-width:640px){.result-prize-hero{font-size:clamp(2.2rem,11vw,3rem)}.result-halo{inset:-40px -12px}}
+
+/* ===================== Solo Result — game-screens-reference .res ===================== */
+/* No heavy enclosing panel: the .glass.stage-panel wrapper (kept for structural
+   parity) is neutralised to a transparent centered stack on the fog+stars stage,
+   matching the reference .res. The app-shell scope beats the stage-panel shadow. */
+.result-sheet { position: relative; z-index: 1; max-width: 440px; margin: 0 auto; padding: 8px 4px; }
+.app-shell:not(.admin-active):not(.game-active) .result-sheet.stage-panel {
+  background: none; border: none; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+/* Crown = the shared solid-gold circle (same token as every other screen). */
+.result-crown {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  margin: 0 auto 16px; color: var(--ink, #0e1524); border: none;
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.7), inset 0 -3px 5px rgba(120, 90, 20, 0.45), 0 4px 10px rgba(224, 189, 99, 0.45);
+}
+.result-trophy {
+  width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center;
+  margin: 0 auto 14px; color: var(--ink, #0e1524);
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.7), 0 10px 26px rgba(224, 189, 99, 0.45);
+}
+.result-stage.is-win .result-trophy { animation: trophy-pop var(--duration-celebrate, 1.1s) var(--ease-spring); }
+.result-title { font-weight: 800; font-size: 1.05rem; color: var(--gold-300, #e8ce82); margin-bottom: 4px; line-height: 1.3; }
+.result-amount {
+  font-weight: 900; font-style: italic; letter-spacing: -2px; line-height: 1;
+  font-size: clamp(2.6rem, 9vw, 3.2rem);
+  background: linear-gradient(180deg, #fbf1c8, #e7c766 44%, #b98b2f);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(2px 4px 0 rgba(90, 66, 14, 0.5)) drop-shadow(0 0 18px rgba(224, 189, 99, 0.35));
+}
+.result-stats { display: flex; gap: 10px; margin: 22px 0; }
+.result-stat {
+  flex: 1; border-radius: 16px; padding: 14px 8px; text-align: center;
+  background: linear-gradient(158deg, rgba(38, 52, 92, 0.5), rgba(15, 23, 44, 0.56));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+.result-stat b { display: block; font-size: 1.6rem; font-weight: 800; color: #fff; font-feature-settings: "tnum"; }
+.result-stat span { font-size: 0.72rem; color: var(--dim, #93a0bd); }
+.result-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.result-cta {
+  border-radius: 16px; padding: 15px; font-weight: 800; font-size: 0.98rem; color: var(--ink, #0e1524); text-align: center; border: none;
+  background: linear-gradient(150deg, #f7ecc4, #e6c063 55%, #b78f34);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.7), inset 0 -4px 8px rgba(120, 90, 20, 0.4), 0 10px 22px rgba(224, 189, 99, 0.35);
+  transition: transform var(--duration-normal) var(--ease-spring), filter var(--duration-normal) var(--ease-default);
+}
+.result-cta:hover { transform: translateY(-1px); filter: saturate(1.08) brightness(1.03); }
+.result-ghost {
+  border-radius: 16px; padding: 14px; font-weight: 700; font-size: 0.9rem; color: var(--gold-100, #f7ecc4); text-align: center;
+  background: linear-gradient(158deg, rgba(38, 52, 92, 0.45), rgba(15, 23, 44, 0.5));
+  border: 1px solid rgba(224, 189, 99, 0.3);
+  transition: transform var(--duration-normal) var(--ease-default), border-color var(--duration-normal) var(--ease-default);
+}
+.result-ghost:hover { transform: translateY(-1px); border-color: rgba(224, 189, 99, 0.55); }
+.result-sheet .guest-progress-cta { margin: 4px 0 14px; }
+
+/* ===================== Correct/Wrong feedback sheet — game-screens-reference .modal/.sheet ===================== */
+/* A centered sheet over the dimmed game during the feedback phase; auto-dismisses
+   with the existing auto-advance (scoring/flow untouched). */
+.answer-modal {
+  position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 22px;
+  background: rgba(6, 10, 20, 0.6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  animation: answer-modal-in var(--duration-slow) var(--ease-default);
+}
+@keyframes answer-modal-in { from { opacity: 0; } to { opacity: 1; } }
+.answer-sheet {
+  width: min(420px, 100%); border-radius: 24px; padding: 26px 20px; text-align: center;
+  background: linear-gradient(160deg, rgba(22, 32, 60, 0.96), rgba(12, 18, 36, 0.97));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: answer-sheet-in var(--duration-slow) var(--ease-spring) both;
+}
+@keyframes answer-sheet-in { from { opacity: 0; transform: scale(0.94) translateY(10px); } to { opacity: 1; transform: none; } }
+.answer-sheet-icon { width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 16px; }
+.answer-sheet-icon.is-correct { color: var(--green, #54d98c); border: 2px solid rgba(84, 217, 140, 0.5); background: radial-gradient(circle at 50% 35%, rgba(84, 217, 140, 0.3), transparent 70%); }
+.answer-sheet-icon.is-wrong { color: var(--red, #ff6b7a); border: 2px solid rgba(255, 107, 122, 0.5); background: radial-gradient(circle at 50% 35%, rgba(255, 107, 122, 0.3), transparent 70%); }
+.answer-sheet-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 6px; }
+.answer-sheet-title.is-correct { color: var(--green, #54d98c); }
+.answer-sheet-title.is-wrong { color: var(--red, #ff6b7a); }
+.answer-sheet-text { font-size: 0.86rem; color: var(--dim, #93a0bd); margin-bottom: 18px; line-height: 1.5; }
+.answer-sheet-go {
+  width: 100%; border-radius: 14px; padding: 13px; font-weight: 800; font-size: 0.9rem; color: var(--ink, #0e1524); border: none;
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  box-shadow: 0 8px 18px rgba(224, 189, 99, 0.35);
+  transition: transform var(--duration-normal) var(--ease-default), filter var(--duration-normal) var(--ease-default);
+}
+.answer-sheet-go:hover { transform: translateY(-1px); filter: brightness(1.04); }
+@media (prefers-reduced-motion: reduce) { .answer-modal, .answer-sheet { animation: none; } }
 /* ===== Exit transitions + progression toasts ===== */
 /* Dialog/drawer exits mirror their entrances; the is-closing class is driven
    by useDismissable, which unmounts after the animation completes. */
@@ -1707,14 +1797,64 @@ html,body{overscroll-behavior-y:none}
 }
 @media (min-width: 768px) { .multiplayer-game h2 { font-size: 2.2rem; } }
 
-.multiplayer-answer-grid { display: grid; gap: 14px; }
+.multiplayer-answer-grid { display: grid; gap: 9px; }
+/* Head-to-head answers — blue world (game-screens-reference .duo .ans): navy
+   fill + a blue gradient border, a blue rounded letter badge, white text. */
+.multiplayer-answer-grid .answer-button { min-height: 0; border-radius: 14px; padding: 12px 13px; gap: 10px; justify-content: flex-start; }
 .multiplayer-answer-grid .answer-button:not(.correct):not(.wrong) {
-  border-color: hsla(0, 0%, 100%, 0.09);
-  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.052), hsla(0, 0%, 100%, 0.018));
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.30), 0 3px 12px -4px hsla(203, 92%, 60%, 0.42);
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(158deg, rgba(30, 43, 80, 0.6), rgba(14, 21, 42, 0.66)) padding-box,
+    linear-gradient(150deg, rgba(154, 166, 255, 0.5), rgba(107, 124, 255, 0.22)) border-box;
+  /* dark depth + the shared cool under-glow (hsla(203, 92%, 60%, 0.42)) that ties
+     the blue answers to the gameplay family. */
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 3px 12px -4px hsla(203, 92%, 60%, 0.42);
 }
-.multiplayer-answer-grid .answer-button:not(:disabled):hover { border-color: hsla(41, 90%, 69%, 0.40); }
-.multiplayer-answer-grid .answer-button > span:first-child { color: var(--gold); font-weight: 900; }
+.multiplayer-answer-grid .answer-button:not(:disabled):hover {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(158deg, rgba(38, 52, 96, 0.66), rgba(16, 24, 48, 0.72)) padding-box,
+    linear-gradient(150deg, #9aa6ff, #6b7cff 55%, #8a6bff) border-box;
+}
+.multiplayer-answer-grid .answer-button > span:first-child {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center;
+  font-weight: 900; font-size: 0.7rem; color: #cfd6ff;
+  background: rgba(107, 124, 255, 0.16); border: 1px solid rgba(154, 166, 255, 0.5);
+}
+.multiplayer-answer-grid .answer-button > span:last-child { font-weight: 700; font-size: 0.9rem; color: #fff; line-height: 1.35; }
+
+/* ===================== Head-to-head (duo) chrome — game-screens-reference .duo ===================== */
+/* No enclosing panel: crown + VS row + question + answers on the live stage.
+   The app-shell scope beats the shared .stage-panel shadow. */
+.app-shell:not(.admin-active):not(.game-active) [data-mode="duo"].multiplayer-game {
+  border: none; background: none; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.duo-crown {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  margin: 0 auto 14px; color: var(--ink, #0e1524);
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.7), inset 0 -3px 5px rgba(120, 90, 20, 0.45), 0 4px 10px rgba(224, 189, 99, 0.45);
+}
+.duo-versus { display: flex; align-items: flex-start; justify-content: center; gap: 14px; margin: 0 0 16px; }
+.duo-player { flex: 1; max-width: 130px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.duo-avatar {
+  width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 6px;
+  font-weight: 800; font-size: 1.05rem; color: #fff;
+  background: linear-gradient(150deg, #8a97ff, #6b7cff 55%, #8a6bff);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.4), 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+.duo-player.is-me .duo-avatar { background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e); color: var(--ink, #0e1524); }
+.duo-name { font-size: 0.75rem; font-weight: 700; color: #dfe6f5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.duo-score { font-size: 1rem; font-weight: 800; color: var(--blue-l, #9aa6ff); }
+.duo-player.is-me .duo-score { color: var(--gold-300, #e8ce82); }
+.duo-vsx { align-self: center; font-weight: 900; font-size: 0.95rem; color: var(--dim, #93a0bd); }
+/* Shared white question in the blue world. */
+[data-mode="duo"].multiplayer-game h2 { color: #fff; text-align: center; }
+/* Blue round-timer fill + border (reference .duo .bar). */
+[data-mode="duo"] .multiplayer-timer i { background: linear-gradient(90deg, #6b7cff, #9aa6ff); box-shadow: 0 0 10px rgba(107, 124, 255, 0.5); }
+[data-mode="duo"] .multiplayer-timer { border-color: rgba(107, 124, 255, 0.3); }
+[data-mode="duo"] .multiplayer-round-meta { border-color: rgba(107, 124, 255, 0.22); }
 
 /* Head-to-head waiting room: exactly two balanced seats (host + opponent). */
 .multiplayer-versus { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 520px; margin: 1.25rem auto; }

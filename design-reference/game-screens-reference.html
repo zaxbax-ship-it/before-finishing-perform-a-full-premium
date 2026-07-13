@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root{
+    --gold-100:#f7ecc4;--gold-300:#e8ce82;--gold-500:#e0bd63;--gold-700:#a8842e;
+    --blue:#6b7cff;--blue-l:#9aa6ff;--purple:#9a6bff;--green:#54d98c;--red:#ff6b7a;
+    --ink:#0e1524;--txt:#eef2fb;--dim:#93a0bd;
+  }
+  /* crown = solid gold circle (same as all screens) */
+  .crownbtn{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:var(--ink);
+    background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#a8842e);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.7),inset 0 -3px 5px rgba(120,90,20,.45),0 4px 10px rgba(224,189,99,.45)}
+
+  /* ===== 1) SOLO RESULT (gold) ===== */
+  .res .trophy{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;color:var(--ink);
+    background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#a8842e);box-shadow:inset 0 2px 3px rgba(255,255,255,.7),0 10px 26px rgba(224,189,99,.45)}
+  .res .won{font-weight:800;font-size:16px;color:var(--gold-300);margin-bottom:4px;text-align:center}
+  .res .amt{font-weight:900;font-style:italic;letter-spacing:-2px;font-size:44px;line-height:1;text-align:center;
+    background:linear-gradient(180deg,#fbf1c8,#e7c766 44%,#b98b2f);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(2px 4px 0 rgba(90,66,14,.5)) drop-shadow(0 0 18px rgba(224,189,99,.35))}
+  .res .stats{display:flex;gap:10px;margin:22px 0}
+  .res .stat{flex:1;border-radius:16px;padding:14px 8px;text-align:center;
+    background:linear-gradient(158deg,rgba(38,52,92,.5),rgba(15,23,44,.56));border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 8px 18px rgba(0,0,0,.3)}
+  .res .stat b{display:block;font-size:22px;font-weight:800;color:#fff}
+  .res .stat span{font-size:11px;color:var(--dim)}
+  .res .cta{border-radius:16px;padding:15px;font-weight:800;font-size:15px;color:var(--ink);text-align:center;
+    background:linear-gradient(150deg,#f7ecc4,#e6c063 55%,#b78f34);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.7),inset 0 -4px 8px rgba(120,90,20,.4),0 10px 22px rgba(224,189,99,.35)}
+  .res .ghost{border-radius:16px;padding:14px;font-weight:700;font-size:14px;color:var(--gold-100);text-align:center;
+    background:linear-gradient(158deg,rgba(38,52,92,.45),rgba(15,23,44,.5));border:1px solid rgba(224,189,99,.3)}
+
+  /* ===== 2) CORRECT / WRONG modals ===== */
+  .modal{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:22px;
+    background:rgba(6,10,20,.6);backdrop-filter:blur(3px)}
+  .sheet{width:100%;border-radius:24px;padding:26px 20px;text-align:center;
+    background:linear-gradient(160deg,rgba(22,32,60,.96),rgba(12,18,36,.97));border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.1)}
+  .sheet .ic{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px}
+  .ic.ok{background:radial-gradient(circle at 50% 35%,rgba(84,217,140,.3),transparent 70%);color:var(--green);border:2px solid rgba(84,217,140,.5)}
+  .ic.no{background:radial-gradient(circle at 50% 35%,rgba(255,107,122,.3),transparent 70%);color:var(--red);border:2px solid rgba(255,107,122,.5)}
+  .sheet h3{font-size:22px;font-weight:800;margin-bottom:6px}
+  .sheet h3.ok{color:var(--green)}.sheet h3.no{color:var(--red)}
+  .sheet p{font-size:13px;color:var(--dim);margin-bottom:18px}
+  .sheet .go{border-radius:14px;padding:13px;font-weight:800;font-size:14px;color:var(--ink);
+    background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#a8842e);box-shadow:0 8px 18px rgba(224,189,99,.35)}
+
+  /* ===== 3) HEAD-TO-HEAD (blue) ===== */
+  .duo .vs{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 16px}
+  .duo .pl{flex:1;text-align:center}
+  .duo .av{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;margin:0 auto 6px;font-weight:800;font-size:18px;color:#fff;
+    background:linear-gradient(150deg,#8a97ff,#6b7cff 55%,#8a6bff);box-shadow:inset 0 2px 2px rgba(255,255,255,.4),0 6px 14px rgba(0,0,0,.4)}
+  .duo .pl.me .av{background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#a8842e);color:var(--ink)}
+  .duo .nm{font-size:12px;font-weight:700;color:#dfe6f5}
+  .duo .sc{font-size:16px;font-weight:800;color:var(--blue-l)}
+  .duo .pl.me .sc{color:var(--gold-300)}
+  .duo .vsx{font-weight:900;font-size:15px;color:var(--dim)}
+  .duo .qtext{font-weight:800;font-size:17px;line-height:1.3;color:#fff;text-align:center;margin:0 4px 16px}
+  .duo .ans{display:flex;align-items:center;gap:10px;border-radius:14px;padding:12px 13px;margin-bottom:9px;
+    background:linear-gradient(158deg,rgba(30,43,80,.6),rgba(14,21,42,.66)) padding-box,linear-gradient(150deg,rgba(154,166,255,.5),rgba(107,124,255,.22)) border-box;border:1.5px solid transparent;
+    box-shadow:0 8px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
+  .duo .ans .k{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;flex:0 0 auto;font-weight:900;font-size:11px;color:#cfd6ff;background:rgba(107,124,255,.16);border:1px solid rgba(154,166,255,.5)}
+  .duo .ans .t{font-weight:700;font-size:12.5px;color:#fff}
+  .duo .bar{height:7px;border-radius:20px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:12px}
+  .duo .bar i{display:block;height:100%;width:48%;border-radius:20px;background:linear-gradient(90deg,#6b7cff,#9aa6ff);box-shadow:0 0 10px rgba(107,124,255,.7)}
+</style>
+</head>
+<body>
+  <!-- 1) SOLO RESULT: crown (gold circle) centered top, gold trophy, "סיימת את המשחק!", big metallic-gold amount, two stat cards (correct answers / level), then a gold "שחק שוב" CTA + a ghost "חזרה לעמוד הבית". Black-gold with gold accents. -->
+  <div class="res">
+    <div class="crownbtn"></div>
+    <div class="trophy"></div>
+    <div class="won">סיימת את המשחק!</div>
+    <div class="amt">$150,000</div>
+    <div class="stats"><div class="stat"><b>12</b><span>תשובות נכונות</span></div><div class="stat"><b>5</b><span>שלב</span></div></div>
+    <div class="cta">שחק שוב</div>
+    <div class="ghost">חזרה לעמוד הבית</div>
+  </div>
+
+  <!-- 2a) CORRECT modal: dimmed game behind; centered sheet; green check icon (functional signal); "תשובה נכונה!"; subtext (e.g. climbed to $40,000); gold "המשך" button. -->
+  <div class="modal"><div class="sheet"><div class="ic ok"></div><h3 class="ok">תשובה נכונה!</h3><p>כל הכבוד — עלית ל־$40,000</p><div class="go">המשך</div></div></div>
+
+  <!-- 2b) WRONG modal: red X icon (functional signal); "תשובה שגויה"; shows the correct answer; gold "סיום" button. -->
+  <div class="modal"><div class="sheet"><div class="ic no"></div><h3 class="no">תשובה שגויה</h3><p>התשובה הנכונה: Ozark – סטיב בלקמן</p><div class="go">סיום</div></div></div>
+
+  <!-- 3) HEAD-TO-HEAD (blue world): crown (gold circle) centered top; a VS row with two players (avatar + name + score) — MY player uses a gold avatar+score accent, opponent uses blue; shared question (white); 4 blue-bordered answer rows with blue letter badges + white text; blue progress bar. -->
+  <div class="duo">
+    <div class="crownbtn"></div>
+    <div class="vs"><div class="pl me"><div class="av">י</div><div class="nm">יוסי</div><div class="sc">2</div></div><div class="vsx">VS</div><div class="pl"><div class="av">ד</div><div class="nm">דני</div><div class="sc">1</div></div></div>
+    <div class="qtext">מהי בירת אוסטרליה?</div>
+    <div class="ans"><span class="k">א</span><span class="t">סידני</span></div>
+    <div class="ans"><span class="k">ב</span><span class="t">קנברה</span></div>
+    <div class="ans"><span class="k">ג</span><span class="t">מלבורן</span></div>
+    <div class="ans"><span class="k">ד</span><span class="t">פרת'</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+</body>
+</html>
