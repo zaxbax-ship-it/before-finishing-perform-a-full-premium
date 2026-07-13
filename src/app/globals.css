@@ -1707,7 +1707,12 @@ html,body{overscroll-behavior-y:none}
    ~70% translucent navy padding-box + a thin white gradient border-box, centered
    gold-tinted icon tile + centered white label. Replaces the old tall
    azure/lit-from-below tiles (min-height / space-between / start-aligned). */
-.app-shell:not(.admin-active):not(.game-active) .category-card {
+/* NOTE: the .category-card also carries `stage-interactive`, whose rule (later in
+   this file, same base specificity) otherwise wins and repaints the card with the
+   old azure glass + cyan lower-edge glow. We target `.category-card.stage-interactive`
+   (one class higher) so the reference navy card + thin WHITE gradient border wins,
+   killing the azure/cyan look. Layout props included here too. */
+.app-shell:not(.admin-active):not(.game-active) .category-card.stage-interactive {
   min-height: 0;
   padding: 18px;
   gap: 10px;
@@ -1721,7 +1726,7 @@ html,body{overscroll-behavior-y:none}
     linear-gradient(150deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05)) border-box;
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
-.app-shell:not(.admin-active):not(.game-active) .category-card:hover {
+.app-shell:not(.admin-active):not(.game-active) .category-card.stage-interactive:hover:not(:disabled) {
   border: 1.5px solid transparent;
   background:
     radial-gradient(130% 90% at 50% -20%, rgba(224, 189, 99, 0.14), transparent 60%) padding-box,
@@ -2649,56 +2654,14 @@ html,body{overscroll-behavior-y:none}
   100% { opacity: 0; }
 }
 
-/* Static ladder (post-correct climb): the rungs are now IDENTICAL in size to the
-   game-start deal ladder — same .launch-rung box (48px, padding 12). The old
-   height:42px/padding:0 override (which made the climb ladder look smaller than
-   the deal ladder) was removed so the two occurrences read the same. Only the
-   entrance is different (a gentle fade instead of the deal stagger) + the marker;
-   motion timing/curves are unchanged. The row pitch var keeps the climbing
-   marker locked to the (now taller) rungs so they can't drift apart. */
-.launch-ladder.is-static { position: relative; --launch-row-pitch: 58px; }
-.launch-ladder.is-static .launch-rung {
-  opacity: 0;
-  transform: none;
-  animation: launch-rung-fade 0.6s ease forwards;
-}
-@keyframes launch-rung-fade { from { opacity: 0; } to { opacity: 0.82; } }
-.launch-ladder.is-static .launch-rung.is-reached { animation: launch-rung-fade-bright 0.6s ease forwards; }
-@keyframes launch-rung-fade-bright { from { opacity: 0; } to { opacity: 1; } }
-
-/* The climbing marker: a gold highlight that slides from the previous rung to the
-   reached rung. Sized to one full rung (48px) and stepped by the shared row pitch
-   (rung 48 + gap 8) so it overlays the rungs exactly. */
-.launch-climber {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: calc(var(--launch-row-pitch) - 8px);
-  border-radius: 14px;
-  pointer-events: none;
-  background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.34), hsla(41, 90%, 69%, 0.12));
-  border: 1px solid hsla(41, 90%, 69%, 0.72);
-  box-shadow: 0 0 26px hsla(41, 90%, 69%, 0.5), var(--stage-edge-cyan-strong);
-  transform: translateY(calc(var(--from-row) * var(--launch-row-pitch)));
-  animation: launch-climb 3s cubic-bezier(0.34, 0.1, 0.2, 1) both;
-}
-@keyframes launch-climb {
-  0% { transform: translateY(calc(var(--from-row) * var(--launch-row-pitch))); opacity: 0; }
-  16% { opacity: 1; }
-  38% { transform: translateY(calc(var(--from-row) * var(--launch-row-pitch))); }
-  72% { transform: translateY(calc(var(--to-row) * var(--launch-row-pitch))); opacity: 1; }
-  100% { transform: translateY(calc(var(--to-row) * var(--launch-row-pitch))); opacity: 1; }
-}
-/* (the current/target rung's amount uses the gold gradient text defined above,
-   matching reference .lad .row.on .amt) */
-
+/* The post-correct "climb" now renders the IDENTICAL deal ladder (same component,
+   same .launch-ladder / .launch-rung / order / is-final glow / stagger-in). The
+   only climb-specific rule is the .is-climb wrapper fade above, so the mid-game
+   beat gently fades in and out. The old static-ladder + climbing-marker CSS
+   (.launch-ladder.is-static / .launch-climber / launch-climb / launch-rung-fade)
+   was removed — it was what made the two occurrences look different. */
 @media (prefers-reduced-motion: reduce) {
-  .launch-transition.is-climb, .launch-ladder.is-static .launch-rung, .launch-climber {
-    animation-duration: 0.01ms !important;
-  }
-  .launch-ladder.is-static .launch-rung { opacity: 1; }
-  .launch-climber { transform: translateY(calc(var(--to-row) * var(--launch-row-pitch))); opacity: 1; }
+  .launch-transition.is-climb { animation-duration: 0.01ms !important; }
 }
 
 

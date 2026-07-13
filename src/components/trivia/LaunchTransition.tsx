@@ -1,53 +1,23 @@
-import type { CSSProperties } from 'react';
 import { money } from './format';
 import { MILESTONES } from './milestones';
 
 /**
- * The cinematic prize-ladder interstitial, in two modes:
+ * The cinematic prize-ladder interstitial. ONE visual: the metallic-gold
+ * "$1,000,000" hero over the eight prize milestones dealing in and stacking into
+ * a ladder ($1,000 → $1,000,000, the top prize glowing). Shown in two moments,
+ * rendered IDENTICALLY so they can never drift apart:
  *
- *  • "deal"  — shown after a category (or the random game) is tapped, while the
- *    round is prepared. The 3D one-million-dollar hero crowns the screen and the
- *    eight prize milestones deal in one after another, stacking into a ladder.
+ *  • "deal"  — when a game starts (fades in, then the game takes over).
+ *  • "climb" — when a milestone is reached mid-game. The SAME ladder; the only
+ *    difference is the wrapper gently fades in AND out (`.is-climb`) so it sits as
+ *    a brief mid-game beat. Same size, scale, position, rungs and prize text.
  *
- *  • "climb" — shown when a milestone is reached mid-game. The full ladder is
- *    already in place (highest prize on top) and a single gold marker climbs one
- *    rung, from the previous prize to the new one. Fades in and out gently.
- *
- * Presentation only — never interactive.
+ * `climbTo` is accepted for call-site compatibility but no longer changes the
+ * appearance. Presentation only — never interactive.
  */
-export function LaunchTransition({ mode = 'deal', climbTo }: { mode?: 'deal' | 'climb'; climbTo?: number }) {
-  const total = MILESTONES.length;
-
-  if (mode === 'climb') {
-    const target = Math.max(1, Math.min(total - 1, climbTo ?? 1));
-    const fromRow = total - 1 - (target - 1);
-    const toRow = total - 1 - target;
-    const rows = [...MILESTONES].reverse(); // highest prize on top
-    const ladderStyle = { ['--from-row' as string]: fromRow, ['--to-row' as string]: toRow } as CSSProperties;
-    return (
-      <div className="launch-transition is-climb" role="status" aria-live="polite">
-        <div className="launch-million">
-          <span className="launch-million-halo" aria-hidden="true" />
-          <div className="launch-million-text">$1,000,000</div>
-        </div>
-        <div className="launch-ladder is-static" aria-hidden="true" style={ladderStyle}>
-          {rows.map((milestone, row) => {
-            const index = total - 1 - row;
-            return (
-              <div key={milestone.id} className={`launch-rung${index === target ? ' is-target' : ''}${index <= target ? ' is-reached' : ''}`}>
-                <span className="launch-rung-index">{index + 1}</span>
-                <span className="launch-rung-prize">{money(milestone.prize)}</span>
-              </div>
-            );
-          })}
-          <span className="launch-climber" aria-hidden="true" />
-        </div>
-      </div>
-    );
-  }
-
+export function LaunchTransition({ mode = 'deal' }: { mode?: 'deal' | 'climb'; climbTo?: number }) {
   return (
-    <div className="launch-transition" role="status" aria-live="polite">
+    <div className={`launch-transition${mode === 'climb' ? ' is-climb' : ''}`} role="status" aria-live="polite">
       <div className="launch-million">
         <span className="launch-million-halo" aria-hidden="true" />
         <div className="launch-million-text">$1,000,000</div>
