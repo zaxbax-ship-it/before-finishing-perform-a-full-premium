@@ -1074,38 +1074,10 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
 .result-ghost:hover { transform: translateY(-1px); border-color: rgba(224, 189, 99, 0.55); }
 .result-sheet .guest-progress-cta { margin: 4px 0 14px; }
 
-/* ===================== Correct/Wrong feedback sheet — game-screens-reference .modal/.sheet ===================== */
-/* A centered sheet over the dimmed game during the feedback phase; auto-dismisses
-   with the existing auto-advance (scoring/flow untouched). */
-.answer-modal {
-  position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 22px;
-  background: rgba(6, 10, 20, 0.6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
-  animation: answer-modal-in var(--duration-slow) var(--ease-default);
-}
-@keyframes answer-modal-in { from { opacity: 0; } to { opacity: 1; } }
-.answer-sheet {
-  width: min(420px, 100%); border-radius: 24px; padding: 26px 20px; text-align: center;
-  background: linear-gradient(160deg, rgba(22, 32, 60, 0.96), rgba(12, 18, 36, 0.97));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  animation: answer-sheet-in var(--duration-slow) var(--ease-spring) both;
-}
-@keyframes answer-sheet-in { from { opacity: 0; transform: scale(0.94) translateY(10px); } to { opacity: 1; transform: none; } }
-.answer-sheet-icon { width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 16px; }
-.answer-sheet-icon.is-correct { color: var(--green, #54d98c); border: 2px solid rgba(84, 217, 140, 0.5); background: radial-gradient(circle at 50% 35%, rgba(84, 217, 140, 0.3), transparent 70%); }
-.answer-sheet-icon.is-wrong { color: var(--red, #ff6b7a); border: 2px solid rgba(255, 107, 122, 0.5); background: radial-gradient(circle at 50% 35%, rgba(255, 107, 122, 0.3), transparent 70%); }
-.answer-sheet-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 6px; }
-.answer-sheet-title.is-correct { color: var(--green, #54d98c); }
-.answer-sheet-title.is-wrong { color: var(--red, #ff6b7a); }
-.answer-sheet-text { font-size: 0.86rem; color: var(--dim, #93a0bd); margin-bottom: 18px; line-height: 1.5; }
-.answer-sheet-go {
-  width: 100%; border-radius: 14px; padding: 13px; font-weight: 800; font-size: 0.9rem; color: var(--ink, #0e1524); border: none;
-  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
-  box-shadow: 0 8px 18px rgba(224, 189, 99, 0.35);
-  transition: transform var(--duration-normal) var(--ease-default), filter var(--duration-normal) var(--ease-default);
-}
-.answer-sheet-go:hover { transform: translateY(-1px); filter: brightness(1.04); }
-@media (prefers-reduced-motion: reduce) { .answer-modal, .answer-sheet { animation: none; } }
+/* (The Test-3 correct/wrong feedback sheet — .answer-modal/.answer-sheet — was
+   removed: it overlapped the level-up / prize-climb overlay on a correct answer.
+   The original inline verdict (blue/red answer states) + auto-advance stand.) */
+
 /* ===== Exit transitions + progression toasts ===== */
 /* Dialog/drawer exits mirror their entrances; the is-closing class is driven
    by useDismissable, which unmounts after the animation completes. */
@@ -2508,11 +2480,20 @@ html,body{overscroll-behavior-y:none}
 .launch-million-text {
   position: relative;
   z-index: 1;
+  /* width:auto + horizontal padding + overflow:visible so the italic slant and
+     drop-shadow on the last "0" are never clipped on the right edge. Centered. */
+  width: auto;
+  max-width: 100%;
+  box-sizing: content-box;
+  padding: 0.06em 0.24em;
+  overflow: visible;
+  text-align: center;
+  white-space: nowrap;
   font-weight: 900;
   font-style: italic;
   letter-spacing: -2px;
-  font-size: clamp(2.6rem, 12vw, 4rem);
-  line-height: 1;
+  font-size: clamp(2.4rem, 11vw, 4rem);
+  line-height: 1.06;
   background: linear-gradient(180deg, #fbf1c8, #e7c766 44%, #b98b2f);
   -webkit-background-clip: text;
   background-clip: text;
