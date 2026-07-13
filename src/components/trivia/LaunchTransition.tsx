@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react';
-import { ASSETS } from '@/lib/assets';
 import { money } from './format';
 import { MILESTONES } from './milestones';
 
@@ -29,7 +28,7 @@ export function LaunchTransition({ mode = 'deal', climbTo }: { mode?: 'deal' | '
       <div className="launch-transition is-climb" role="status" aria-live="polite">
         <div className="launch-million">
           <span className="launch-million-halo" aria-hidden="true" />
-          <img src={ASSETS.million3d} alt="$1,000,000" width={1024} height={334} className="launch-million-img" />
+          <div className="launch-million-text">$1,000,000</div>
         </div>
         <div className="launch-ladder is-static" aria-hidden="true" style={ladderStyle}>
           {rows.map((milestone, row) => {
@@ -51,7 +50,7 @@ export function LaunchTransition({ mode = 'deal', climbTo }: { mode?: 'deal' | '
     <div className="launch-transition" role="status" aria-live="polite">
       <div className="launch-million">
         <span className="launch-million-halo" aria-hidden="true" />
-        <img src={ASSETS.million3d} alt="$1,000,000" width={1024} height={334} className="launch-million-img" />
+        <div className="launch-million-text">$1,000,000</div>
       </div>
       <div className="launch-ladder" aria-hidden="true">
         {MILESTONES.map((milestone, index) => (

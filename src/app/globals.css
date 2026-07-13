@@ -827,14 +827,14 @@ header .language-option.active,header .language-option:hover{border-color:hsla(4
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border-radius: var(--radius-2xl);
+  border-radius: 18px;
   padding: 0 26px;
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: #08101f;
-  border: 1px solid rgba(255, 228, 154, 0.72);
-  background: linear-gradient(135deg, #fff7c9, #f8d36f 36%, #d99b38 68%, #9f641f);
-  box-shadow: 0 20px 52px hsla(41, 90%, 69%, 0.32), inset 0 1px 0 hsla(0, 0%, 100%, 0.8);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink, #0e1524);
+  border: none;
+  background: linear-gradient(150deg, #f7ecc4, #e6c063 55%, #b78f34);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.7), inset 0 -4px 8px rgba(120, 90, 20, 0.4), 0 10px 22px rgba(224, 189, 99, 0.35);
   transition: transform var(--duration-normal) var(--ease-spring), box-shadow var(--duration-normal) var(--ease-default), filter var(--duration-normal) var(--ease-default);
 }
 .play-all-banner:hover {
@@ -1405,7 +1405,18 @@ html,body{overscroll-behavior-y:none}
   border-color: transparent;
   background: transparent;
   box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   padding: 0.35rem 0.15rem;
+}
+/* No enclosing gameplay-stage frame in solo (reference .q sits directly on the
+   live fog+stars background — no glass panel around answers/lifelines/bar). */
+.game-active .gameplay-stage {
+  margin-top: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
 }
 @media (min-width: 768px) {
   .game-active .question-priority.glass { padding: 0.75rem 0.85rem; }
@@ -1452,16 +1463,39 @@ html,body{overscroll-behavior-y:none}
 /* --- ANSWERS feel lighter -------------------------------------------------
    One quiet surface, one soft cinematic shadow, more air between rows.
    Touch targets, correct/wrong feedback and focus rings are untouched. */
-.game-active .answers-grid { gap: 14px; }
+.game-active .answers-grid { gap: 11px; }
+/* Answer rows — reference .q .ans: airy, translucent navy fill, thin white
+   border, white CENTERED text with the gold letter at the inline-end. */
+.game-active .answer-button {
+  min-height: 0;
+  border-radius: 15px;
+  padding: 13px 16px;
+  gap: 12px;
+  justify-content: center;
+}
+.game-active .answer-button .answer-letter {
+  order: 2;
+  width: 16px;
+  height: auto;
+  font-size: 0.95rem;
+}
+.game-active .answer-button > span:not(.answer-letter) {
+  order: 1;
+  flex: 1;
+  text-align: center;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: #fff;
+}
 .game-active .answer-button:not(.correct):not(.wrong) {
-  border-color: hsla(0, 0%, 100%, 0.09);
-  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.052), hsla(0, 0%, 100%, 0.018));
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(158deg, rgba(38, 52, 92, 0.55), rgba(15, 23, 44, 0.62));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .game-active .answer-button:not(:disabled):hover {
   border-color: hsla(41, 90%, 69%, 0.40);
-  background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.10), hsla(0, 0%, 100%, 0.02));
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(158deg, rgba(48, 64, 108, 0.6), rgba(18, 27, 50, 0.66));
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Letter integrated into the row: no chip, no border, no fill, no glow —
@@ -1477,18 +1511,24 @@ html,body{overscroll-behavior-y:none}
 
 /* --- LIFELINES: icon + price + state, nothing more ------------------------
    Quiet tile, one shadow only on hover. (Icon container removed in Stage 14.) */
+/* Lifeline squares — reference .q .life: dark translucent navy, thin border,
+   gold glyph, soft depth. */
 .game-active .lifeline-tile {
-  border-color: hsla(0, 0%, 100%, 0.08);
-  background: hsla(0, 0%, 100%, 0.028);
-  box-shadow: none;
+  min-height: 58px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(158deg, rgba(38, 52, 92, 0.42), rgba(15, 23, 44, 0.48));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 14px rgba(0, 0, 0, 0.3);
+  color: var(--gold-300, #e8ce82);
 }
+.game-active .lifeline-tile .lifeline-icon-shell { color: var(--gold-300, #e8ce82); }
 .game-active .lifeline-tile.paid {
   border-color: hsla(41, 90%, 69%, 0.26);
-  background: hsla(41, 90%, 69%, 0.075);
+  background: linear-gradient(158deg, rgba(224, 189, 99, 0.14), rgba(38, 52, 92, 0.42));
 }
 .game-active .lifeline-tile:not(:disabled):hover {
   border-color: hsla(41, 90%, 69%, 0.42);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 22px rgba(0, 0, 0, 0.38);
 }
 
 /* --- SUPPORT PANELS: quiet, not floating windows -------------------------
@@ -1594,17 +1634,40 @@ html,body{overscroll-behavior-y:none}
    Presentation only; one dark depth + one azure edge = not a stacked pile.
    ========================================================================== */
 
-/* Gameplay answers — restore the reference's azure edge-light (neutral only). */
+/* Gameplay answers — solo depth reference: one soft dark shadow + inner sheen
+   (the old azure lower-edge glow was removed for the black-gold solo look). */
 .game-active .answer-button:not(.correct):not(.wrong) {
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.30), 0 3px 12px -4px hsla(203, 92%, 60%, 0.42);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Public category tiles — the same lit-from-below signature. */
+/* Category tiles — black-gold depth reference (design-reference/solo-path-
+   reference.html .cat .card): ~70% translucent navy padding-box + a thin
+   white gradient border-box, centered icon + white label, one soft dark
+   shadow + inner sheen. No azure edge (that was the old signature). */
 .app-shell:not(.admin-active):not(.game-active) .category-card {
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.30), 0 3px 12px -4px hsla(203, 92%, 60%, 0.34);
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(158deg, rgba(30, 43, 80, 0.42), rgba(14, 21, 42, 0.5)) padding-box,
+    linear-gradient(150deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05)) border-box;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .app-shell:not(.admin-active):not(.game-active) .category-card:hover {
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), 0 5px 16px -4px hsla(203, 92%, 62%, 0.50);
+  border: 1.5px solid transparent;
+  background:
+    radial-gradient(130% 90% at 50% -20%, rgba(224, 189, 99, 0.14), transparent 60%) padding-box,
+    linear-gradient(158deg, rgba(34, 48, 88, 0.5), rgba(16, 24, 48, 0.56)) padding-box,
+    linear-gradient(150deg, #f7ecc4, #e0bd63 55%, #a8842e) border-box;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+/* Icon tile — reference .cat .ico: rounded-square neutral glass, gold glyph. */
+.app-shell:not(.admin-active):not(.game-active) .category-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  color: var(--gold-300, #e8ce82);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 5px rgba(0, 0, 0, 0.3);
 }
 
 
@@ -1691,9 +1754,10 @@ html,body{overscroll-behavior-y:none}
 }
 .stage-lifelines .lifeline-help { justify-content: center; margin-top: 0.6rem; }
 
-/* Stronger, reference-matching cyan under-glow on the answer cards in the stage. */
+/* Solo answer depth (inside the now-frameless stage): soft dark shadow + sheen,
+   no azure glow — matches the black-gold reference. */
 .game-active .gameplay-stage .answer-button:not(.correct):not(.wrong) {
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30), 0 4px 16px -4px hsla(203, 95%, 62%, 0.55);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Single premium countdown — one thin line, no nested track, no capsule. */
@@ -1842,14 +1906,52 @@ html,body{overscroll-behavior-y:none}
 .milestone-rung.is-current .milestone-amount { font-size: clamp(1.16rem, 4.2vw, 1.56rem); }
 .milestone-dot { width: 11px; height: 11px; }
 
-/* 4/5. The gameplay header reads like the Home wordmark: flatten the pill so it
-   is just the shared logo, aligned to the start (logical RTL/LTR). */
-.game-topline-slim { display: flex; justify-content: flex-start; align-items: center; border: none; background: none; box-shadow: none; padding: 2px; margin-bottom: 14px; }
+/* 4/5. Solo gameplay header = a solid-gold crown circle, centered, no title
+   (design-reference/solo-path-reference.html .q .ghead / .crownbtn). The
+   .app-brand button keeps its exit/cash-out handler; only its look changes. */
+.game-topline-slim { display: flex; justify-content: center; align-items: center; border: none; background: none; box-shadow: none; padding: 2px; margin-bottom: 20px; }
+.game-active .app-brand { gap: 0; }
+.game-active .app-brand-mark {
+  width: 50px; height: 50px; border-radius: 50%;
+  color: var(--ink, #0e1524);
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.7), inset 0 -3px 5px rgba(120, 90, 20, 0.45), 0 4px 10px rgba(224, 189, 99, 0.45);
+}
+/* No visible title in solo gameplay (the accessible name lives on the button's
+   aria-label / title). */
+.game-active .app-brand-text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* 6/7. Bottom status is a centred vertical stack: the three chances centred as
    one unit, with the larger current winnings directly below them. */
 .game-bottom-status { flex-direction: column; align-items: center; justify-content: center; gap: 0.55rem; margin-top: 1.5rem; }
 .game-bottom-pot { font-size: clamp(1.7rem, 6vw, 2.15rem); }
+/* Streak pills — reference .q .pills: flat gold rectangles (no skew). */
+.game-active .chance-meter { gap: 6px; }
+.game-active .chance-pip {
+  width: 22px; height: 14px; border-radius: 4px; transform: none;
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.game-active .chance-pip.is-spent {
+  background: hsla(0, 0%, 100%, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  opacity: 0.5;
+}
+
+/* Solo timer bar — reference .q .bar: a gold track fill. The width still
+   animates from the game's countdown logic (inline style); only the colour is
+   forced gold here (the countdown urgency stays legible via the bar thinning +
+   the thicker is-critical height). !important beats the inline background. */
+.game-active .gameplay-timer {
+  height: 7px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.game-active .gameplay-timer-fill {
+  background: linear-gradient(90deg, #c79a3e, #f7ecc4) !important;
+  box-shadow: 0 0 10px rgba(224, 189, 99, 0.5);
+  border-radius: 20px;
+}
 
 /* 9. Optically centre each lifeline icon inside its existing tile. The price/
    status floats at the tile base so the only in-flow child (the icon) sits at
@@ -1995,8 +2097,8 @@ html,body{overscroll-behavior-y:none}
 /* ===================== Home redesign — depth-reference dock, prize & fog ===================== */
 /* The old 3D million-dollar image hero + crown were replaced by pure CSS: a
    metallic-gold "$1,000,000" text prize and a compact glass dock. The image
-   asset (million3d) is no longer referenced on Home (still used by the launch
-   interstitial, so it is intentionally kept). */
+   asset (million3d) is now unused everywhere (Home + the launch interstitial
+   both render CSS gold text); the file is intentionally kept, not deleted. */
 
 .home-landing { position: relative; text-align: center; }
 
@@ -2261,12 +2363,21 @@ html,body{overscroll-behavior-y:none}
 }
 @keyframes launch-fade { from { opacity: 0; } to { opacity: 1; } }
 .launch-million { position: relative; display: grid; place-items: center; }
-.launch-million-img {
+/* Metallic-gold "$1,000,000" CSS text (was the 3D image), reference .lad .prize.
+   Motion preserved: same launch-million-in entrance. */
+.launch-million-text {
   position: relative;
   z-index: 1;
-  width: min(72vw, 520px);
-  height: auto;
-  filter: drop-shadow(0 24px 60px rgba(0, 0, 0, 0.5));
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -2px;
+  font-size: clamp(2.6rem, 12vw, 4rem);
+  line-height: 1;
+  background: linear-gradient(180deg, #fbf1c8, #e7c766 44%, #b98b2f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(2px 4px 0 rgba(90, 66, 14, 0.5)) drop-shadow(0 0 18px rgba(224, 189, 99, 0.35));
   animation: launch-million-in 0.7s cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 .launch-million-halo {
@@ -2292,16 +2403,22 @@ html,body{overscroll-behavior-y:none}
   flex-direction: column;
   gap: 8px;
 }
+/* Ladder rungs — reference .lad .row: centered amount, translucent navy
+   padding-box + thin white gradient border-box, number badge pinned to the
+   inline-start. Entrance motion (launch-rung-in) is unchanged. */
 .launch-rung {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 14px;
-  padding: 12px 18px;
-  border-radius: 16px;
-  border: 1px solid hsla(0, 0%, 100%, 0.14);
-  background: var(--stage-glass);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3), var(--stage-edge-cyan);
+  padding: 12px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(158deg, rgba(30, 43, 80, 0.42), rgba(14, 21, 42, 0.5)) padding-box,
+    linear-gradient(150deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)) border-box;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: #fff;
   opacity: 0;
   transform: translateY(-26px) scale(0.96);
@@ -2313,23 +2430,44 @@ html,body{overscroll-behavior-y:none}
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .launch-rung-index {
+  position: absolute;
+  inset-inline-start: 12px;
   display: grid;
   place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 999px;
-  background: hsla(0, 0%, 100%, 0.08);
-  font-size: 0.78rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--dim, #93a0bd);
 }
-.launch-rung-prize { font-size: 1.05rem; font-weight: 900; color: var(--gold); }
-.launch-rung.is-final {
-  border-color: hsla(41, 90%, 69%, 0.6);
-  background: linear-gradient(135deg, hsla(41, 90%, 69%, 0.22), var(--stage-glass));
-  box-shadow: 0 18px 40px hsla(41, 90%, 69%, 0.28), var(--stage-edge-cyan-strong);
+.launch-rung-prize { font-size: 16px; font-weight: 800; color: var(--gold-300, #e8ce82); }
+/* Current/top rung glows gold — reference .lad .row.on. */
+.launch-rung.is-final,
+.launch-rung.is-target {
+  border: 1.5px solid transparent;
+  background:
+    radial-gradient(130% 90% at 50% -20%, rgba(224, 189, 99, 0.22), transparent 60%) padding-box,
+    linear-gradient(158deg, rgba(30, 43, 80, 0.45), rgba(14, 21, 42, 0.52)) padding-box,
+    linear-gradient(150deg, #f7ecc4, #e0bd63 55%, #a8842e) border-box;
+  box-shadow: 0 0 22px rgba(224, 189, 99, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
-.launch-rung.is-final .launch-rung-prize { font-size: 1.2rem; }
+.launch-rung.is-final .launch-rung-prize,
+.launch-rung.is-target .launch-rung-prize {
+  font-size: 18px;
+  background: linear-gradient(180deg, #fff, #e7c766);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.launch-rung.is-final .launch-rung-index,
+.launch-rung.is-target .launch-rung-index {
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63);
+  color: var(--ink, #0e1524);
+  border: none;
+}
 .launch-caption {
   font-size: 1rem;
   font-weight: 700;
@@ -2337,7 +2475,7 @@ html,body{overscroll-behavior-y:none}
   color: rgba(255, 255, 255, 0.8);
 }
 @media (prefers-reduced-motion: reduce) {
-  .launch-transition, .launch-million-img, .launch-million-halo, .launch-rung {
+  .launch-transition, .launch-million-text, .launch-million-halo, .launch-rung {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
@@ -2397,7 +2535,8 @@ html,body{overscroll-behavior-y:none}
   72% { transform: translateY(calc(var(--to-row) * 50px)); opacity: 1; }
   100% { transform: translateY(calc(var(--to-row) * 50px)); opacity: 1; }
 }
-.launch-rung.is-target .launch-rung-prize { color: var(--gold); }
+/* (the current/target rung's amount uses the gold gradient text defined above,
+   matching reference .lad .row.on .amt) */
 
 @media (prefers-reduced-motion: reduce) {
   .launch-transition.is-climb, .launch-ladder.is-static .launch-rung, .launch-climber {
