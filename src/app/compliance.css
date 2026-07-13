@@ -3,7 +3,7 @@
   z-index: 2;
   border-top: 1px solid hsla(0, 0%, 100%, .12);
   background:
-    radial-gradient(circle at 10% 0, rgba(69, 194, 255, .12), transparent 22rem),
+    radial-gradient(circle at 50% 0, hsla(41, 90%, 69%, .06), transparent 22rem),
     linear-gradient(180deg, rgba(3, 6, 18, .72), rgba(3, 6, 18, .98));
   color: rgba(255, 255, 255, .72);
 }
@@ -75,7 +75,7 @@
   padding: 72px 18px 96px;
   color: #f8fbff;
   background:
-    radial-gradient(circle at 50% -20%, rgba(69, 194, 255, .26), transparent 34rem),
+    radial-gradient(circle at 50% -20%, hsla(41, 90%, 69%, .16), transparent 34rem),
     radial-gradient(circle at 88% 12%, rgba(247, 202, 103, .13), transparent 28rem),
     linear-gradient(140deg, #02030a, #06122b 42%, #02040b);
 }
@@ -88,6 +88,7 @@
 
 .compliance-hero {
   padding: 0 0 34px;
+  text-align: center;
 }
 
 .compliance-back-link {
@@ -112,18 +113,21 @@
 
 .compliance-hero h1 {
   max-width: 920px;
-  margin-top: 14px;
-  color: #fff;
-  font-size: clamp(2.6rem, 8vw, 6rem);
-  line-height: .94;
-  font-weight: 950;
+  margin: 14px auto 0;
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  line-height: 1.05;
+  font-weight: 900;
+  background: linear-gradient(180deg, #f7ecc4, #e0bd63);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .compliance-description {
   max-width: 780px;
-  margin-top: 18px;
+  margin: 18px auto 0;
   color: rgba(255, 255, 255, .72);
-  font-size: clamp(1rem, 2vw, 1.22rem);
+  font-size: clamp(1rem, 2vw, 1.15rem);
   line-height: 1.75;
 }
 
@@ -136,12 +140,10 @@
 
 .compliance-toc,
 .compliance-card {
-  border: 1px solid rgba(255, 255, 255, .14);
-  background:
-    radial-gradient(circle at 10% 0, rgba(69, 194, 255, .15), transparent 22rem),
-    linear-gradient(145deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .045));
-  box-shadow: 0 28px 78px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .15);
-  backdrop-filter: blur(22px) saturate(1.16);
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: linear-gradient(158deg, rgba(30, 43, 80, .55), rgba(14, 21, 42, .62));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .1);
+  backdrop-filter: blur(16px) saturate(1.1);
 }
 
 .compliance-toc {
@@ -232,9 +234,9 @@
 
 .compliance-contact-strip {
   margin-bottom: 26px;
-  border: 1px solid rgba(247, 202, 103, .28);
+  border: 1px solid rgba(224, 189, 99, .3);
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(247, 202, 103, .13), rgba(69, 194, 255, .08));
+  background: linear-gradient(158deg, rgba(224, 189, 99, .12), rgba(14, 21, 42, .5));
   padding: 18px;
   display: grid;
   gap: 5px;
@@ -261,24 +263,29 @@
   padding: 28px;
   color: #fff;
   background:
-    radial-gradient(circle at 50% 0, rgba(69, 194, 255, .24), transparent 32rem),
+    radial-gradient(circle at 50% 0, hsla(41, 90%, 69%, .16), transparent 32rem),
     linear-gradient(140deg, #02030a, #06122b, #02040b);
 }
 
 .compliance-error-card {
-  width: min(720px, 100%);
-  border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 34px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .045));
-  box-shadow: 0 30px 86px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .16);
-  padding: clamp(24px, 6vw, 48px);
+  width: min(560px, 100%);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 28px;
+  background: linear-gradient(158deg, rgba(30, 43, 80, .55), rgba(14, 21, 42, .62));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  padding: clamp(24px, 6vw, 44px);
   text-align: center;
 }
 
 .compliance-error-card h1 {
-  font-size: clamp(2.2rem, 7vw, 4.6rem);
-  line-height: 1;
-  font-weight: 950;
+  font-size: clamp(1.9rem, 6vw, 3rem);
+  line-height: 1.05;
+  font-weight: 900;
+  background: linear-gradient(180deg, #f7ecc4, #e0bd63);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .compliance-error-card p {

@@ -213,8 +213,8 @@
 
 .public-user-trigger:hover {
   transform: translateY(-2px);
-  border-color: rgba(69, 194, 255, 0.5);
-  box-shadow: 0 20px 54px rgba(69, 194, 255, 0.13), inset 0 1px 0 hsla(0, 0%, 100%, 0.2);
+  border-color: hsla(41, 90%, 69%, 0.5);
+  box-shadow: 0 20px 54px hsla(41, 90%, 69%, 0.13), inset 0 1px 0 hsla(0, 0%, 100%, 0.2);
 }
 
 .public-user-trigger strong,
@@ -237,7 +237,7 @@
   height: 44px;
   border-radius: 16px;
   border: 1px solid hsla(41, 90%, 69%, 0.36);
-  background: radial-gradient(circle at 30% 0, hsla(41, 90%, 69%, 0.34), rgba(69, 194, 255, 0.12)), hsla(0, 0%, 100%, 0.08);
+  background: radial-gradient(circle at 30% 0, hsla(41, 90%, 69%, 0.34), hsla(41, 70%, 50%, 0.12)), hsla(0, 0%, 100%, 0.08);
   color: #fff2b4;
   object-fit: cover;
   font-weight: 950;
@@ -276,7 +276,7 @@
 .public-user-dropdown > button:hover {
   transform: translateY(-1px);
   border-color: hsla(41, 90%, 69%, 0.48);
-  background: linear-gradient(145deg, hsla(41, 90%, 69%, 0.16), rgba(69, 194, 255, 0.07));
+  background: linear-gradient(145deg, hsla(41, 90%, 69%, 0.16), rgba(14, 21, 42, 0.5));
 }
 
 .public-user-dropdown > button.danger {
@@ -289,7 +289,7 @@
   margin-bottom: 4px;
   border: 1px solid hsla(41, 90%, 69%, 0.24);
   border-radius: 20px;
-  background: linear-gradient(145deg, hsla(41, 90%, 69%, 0.12), rgba(69, 194, 255, 0.06));
+  background: linear-gradient(145deg, hsla(41, 90%, 69%, 0.12), rgba(14, 21, 42, 0.45));
   padding: 14px;
 }
 
@@ -328,7 +328,7 @@
   margin-bottom: 1.15rem;
   border: 1px solid hsla(0, 0%, 100%, 0.14);
   border-radius: 28px;
-  background: radial-gradient(circle at 12% 0, rgba(69, 194, 255, 0.18), transparent 22rem), linear-gradient(145deg, hsla(0, 0%, 100%, 0.1), hsla(0, 0%, 100%, 0.035));
+  background: radial-gradient(circle at 12% 0, hsla(41, 90%, 69%, 0.16), transparent 22rem), linear-gradient(145deg, hsla(0, 0%, 100%, 0.1), hsla(0, 0%, 100%, 0.035));
   padding: 1.2rem;
 }
 

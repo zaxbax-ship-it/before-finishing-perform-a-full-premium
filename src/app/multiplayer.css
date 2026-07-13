@@ -45,7 +45,7 @@
 
 .multiplayer-status-card {
   border: 1px solid hsla(41, 90%, 69%, .28);
-  background: linear-gradient(135deg, hsla(41, 90%, 69%, .14), rgba(69, 194, 255, .08));
+  background: linear-gradient(135deg, hsla(41, 90%, 69%, .14), rgba(14, 21, 42, .5));
   padding: 1.1rem;
 }
 
@@ -101,7 +101,7 @@
 .multiplayer-pill.active {
   transform: translateY(-2px);
   border-color: hsla(41, 90%, 69%, .58);
-  background: linear-gradient(145deg, hsla(41, 90%, 69%, .18), rgba(69, 194, 255, .08));
+  background: linear-gradient(145deg, hsla(41, 90%, 69%, .18), rgba(14, 21, 42, .5));
 }
 
 .multiplayer-panel-heading {
@@ -517,7 +517,7 @@
   margin-top: .9rem;
   border: 1px solid hsla(41, 90%, 69%, .28);
   border-radius: 20px;
-  background: linear-gradient(135deg, hsla(41, 90%, 69%, .12), rgba(69, 194, 255, .06));
+  background: linear-gradient(135deg, hsla(41, 90%, 69%, .12), rgba(14, 21, 42, .45));
   color: hsla(0, 0%, 100%, .78);
   padding: .85rem 1rem;
   font-weight: 850;

@@ -23,10 +23,10 @@ describe('Stage 24B — shared gameplay-derived visual primitives exist', () => 
     expect(css).toContain('.app-shell:not(.admin-active):not(.game-active) .stage-panel');
     expect(css).not.toContain('.admin-active .stage-interactive {');
   });
-  it('inputs get a cyan focus edge (not the old gold focus)', () => {
+  it('inputs get a gold focus edge (unified black-gold identity)', () => {
     expect(css).toContain('.app-shell:not(.admin-active):not(.game-active) .form-input:focus');
     const block = css.slice(css.indexOf('.app-shell:not(.admin-active):not(.game-active) .form-input:focus'));
-    expect(block.slice(0, 400)).toContain('rgba(69, 194, 255');
+    expect(block.slice(0, 400)).toContain('hsla(41, 90%, 69%');
   });
 });
 

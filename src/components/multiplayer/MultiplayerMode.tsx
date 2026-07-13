@@ -599,9 +599,9 @@ export function MultiplayerMode({ locale, initialNickname, isAuthenticated, save
 
       {gameState && currentRound && (
         <section key={currentRound.id} data-mode="duo" className="glass multiplayer-game multiplayer-round-enter stage-panel">
-          {/* Head-to-head (blue) — game-screens-reference .duo: gold crown, a VS
-              row (my player gold, opponents blue), white question, blue answers. */}
-          <div className="duo-crown" aria-hidden="true"><PremiumIcon size={22} /></div>
+          {/* Head-to-head (blue) — game-screens-reference .duo: the unified dock
+              crown sits above; here the VS row (my player gold, opponents blue),
+              white question, blue answers. */}
           <div className="duo-versus" role="group" aria-label={copy.results}>
             {gameState.players.map((player, index) => {
               const isMe = player.id === gameState.me?.id;

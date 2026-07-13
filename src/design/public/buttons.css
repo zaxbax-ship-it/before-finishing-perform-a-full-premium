@@ -32,9 +32,9 @@
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
-/* Hover increases clarity slightly (the azure tint returns, unchanged). */
+/* Hover increases clarity slightly (unified black-gold tint). */
 .app-shell:not(.admin-active) .ghost-button:hover {
-  background: linear-gradient(145deg, rgba(69, 194, 255, 0.16), hsla(0, 0%, 100%, 0.075));
+  background: linear-gradient(145deg, hsla(41, 90%, 69%, 0.16), hsla(0, 0%, 100%, 0.075));
 }
 
 /* Home primary/secondary play actions — the big navy cards + the leaderboard

@@ -20,9 +20,9 @@ describe('Stage 29 — subtle premium button transparency', () => {
     expect(buttons).toContain('.primary-action-card.is-solo.stage-interactive');
     expect(buttons).toContain('rgba(16, 40, 92, 0.58)');
   });
-  it('preserves the ghost hover state exactly (azure tint unchanged)', () => {
+  it('ghost hover uses the unified black-gold tint', () => {
     expect(buttons).toContain('.ghost-button:hover');
-    expect(buttons).toContain('rgba(69, 194, 255, 0.16)');
+    expect(buttons).toContain('hsla(41, 90%, 69%, 0.16)');
   });
   it('every button rule is public-scoped — Admin is excluded', () => {
     for (const line of selectorLines) {
