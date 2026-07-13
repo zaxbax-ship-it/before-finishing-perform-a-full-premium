@@ -18,31 +18,35 @@
   .auth-card { padding: 42px; }
 }
 
+/* Reference regular-pages .login .logo: a centered solid-gold crown circle above
+   the title (shared token with every other screen). */
 .auth-brand {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: 22px;
+  gap: 6px;
+  margin: 4px auto 16px;
   text-align: center;
 }
 
 .auth-brand-badge {
   display: grid;
   place-items: center;
-  height: 44px;
-  width: 44px;
-  border-radius: var(--radius-md);
-  background: var(--gold);
-  color: var(--bg);
-  box-shadow: var(--shadow-gold-glow);
+  height: 64px;
+  width: 64px;
+  border-radius: 50%;
+  font-size: 1.9rem;
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  color: var(--ink, #0e1524);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.7), 0 8px 20px rgba(224, 189, 99, 0.4);
   font-weight: 900;
 }
 
 .auth-brand strong { display: block; font-size: 1.05rem; font-weight: 900; }
 .auth-brand small { color: hsla(0, 0%, 100%, 0.6); }
 
-.auth-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; line-height: 1.05; }
-.auth-subtitle { margin-top: 10px; color: hsla(0, 0%, 100%, 0.65); }
+.auth-title { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; line-height: 1.1; text-align: center; }
+.auth-subtitle { margin-top: 10px; color: hsla(0, 0%, 100%, 0.65); text-align: center; }
 
 .auth-body { margin-top: 28px; display: grid; gap: 16px; }
 

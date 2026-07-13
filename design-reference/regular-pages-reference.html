@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root{--gold-100:#f7ecc4;--gold-300:#e8ce82;--gold-500:#e0bd63;--gold-700:#a8842e;--blue:#6b7cff;--ink:#0e1524;--txt:#eef2fb;--dim:#93a0bd;}
+  /* unified dock */
+  .dock{margin:6px auto 14px;display:flex;align-items:center;gap:5px;padding:6px;border-radius:22px;
+    background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.15);
+    box-shadow:0 8px 22px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.2)}
+  .dbtn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:none;color:var(--gold-300);
+    background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(0,0,0,.05));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2px 4px rgba(0,0,0,.25)}
+  .dbtn.brand{background:linear-gradient(150deg,#f7ecc4,#e0bd63 60%,#a8842e);color:var(--ink);box-shadow:inset 0 2px 2px rgba(255,255,255,.7),0 4px 10px rgba(224,189,99,.4)}
+  .ttl{font-weight:800;font-size:22px;text-align:center;color:#fff;margin:2px 0 16px}
+  .ttl.gold{background:linear-gradient(180deg,#f7ecc4,#e0bd63);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* PROFILE */
+  .pf .avatar{width:82px;height:82px;border-radius:50%;display:grid;place-items:center;margin:8px auto 10px;font-weight:800;font-size:32px;color:var(--ink);
+    background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#a8842e);box-shadow:inset 0 2px 3px rgba(255,255,255,.7),0 8px 20px rgba(224,189,99,.4)}
+  .pf .uname{text-align:center;font-weight:800;font-size:20px;color:#fff}
+  .pf .umail{text-align:center;font-size:12px;color:var(--dim);margin-top:2px}
+  .pf .stats{display:flex;gap:9px;margin:18px 0}
+  .pf .stat{flex:1;border-radius:15px;padding:13px 6px;text-align:center;background:linear-gradient(158deg,rgba(38,52,92,.5),rgba(15,23,44,.56));border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+  .pf .stat b{display:block;font-size:19px;font-weight:800;color:var(--gold-300)}
+  .pf .stat span{font-size:10px;color:var(--dim)}
+  .pf .row{display:flex;align-items:center;gap:12px;border-radius:14px;padding:13px;margin-bottom:9px;background:linear-gradient(158deg,rgba(30,43,80,.4),rgba(14,21,42,.46));border:1px solid rgba(255,255,255,.07)}
+  .pf .row .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--gold-300);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+  .pf .row .lb{flex:1;font-weight:700;font-size:13.5px;color:#eef2fb}
+
+  /* LEADERBOARD */
+  .lb .card{position:relative;display:flex;align-items:center;gap:12px;border-radius:16px;padding:13px;margin-bottom:10px;
+    background:linear-gradient(158deg,rgba(30,43,80,.4),rgba(14,21,42,.48)) padding-box,linear-gradient(150deg,rgba(255,255,255,.14),rgba(255,255,255,.05)) border-box;border:1.5px solid transparent;box-shadow:0 10px 22px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)}
+  .lb .card.win{background:radial-gradient(130% 90% at 50% -12%,rgba(224,189,99,.16),transparent 60%) padding-box,linear-gradient(158deg,rgba(30,43,80,.42),rgba(14,21,42,.5)) padding-box,linear-gradient(150deg,#f7ecc4,#e0bd63 55%,#a8842e) border-box;box-shadow:0 0 20px rgba(224,189,99,.28)}
+  .lb .medal{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;font-weight:900;color:var(--ink)}
+  .lb .m1{background:linear-gradient(150deg,#f7ecc4,#e0bd63 60%,#a8842e)}
+  .lb .m2{background:linear-gradient(150deg,#dfe6f2,#aab6c9 60%,#8894a8)}
+  .lb .m3{background:linear-gradient(150deg,#e6b98a,#c98a5a 60%,#9a6a3a)}
+  .lb .nm{font-weight:800;font-size:15px;color:#fff}
+  .lb .am{font-weight:800;font-size:14px;background:linear-gradient(180deg,#f7ecc4,#e0bd63);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:2px}
+
+  /* LOGIN */
+  .login .logo{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin:18px auto 16px;color:var(--ink);background:linear-gradient(150deg,#f7ecc4,#e0bd63 58%,#a8842e);box-shadow:0 8px 20px rgba(224,189,99,.4)}
+  .login .field{border-radius:14px;padding:14px;margin-bottom:11px;display:flex;align-items:center;gap:10px;background:linear-gradient(158deg,rgba(30,43,80,.45),rgba(14,21,42,.5));border:1px solid rgba(255,255,255,.1)}
+  .login .field span{font-size:13px;color:var(--dim)}
+  .login .go{border-radius:14px;padding:15px;font-weight:800;font-size:15px;color:var(--ink);text-align:center;margin-top:4px;background:linear-gradient(150deg,#f7ecc4,#e6c063 55%,#b78f34);box-shadow:inset 0 2px 2px rgba(255,255,255,.7),0 10px 22px rgba(224,189,99,.35)}
+  .login .gg{border-radius:14px;padding:13px;font-weight:700;font-size:13px;color:#fff;text-align:center;margin-top:10px;background:linear-gradient(158deg,rgba(38,52,92,.45),rgba(15,23,44,.5));border:1px solid rgba(255,255,255,.12)}
+  .login .alt{text-align:center;font-size:12px;color:var(--dim);margin-top:14px}
+  .login .alt b{color:var(--gold-300)}
+
+  /* SETTINGS */
+  .set .grp{font-size:11px;font-weight:700;color:var(--dim);margin:10px 4px 8px;text-align:right}
+  .set .row{display:flex;align-items:center;gap:12px;border-radius:14px;padding:13px;margin-bottom:9px;background:linear-gradient(158deg,rgba(30,43,80,.4),rgba(14,21,42,.46));border:1px solid rgba(255,255,255,.07)}
+  .set .row .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--gold-300);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+  .set .row .lb{flex:1;font-weight:700;font-size:13.5px}
+  .set .tog{width:42px;height:24px;border-radius:20px;position:relative;background:linear-gradient(90deg,#a8842e,#e0bd63);flex:0 0 auto}
+  .set .tog:after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff}
+  .set .tog.off{background:rgba(255,255,255,.12)}
+  .set .tog.off:after{left:auto;right:2px}
+</style>
+</head>
+<body>
+  <!-- 1) PROFILE: unified dock; gold avatar-circle (initials); name + email; three gold-accent stat cards; menu rows (icon tile + label). Black-gold. -->
+  <div class="pf">
+    <div class="dock"><button class="dbtn brand"></button><button class="dbtn"></button><button class="dbtn"></button><button class="dbtn"></button></div>
+    <div class="ttl gold">הפרופיל שלי</div>
+    <div class="avatar">י</div>
+    <div class="uname">יוסי דוידוב</div>
+    <div class="umail">yossi@example.com</div>
+    <div class="stats">
+      <div class="stat"><b>42</b><span>משחקים</span></div>
+      <div class="stat"><b>$1M</b><span>שיא</span></div>
+      <div class="stat"><b>7</b><span>רמה</span></div>
+    </div>
+    <div class="row"><span class="ic"></span><span class="lb">הישגים</span></div>
+    <div class="row"><span class="ic"></span><span class="lb">סטטיסטיקות</span></div>
+    <div class="row"><span class="ic"></span><span class="lb">אוסף פרסים</span></div>
+  </div>
+
+  <!-- 2) LEADERBOARD: unified dock; gold title; ranked cards (gold/silver/bronze medals), the current player's card highlighted with a glowing gold border (.card.win); name + gold amount. -->
+  <div class="lb">
+    <div class="dock"><button class="dbtn brand"></button><button class="dbtn"></button><button class="dbtn"></button><button class="dbtn"></button></div>
+    <div class="ttl gold">לוח שיאים</div>
+    <div class="card win"><span class="medal m1">1</span><div><div class="nm">יוסי</div><div class="am">$1,000,000</div></div></div>
+    <div class="card"><span class="medal m2">2</span><div><div class="nm">דני</div><div class="am">$700,000</div></div></div>
+    <div class="card"><span class="medal m3">3</span><div><div class="nm">רותם</div><div class="am">$400,000</div></div></div>
+    <div class="card"><span class="medal">4</span><div><div class="nm">מיכל</div><div class="am">$150,000</div></div></div>
+  </div>
+
+  <!-- 3) LOGIN: gold crown-circle logo; title "התחברות"; glass fields (email, password); gold "התחבר" button; a "התחברות עם Google" secondary button; small "אין לך חשבון? הרשמה" link. Signup + reset-password use the same styling. -->
+  <div class="login">
+    <div class="logo"></div><div class="ttl">התחברות</div>
+    <div class="field"><span>אימייל</span></div><div class="field"><span>סיסמה</span></div>
+    <div class="go">התחבר</div><div class="gg">התחברות עם Google</div>
+    <div class="alt">אין לך חשבון? <b>הרשמה</b></div>
+  </div>
+
+  <!-- 4) SETTINGS: unified dock; gold title "הגדרות"; grouped rows (icon tile + label + gold toggle for on / neutral toggle for off); account rows (language, logout). -->
+  <div class="set">
+    <div class="dock"><button class="dbtn brand"></button><button class="dbtn"></button><button class="dbtn"></button><button class="dbtn"></button></div>
+    <div class="ttl gold">הגדרות</div>
+    <div class="grp">כללי</div>
+    <div class="row"><span class="ic"></span><span class="lb">צלילים</span><span class="tog"></span></div>
+    <div class="row"><span class="ic"></span><span class="lb">התראות</span><span class="tog off"></span></div>
+    <div class="grp">חשבון</div>
+    <div class="row"><span class="ic"></span><span class="lb">שפה</span></div>
+    <div class="row"><span class="ic"></span><span class="lb">התנתקות</span></div>
+  </div>
+</body>
+</html>

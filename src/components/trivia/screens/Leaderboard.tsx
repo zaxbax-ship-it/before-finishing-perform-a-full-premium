@@ -81,9 +81,7 @@ export function Leaderboard({ t, entries, status, isAuthenticated, personalBest,
               const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
               return (
                 <div key={entry.id} className={`leaderboard-row ${rankClass}`} role="row">
-                  <span className="leaderboard-rank font-black" role="cell">
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
-                  </span>
+                  <span className="leaderboard-rank font-black" role="cell">{index + 1}</span>
                   <strong role="cell" className={index < 3 ? 'text-white font-black' : 'text-white/80'}>{entry.nickname || entry.displayName}</strong>
                   <span className="leaderboard-prize" role="cell">{money(entry.bestPrize)}</span>
                 </div>

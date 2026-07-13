@@ -2666,3 +2666,118 @@ html,body{overscroll-behavior-y:none}
   .launch-ladder.is-static .launch-rung { opacity: 1; }
   .launch-climber { transform: translateY(calc(var(--to-row) * 50px)); opacity: 1; }
 }
+
+
+/* ===================== Test 4 — regular pages (Profile / Leaderboard / Settings) ===================== */
+/* Matches design-reference/regular-pages-reference.html: gold centered title,
+   frameless content on the fog+stars stage, black-gold cards. Scoped to the
+   three screens via .regular-page-active so no other page is affected. */
+
+/* Gold, centered screen title (reference .ttl.gold). */
+.app-shell.regular-page-active .public-screen-title {
+  text-align: center;
+  background: linear-gradient(180deg, #f7ecc4, #e0bd63);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* Frameless: neutralise the shared PublicSurface (.glass.stage-panel) so content
+   sits directly on the stage. Beats the .stage-panel shadow by source order. */
+.app-shell.regular-page-active .glass.stage-panel {
+  background: none; border: none; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  padding-left: 0; padding-right: 0;
+}
+
+/* ---- PROFILE (reference .pf) ---- */
+.app-shell.regular-page-active .profile-identity {
+  flex-direction: column; align-items: center; text-align: center; gap: 0.35rem;
+  border: none; background: none; padding: 0.25rem 0 0.5rem; margin-bottom: 0.5rem;
+}
+.app-shell.regular-page-active .profile-monogram {
+  width: 82px; height: 82px; font-size: 2rem; color: var(--ink, #0e1524);
+  background: linear-gradient(150deg, #f7ecc4, #e0bd63 58%, #a8842e);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.7), 0 8px 20px rgba(224, 189, 99, 0.4);
+}
+.app-shell.regular-page-active .profile-identity-main { text-align: center; }
+.app-shell.regular-page-active .profile-summary { justify-content: center; }
+.app-shell.regular-page-active .profile-pinned { justify-content: center; }
+.app-shell.regular-page-active .profile-stat {
+  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 15px; padding: 13px 6px; text-align: center;
+  background: linear-gradient(158deg, rgba(38, 52, 92, 0.5), rgba(15, 23, 44, 0.56));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.app-shell.regular-page-active .profile-stat-value,
+.app-shell.regular-page-active .profile-stat-value.is-gold { color: var(--gold-300, #e8ce82); }
+/* Section cards read as the reference navy rows. */
+.app-shell.regular-page-active .profile-chip {
+  background: linear-gradient(158deg, rgba(30, 43, 80, 0.4), rgba(14, 21, 42, 0.46));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.app-shell.regular-page-active .profile-chip.is-active {
+  border-color: rgba(224, 189, 99, 0.6);
+  background: linear-gradient(158deg, rgba(224, 189, 99, 0.16), rgba(14, 21, 42, 0.5)); color: var(--gold-300, #e8ce82);
+}
+.app-shell.regular-page-active .profile-section-title { color: var(--gold-300, #e8ce82); }
+
+/* ---- LEADERBOARD (reference .lb) ---- */
+/* Each row becomes a card: a medal circle + name/amount, current player glows. */
+.app-shell.regular-page-active .leaderboard-table-card { border: none; background: none; box-shadow: none; padding: 0; }
+.app-shell.regular-page-active .leaderboard-list { display: grid; gap: 10px; }
+.app-shell.regular-page-active .leaderboard-row {
+  display: flex; align-items: center; gap: 12px; grid-template-columns: none;
+  border: 1.5px solid transparent; border-radius: 16px; padding: 13px;
+  background:
+    linear-gradient(158deg, rgba(30, 43, 80, 0.4), rgba(14, 21, 42, 0.48)) padding-box,
+    linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05)) border-box;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.app-shell.regular-page-active .leaderboard-row.leaderboard-head { display: none; }
+.app-shell.regular-page-active .leaderboard-rank {
+  width: 42px; height: 42px; border-radius: 50%; flex: 0 0 auto; font-weight: 900; color: var(--ink, #0e1524);
+  background: rgba(255, 255, 255, 0.08);
+}
+.app-shell.regular-page-active .leaderboard-row strong { flex: 1; color: #fff; font-weight: 800; font-size: 0.98rem; }
+.app-shell.regular-page-active .leaderboard-prize {
+  justify-self: auto; margin-inline-start: auto; font-weight: 800; text-shadow: none;
+  background: linear-gradient(180deg, #f7ecc4, #e0bd63); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* Medals: gold / silver / bronze; the top row also gets the glowing gold border. */
+.app-shell.regular-page-active .leaderboard-row.rank-1 {
+  border: 1.5px solid transparent !important;
+  background:
+    radial-gradient(130% 90% at 50% -12%, rgba(224, 189, 99, 0.16), transparent 60%) padding-box,
+    linear-gradient(158deg, rgba(30, 43, 80, 0.42), rgba(14, 21, 42, 0.5)) padding-box,
+    linear-gradient(150deg, #f7ecc4, #e0bd63 55%, #a8842e) border-box !important;
+  box-shadow: 0 0 20px rgba(224, 189, 99, 0.28) !important;
+}
+.app-shell.regular-page-active .leaderboard-row.rank-1 .leaderboard-rank { background: linear-gradient(150deg, #f7ecc4, #e0bd63 60%, #a8842e); }
+.app-shell.regular-page-active .leaderboard-row.rank-2 .leaderboard-rank { background: linear-gradient(150deg, #dfe6f2, #aab6c9 60%, #8894a8); }
+.app-shell.regular-page-active .leaderboard-row.rank-3 .leaderboard-rank { background: linear-gradient(150deg, #e6b98a, #c98a5a 60%, #9a6a3a); }
+/* "Your best" card keeps a gold identity, centered content. */
+.app-shell.regular-page-active .leaderboard-you {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(158deg, rgba(30, 43, 80, 0.42), rgba(14, 21, 42, 0.5)) padding-box,
+    linear-gradient(150deg, #f7ecc4, #e0bd63 55%, #a8842e) border-box;
+  box-shadow: 0 0 20px rgba(224, 189, 99, 0.22);
+}
+.app-shell.regular-page-active .leaderboard-you-score { color: transparent; background: linear-gradient(180deg, #fbf1c8, #e7c766); -webkit-background-clip: text; background-clip: text; }
+
+/* ---- SETTINGS (reference .set) ---- */
+.app-shell.regular-page-active .setting-row {
+  border-radius: 14px; padding: 13px; margin-bottom: 9px;
+  background: linear-gradient(158deg, rgba(30, 43, 80, 0.4), rgba(14, 21, 42, 0.46));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.app-shell.regular-page-active .setting-row:hover { background: linear-gradient(158deg, rgba(36, 50, 92, 0.46), rgba(16, 24, 48, 0.52)); }
+/* Convert the native checkbox into the reference gold/neutral toggle switch. */
+.app-shell.regular-page-active .setting-row input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 42px; height: 24px; border-radius: 20px; position: relative; flex: 0 0 auto; cursor: pointer;
+  background: rgba(255, 255, 255, 0.12); border: none; transition: background var(--duration-normal) var(--ease-default);
+}
+.app-shell.regular-page-active .setting-row input[type="checkbox"]::after {
+  content: ""; position: absolute; top: 2px; inset-inline-end: 2px; width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; transition: inset-inline var(--duration-normal) var(--ease-default);
+}
+.app-shell.regular-page-active .setting-row input[type="checkbox"]:checked { background: linear-gradient(90deg, #a8842e, #e0bd63); }
+.app-shell.regular-page-active .setting-row input[type="checkbox"]:checked::after { inset-inline-end: auto; inset-inline-start: 2px; }
